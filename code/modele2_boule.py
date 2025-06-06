@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Modèle de refroidissement sur quelques jours (axe en jours).
+Modèle de refroidissement sur 12 heures (axe en heures).
 T(t) = T0 + (Ti − T0)·exp(−k·t)
 """
 
@@ -17,8 +17,8 @@ R_T        = 6_400.0       # m              (rayon caractéristique RT)
 Ti         = 288.0         # K  (température initiale)
 T0         = 273.0         # K  (température ambiante)
 
-t_max_days = 5.0           # jours (durée totale du tracé)
-n_points   = 500           # nombre de points pour tracer
+t_max_hours = 12.0         # heures (durée totale du tracé)
+n_points    = 500          # nombre de points pour tracer
 
 # ────────────────────────────────────
 # 2) CALCUL DE k (en s⁻¹)
@@ -37,13 +37,13 @@ def T(t_seconds, T_inf=T0, T_init=Ti, k_val=k):
 # ────────────────────────────────────
 # 4) CRÉATION DES VECTEURS TEMPS
 # ────────────────────────────────────
-secondes_par_jour = 86_400.0
-t_max_s          = t_max_days * secondes_par_jour
+secondes_par_heure = 3_600.0
+t_max_s            = t_max_hours * secondes_par_heure
 
-# Vecteur des temps en jours (pour l’affichage)
-t_days = np.linspace(0.0, t_max_days, n_points)
+# Vecteur des temps en heures (pour l’affichage)
+t_hours   = np.linspace(0.0, t_max_hours, n_points)
 # Conversion en secondes pour la fonction T()
-t_seconds = t_days * secondes_par_jour
+t_seconds = t_hours * secondes_par_heure
 
 # Calcul de la température sur ces instants
 T_vals = T(t_seconds)
@@ -54,10 +54,10 @@ T_vals = T(t_seconds)
 import matplotlib.pyplot as plt
 
 plt.figure(figsize=(6,4))
-plt.plot(t_days, T_vals, lw=2)
-plt.xlabel("Temps (jours)")
+plt.plot(t_hours, T_vals, lw=2)
+plt.xlabel("Temps (heures)")
 plt.ylabel("Température (K)")
-plt.title("Refroidissement sur quelques jours (modèle 2)")
+plt.title("Refroidissement sur 12 heures (modèle)")
 plt.grid(True)
 plt.tight_layout()
 plt.show()
