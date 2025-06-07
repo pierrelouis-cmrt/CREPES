@@ -1,0 +1,53 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[a4paper, margin=2.4cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb} % Packages pour les maths
+\usepackage[T1]{fontenc}
+\usepackage{graphicx} 
+\usepackage{caption}
+\usepackage{setspace} % Espacement des lignes
+\usepackage{tikz}
+
+
+
+
+\title{Projet de Modélisation de la Température de la Terre}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\section*{Projet}
+
+\subsection*{14h - 15h}
+
+\begin{itemize}
+    \item Premier modèle simple : la Terre est assimilée à une \textbf{boule d'eau} (corps noir) dans le \textbf{vide}. Étude des rayonnements, première façon de modéliser l'évolution de la température la nuit.
+    \item Deuxième modèle : la Terre est une \textbf{boule d'eau} dans l'\textbf{air} (atmosphère), en ignorant la convection.
+    \item Création du \textbf{repo GitHub}.
+    \item Création du document \LaTeX{} pour la théorie des modèles.
+\end{itemize}
+
+\subsection*{15h - 16h}
+
+\begin{itemize}
+    \item La Terre est maintenant assimilée à une \textbf{coquille}.
+    \item Mise à jour du calcul de $C$ (capacité thermique).
+    \item Exécution des scripts Python des modèles 1 et 2 pour constater les \textbf{changements} sur les courbes.
+\end{itemize}
+
+\subsection*{16h - 17h}
+
+\begin{itemize}
+    \item Modèle 3 : coquille, mais de l'air et non du vide à l'intérieur, donc avec une température constante et un rayonnement reçu par la croûte depuis le noyau (assemblage des modèles 1 et 2, avec température uniforme : pas de dépendance en $\theta$ ou $\phi$).
+    \item Schéma explicatif du modèle 3 (Melvin).
+    \item Passage des scripts pour n'afficher que de 0 à 12h en abscisse.
+\end{itemize}
+
+\subsection*{17h - 17h30}
+
+\begin{itemize}
+    \item Modèle 4 : fusion des modèles 1, 2 et 3 en prenant en compte le Soleil.
+\end{itemize}
+
+\end{document}
