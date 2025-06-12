@@ -1,0 +1,1 @@
+Ensemble des fichier permettant de tracer les lignes des frontières des continents dans la modélisation. Il n'est pas nécessaire d'ouvrir ces fichiers.
