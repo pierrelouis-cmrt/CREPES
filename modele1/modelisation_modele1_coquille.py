@@ -9,14 +9,14 @@ from fonctions_modele1_coquille import project_to_sphere, get_shape, calc_power_
 
 
 # Charger les données SHP
-sf = shapefile.Reader("data/ne_10m_coastline.shp")
+sf = shapefile.Reader("ressources/data/ne_10m_coastline.shp")
 shapes = sf.shapes()
 Tmax = 388
 
 list_albedo = []
 for i in range(1, 10):
     # Charger les données d'albédo
-    csv_file_path = f'albedo/albedo0{i}.csv'
+    csv_file_path = f'ressources/albedo/albedo0{i}.csv'
     albedo_data = pd.read_csv(csv_file_path)
     if i == 1:
         latitudes = albedo_data['Latitude/Longitude'].values
@@ -25,7 +25,7 @@ for i in range(1, 10):
     albedo_grid = albedo_data.set_index('Latitude/Longitude').to_numpy()
     list_albedo.append(albedo_grid)
 for i in range(10, 13):
-    csv_file_path = f'albedo/albedo{i}.csv'
+    csv_file_path = f'ressources/albedo/albedo{i}.csv'
     albedo_data = pd.read_csv(csv_file_path)
     # Convertir les données CSV en grille d'albédo
     albedo_grid = albedo_data.set_index('Latitude/Longitude').to_numpy()
