@@ -1,0 +1,43 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[a4paper, margin=2.4cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb} % Packages pour les maths
+\usepackage[T1]{fontenc}
+\usepackage{graphicx} 
+\usepackage{caption}
+\usepackage{setspace} % Espacement des lignes
+\usepackage{tikz}
+\begin{document}
+\section{Modèle 2: Avec atmosphère}
+\subsection{a. Boule d'eau avec atmosphère }
+\textbf{Hypothèses}:
+\begin{itemize}
+    \item Terre assimilé à boule d'eau, de température \(T_{\text{Terre}}\) 
+    \item  Athmosphère avec une température uniforme T 
+    \item  Sans puissance solaire reçue  
+    \item  ignorance de la convection  
+    \item \(C_{\text{air}}\sim C_{\text{eau}}\) 
+    \item $T(t=0) = T_i$ \ \ \
+$T(t \to +\infty) = T_0$
+   
+\end{itemize}
+\textbf{Équations de transfert thermique}
+
+On introduira plus tard le \(P_{\text{th rayonnement}}\)
+
+\begin{align*}
+\delta Q &= c_{air}\, dT = -P_{\text{th,cond}} \cdot dt \\
+\Rightarrow -\int \int \vec{j_{\text{th,cond}}}\, \vec{dS}\,dt = c_{air}\, dT \\
+\Rightarrow -\int_{\theta=0}^\pi \int_{\phi=0}^{2\pi} h(T - T_0) \vec{e_{\text{r}}}\cdot r^2 \sin\theta\, d\theta\, d\varphi \vec{e_{\text{r}}}\, dt &=  c_{air}\, dT  \\
+\Rightarrow -h(T - T_0) \cdot 4\pi\, dt &= c_{air}\, dT \\
+\Rightarrow -T + T_0 = \frac{c}{h 4\pi} \frac{dT}{dt} \Rightarrow \frac{dT}{dt} &= -\frac{4\pi h}{c}(T - T_0)
+\end{align*}
+
+\vspace{0.5cm}
+
+\textbf{Solution:} 
+$T(t) = T_0 + (T_i - T_0)e^{-kt}$ \quad avec $k = \frac{4\pi h}{c}$
+
+\subsection{b. Coquille assimilée à de l'eau avec atmosphère }
+schéma Melvin
+\end{document}
