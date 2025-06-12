@@ -5,7 +5,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.widgets import Slider, Button
 import shapefile
 import pandas as pd
-from fonctions_modele2_coquille import project_to_sphere, get_shape, calc_power_temp, update_plot, slider_update, set_mois
+from fonctions_modele1_coquille import project_to_sphere, get_shape, calc_power_temp, update_plot, slider_update, set_mois
 
 
 # Charger les données SHP
