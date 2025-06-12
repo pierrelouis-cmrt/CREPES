@@ -16,8 +16,17 @@
 \begin{document}
 
 \section{Modèle 1:}
-\subsection{a. Bille remplie d'eau}
-
+\subsection{Bille remplie d'eau}
+\textbf{Hypothèses}:
+\begin{itemize}
+    \item Terre assimilé à boule d'eau, de température \(T_{\text{Terre}}\) 
+    \item  Sans atmosphère (dans le vide)
+    \item  Sans puissance solaire reçu  
+    \item \(C_{\text{air}}\sim C_{\text{eau}}\) 
+    \item $T(t=0) = T_i$ \ \ \
+$T(t \to +\infty) = T_0$
+   
+\end{itemize}
 la terre perd de la température par rayonnement 
 
 \[   P= \sigma T^4 
@@ -38,7 +47,7 @@ et \(C=c_{\text{m eau}}\times m=4,60 \cdot 10^{27} J\cdot K^{-1}\)
 
 \bigskip
 
-\textbf{hypothèse:} la Terre est assimilée à une boule d'eau de rayon \(R_{T}\) =Rayon de la Terre,  dans l'espace (le vide) sans atmosphère, sans soleil, avec une \(T_{\text{Terre}}\) une température de la Terre telle que  \(T_{\text{Terre}}\)> \(T_{\text{vide}}\), avec C=capacité massique de la Terre. 
+\textbf{hypothèse:} la Terre est assimilée à une boule d'eau de rayon \(R_{T}\) =Rayon de la Terre,  dans l'espace (le vide) sans atmosphère, sans soleil, avec une \(T_{\text{Terre}}\) une température de la Terre telle que  \(T_{\text{Terre}}\)> \(T_{\text{vide}}\), avec C=capacité de la Terre. 
 
 \bigskip
 \textbf{Modélisation:} 
@@ -55,7 +64,7 @@ m &= \rho_{\text{eau}} \left( \frac{4}{3} \pi (R_T + dr)^3 - \frac{4}{3} \pi R_T
 C &= c_{\text{eau}} \cdot \rho_{\text{eau}} \cdot 4\pi R_T^2 \cdot dr \\
 &= 4{,}31 \cdot 10^{20} \ \text{J} \cdot \text{K}^{-1} \\
 \\
-k &= \frac{4\pi R}{c_{\text{eau}} \cdot \rho_{\text{eau}} \cdot 4\pi R^2 \cdot dr}
+k &= \frac{4\pi h }{c_{\text{eau}} \cdot \rho_{\text{eau}} \cdot 4\pi R^2 \cdot dr}
 \end{align*}
 
     \includegraphics[width=0.8\linewidth]{../modele1/figures/modele1_coquille.png} 
@@ -63,7 +72,17 @@ k &= \frac{4\pi R}{c_{\text{eau}} \cdot \rho_{\text{eau}} \cdot 4\pi R^2 \cdot d
 
 \section{Modèle 2: Avec atmosphère}
 \subsection{a. Boule d'eau avec atmosphère }
-\section*{Équations de transfert thermique}
+\textbf{Hypothèses}:
+\begin{itemize}
+    \item Terre assimilé à boule d'eau, de température \(T_{\text{Terre}}\) 
+    \item  Athmosphère avec une température uniforme T 
+    \item  ignorance de la convection  
+    \item \(C_{\text{air}}\sim C_{\text{eau}}\) 
+    \item $T(t=0) = T_i$ \ \ \
+$T(t \to +\infty) = T_0$
+   
+\end{itemize}
+\textbf{Équations de transfert thermique}
 
 On introduira plus tard le \(P_{\text{th rayonnement}}\)
 
@@ -76,18 +95,15 @@ On introduira plus tard le \(P_{\text{th rayonnement}}\)
 \end{align*}
 
 \vspace{0.5cm}
-\textbf{hypothèse:}sysème de base l'astre entier assimiler à boule d'eau 
-coquille vide d'eau 
-on assimile terre de température Tt avec eau, avec atmosphère avec température uniforme T  en ignorant la convection 
-avec \(C_{\text{air}}\sim C_{\text{eau}}\)
-avec  $T(t=0) = T_i$ 
-$T(t \to +\infty) = T_0$  \ \ \ \
+
+\textbf{Solution:} 
 $T(t) = T_0 + (T_i - T_0)e^{-kt}$ \quad avec $k = \frac{4\pi h}{c}$
+
 \subsection{b. Coquille assimilée à de l'eau avec atmosphère }
 schéma Melvin
 
 \section{Modèle 3: Avec intérieur de la coquille non vide }
-\textbf{Suppositions}:
+\textbf{Hypothèses}:
 \begin{itemize}
     \item Terre assimilée à une coquille d'eau avec intérieur non vide 
     \item  conduction entre entre centre de la terre et croûte 
@@ -99,22 +115,42 @@ schéma Melvin
 \end{itemize}
 
 
+\[
+(-P_{\mathrm{th,cond}} - P_{\mathrm{th,ray}} + P_r)\,dt = C\,dT.
+\]
 
-\begin{align*}
-(-P_{\text{th, cond}} - P_{\text{th, ray}} + P_r) \, dt &= C \, dT \\
--h\left[T(r + dr) - T_0\right] \cdot 4\pi - 4\pi  (r + dr)^2 \sigma T^4(r+dr) - 4\pi r^2 \lambda \frac{\partial T}{\partial r}(r) &= C \, \frac{dT}{dt} \\
-\\
-\text{or 1er ordre en } dr: \quad r + dr \approx r \\
-\\
--4\pi h(T(r) - T_0)h-4\pi r^2 \sigma T(r)^4 - 4\pi r^2 \lambda \frac{\partial T}{\partial r}(r) &= C \, \frac{dT}{dt}
-\\
-\text{Avec }  
-\\
-P_{r} &= \iint \vec{j_{thr}} \cdot \mathrm{d}\vec{S} \\
-&= \iint -\lambda \nabla T \cdot \mathrm{d}\vec{S} \\
-&= -\lambda \int_{\theta=0}^\pi \int_{\phi=0}^{2\pi} \frac{\partial T}{\partial r} \vec{e_{r}}r^2\sin\theta\, d\theta\, d\varphi \vec{e_{\text{r}}}\\
-&= -\lambda \times 4\pi r^2 \frac{\partial T}{\partial r}
-\end{align*}
+\[
+-\,h\bigl[T(r+dr)-T_0\bigr]\;4\pi
+\;-\;4\pi\,(r+dr)^2\,\sigma\,T^4(r+dr)
+\;-\;4\pi\,r^2\,\lambda\,\frac{\partial T}{\partial r}(r)
+\;=\;C\,\frac{dT}{dt}.
+\]
+
+\medskip
+
+Ou, au premier ordre en \(dr\), \(r+dr\approx r\) :
+
+\[
+-4\pi\,h\bigl(T(r)-T_0\bigr)
+\;-\;4\pi\,r^2\,\sigma\,T(r)^4
+\;-\;4\pi\,r^2\,\lambda\,\frac{\partial T}{\partial r}(r)
+\;=\;C\,\frac{dT}{dt}.
+\]
+
+\medskip
+
+Avec
+\[
+P_{r}
+= \iint\vec j_{\mathrm{thr}}\cdot d\vec S
+= \iint -\lambda\,\nabla T\cdot d\vec S
+= -\lambda
+  \int_{0}^{\pi}\!\!\int_{0}^{2\pi}
+    \frac{\partial T}{\partial r}\,\vec e_{r}\,
+    r^2\sin\theta\;d\theta\,d\varphi\;\vec e_{r}
+= -\lambda\,4\pi\,r^2\,\frac{\partial T}{\partial r}.
+\]
+
 
  
 \vspace{1cm}
