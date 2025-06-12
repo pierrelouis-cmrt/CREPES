@@ -1,52 +1,55 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Refroidissement (12 h) d’une coquille d’eau mince entourée d’atmosphère :
+T(t) = T0 + (Ti − T0)·exp(−k·t)          avec  k = h A / C
+Les pertes ne sont que conductives (h = 2,7 × 10⁻⁷ W m⁻² K⁻¹),
+⇒ τ ≈ 1 × 10⁵ ans : variation imperceptible sur 12 h.
+"""
+
+# ───────────────────────── 1. Constantes ─────────────────────────
 import numpy as np
 import matplotlib.pyplot as plt
 
-# ────────────────────────────────────
-# CONSTANTES
-# ────────────────────────────────────
-sigma = 5.67e-8        # W·m⁻²·K⁻⁴
-R = 6.371e6            # m
-C = 4.31e20            # J/K (valeur calculée pour la chaleur thermique totale)
+C   = 4.31e20          # J·K⁻¹  (capacité thermique globale)
+h   = 2.7e-7           # W·m⁻²·K⁻¹  (conduction seule)
+R_E = 6.371e6          # m       (rayon terrestre)
 
-# ────────────────────────────────────
-# CONDITIONS INITIALES
-# ────────────────────────────────────
-Ti = 288.0             # K (température initiale)
+Ti  = 288.0            # K  (température initiale)
+T0  = 273.0            # K  (température ambiante)
 
-# ────────────────────────────────────
-# PARAMÈTRES TEMPORELS (12 heures)
-# ────────────────────────────────────
-t_max_hours = 12.0               # durée totale en heures
-dt_seconds = 3600.0              # pas de temps en secondes (1 h)
-t_max_seconds = t_max_hours * 3600.0
-n_steps = int(t_max_seconds / dt_seconds) + 1  # nombre de points (on ajoute 1 pour inclure l'instant t=0)
+t_max_hours = 12.0     # h  (durée du tracé)
+n_points    = 500
 
-# ────────────────────────────────────
-# INITIALISATION DES TABLEAUX
-# ────────────────────────────────────
-T = np.zeros(n_steps)
-t_seconds = np.linspace(0.0, t_max_seconds, n_steps)
-t_hours = t_seconds / 3600.0     # vecteur temps en heures (pour l’affichage)
+# ───────────────────────── 2. Constante k ─────────────────────────
+A = 4 * np.pi * R_E**2
+k = h * A / C
 
-T[0] = Ti
+# ───────────────────────── 3. Fonction T(t) ───────────────────────
+def T(t_seconds, T_inf=T0, T_init=Ti, k_val=k):
+    return T_inf + (T_init - T_inf) * np.exp(-k_val * t_seconds)
 
-# ────────────────────────────────────
-# BOUCLE D'EULER EXPLICITE
-# ────────────────────────────────────
-for i in range(1, n_steps):
-    # dT/dt = - (Puissance rayonnée) / C, où Puissance = 4πR²σT⁴
-    dT_dt = - (4 * np.pi * R**2 * sigma * T[i-1]**4) / C
-    T[i] = T[i-1] + dT_dt * dt_seconds
+# ───────────────────────── 4. Echelle de temps ────────────────────
+sec_per_hour = 3600.0
+t_hours   = np.linspace(0.0, t_max_hours, n_points)
+t_seconds = t_hours * sec_per_hour
+T_vals    = T(t_seconds)
 
-# ────────────────────────────────────
-# TRACÉ
-# ────────────────────────────────────
-plt.figure(figsize=(8,5))
-plt.plot(t_hours, T, lw=2)
-plt.xlabel('Temps (heures)')
-plt.ylabel('Température (K)')
-plt.title("Évolution de la température de la Terre (coquille vide) sur 0–12 h")
-plt.xlim(0, t_max_hours)
-plt.grid(True)
-plt.tight_layout()
+# ───────────────────────── 5. Tracé ───────────────────────────────
+fig, ax = plt.subplots(figsize=(7, 4))
+ax.plot(t_hours, T_vals, lw=2)
+
+ax.set_xlabel("Temps (heures)")
+ax.set_ylabel("Température (K)")
+ax.set_title("Refroidissement sur 12 h – coquille d’eau mince (h = 2,7 × 10⁻⁷ W m⁻² K⁻¹)")
+ax.grid(True)
+
+# ✨ désactive l’offset ET la notation scientifique sur l’axe y
+ax.ticklabel_format(axis='y', style='plain', useOffset=False)
+
+# (facultatif) afficher un intervalle « visible » autour de Ti
+# ax.set_ylim(Ti - 1, Ti + 1)
+
+fig.tight_layout()
 plt.show()
