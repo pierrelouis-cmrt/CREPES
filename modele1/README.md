@@ -1,0 +1,1 @@
+le script "modelisation" fonctionne grace au script "fonction".
