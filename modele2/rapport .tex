@@ -8,8 +8,11 @@
 \usepackage{setspace} % Espacement des lignes
 \usepackage{tikz}
 \usepackage{soul}
+\usepackage{titlesec}
+\titleformat{\part}[display]
+  {\normalfont\Huge\bfseries}{}{0pt}{}
 \begin{document}
-\section{Modèle 2: Avec atmosphère}
+\part{Modèle 2: Avec atmosphère}
 \subsection{a. Boule d'eau avec atmosphère }
 \textbf{Hypothèses}:
 \begin{itemize}
@@ -25,7 +28,7 @@ $T(t \to +\infty) = T_0$
 \end{itemize}
 \textbf{Équations de transfert thermique}
 
-
+On applique le premier principe appliqué au système \{ boule d'eau  \}
 
 \begin{align*}
 \delta Q &= C\, dT = -P_{\text{th,cond}} \cdot dt \\
@@ -41,14 +44,20 @@ $T(t \to +\infty) = T_0$
 $T(t) = T_0 + (T_i - T_0)e^{-kt}$ \quad avec $k = \frac{4\pi h}{C}$
 \\
 \bigskip
-\textbf{Modélisation:} 
+\textbf{Modélisation graphique :} 
     
-    \includegraphics[width=0.8\linewidth]{}
+    \includegraphics[width=0.8\linewidth]{../modele2/figures/modele2.png}
 \\
-\subsection{b. Coquille assimilée à de l'eau avec atmosphère }
+\subsection{Coquille assimilée à de l'eau avec atmosphère }
 \textbf{Hypothèses}:
 \begin{itemize}
-    \item On garde les hypothèses précédente excepté le système: la Terre est assimilée à une coquille d'eau, d'épaisseur dr, avec du vide à l'intérieur de la coquille 
+    \item On garde les hypothèses précédente excepté le système: la Terre est assimilée à une coquille d'eau, d'épaisseur dr, avec du vide à l'intérieur de la coquille \end{itemize}
+\textbf{Modélisation graphique :} 
     
-\end{itemize}
+    \includegraphics[width=0.8\linewidth]{../modele2/figures/modele2_coquille.png}    
+
+
+\subsection{Critique du modèle}
+
+
 \end{document}
