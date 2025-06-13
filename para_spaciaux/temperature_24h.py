@@ -44,9 +44,9 @@ def puissance_recue_point(lat_deg, lon_deg, mois, time, albedo=0.3):
     return temperature, puissance_recue
 
 # 🧪 Paramètres de simulation
-lat = 90   # Paris
-lon = 0
-mois = 12
+lat = 49   # Paris
+lon = 2
+mois = 7
 albedo = 0.3
 
 # ⏱️ Simulation sur 24h
