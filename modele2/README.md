@@ -13,10 +13,10 @@ Le dossier _figures_ contient :
 
 Le fichier `modele2_boule.py` modélise la température de la Terre en fonction du temps pour une boule d'eau entouré d'une atmosphère
 
-Le fichier `modele1_coquille.py` modélise la température de la Terre en fonction du temps pour une coquille entouré d'une atmosphère
+Le fichier `modele2_coquille.py` modélise la température de la Terre en fonction du temps pour une coquille entouré d'une atmosphère
 
 
 ## Fichiers
 ### Rapport
 
-Le fichier `rapport.tex`est un fichier LaTeX qui compile notre réflexion pour concevoir le modèle 1 ainsi que les équations.
+Le fichier `rapport.tex`est un fichier LaTeX qui compile notre réflexion pour concevoir le modèle 2 ainsi que les équations.
