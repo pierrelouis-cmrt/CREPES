@@ -1,0 +1,72 @@
+
+
+
+\tikzset{every picture/.style={line width=0.75pt}} %set default line width to 0.75pt        
+
+\begin{tikzpicture}[x=0.75pt,y=0.75pt,yscale=-1,xscale=1]
+%uncomment if require: \path (0,333); %set diagram left start at 0, and has height of 333
+
+%Shape: Circle [id:dp2853450558464582] 
+\draw  [fill={rgb, 255:red, 210; green, 230; blue, 245 }  ,fill opacity=1 ] (75.23,149.59) .. controls (75.06,95.19) and (119.03,50.94) .. (173.44,50.77) .. controls (227.85,50.6) and (272.09,94.57) .. (272.26,148.98) .. controls (272.43,203.38) and (228.46,247.63) .. (174.06,247.8) .. controls (119.65,247.97) and (75.4,204) .. (75.23,149.59) -- cycle ;
+%Shape: Circle [id:dp8831653124660588] 
+\draw  [fill={rgb, 255:red, 255; green, 255; blue, 255 }  ,fill opacity=1 ] (108.45,149.28) .. controls (108.45,113.22) and (137.69,83.99) .. (173.75,83.99) .. controls (209.81,83.99) and (239.04,113.22) .. (239.04,149.28) .. controls (239.04,185.34) and (209.81,214.58) .. (173.75,214.58) .. controls (137.69,214.58) and (108.45,185.34) .. (108.45,149.28) -- cycle ;
+%Left Right Arrow [id:dp27471825009288] 
+\draw   (75.4,148.64) -- (83.66,145.55) -- (83.66,147.1) -- (100.19,147.1) -- (100.19,145.55) -- (108.45,148.64) -- (100.19,151.73) -- (100.19,150.19) -- (83.66,150.19) -- (83.66,151.73) -- cycle ;
+%Straight Lines [id:da3599341439753846] 
+\draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ]   (174.06,247.8) -- (174.26,288.67) ;
+\draw [shift={(174.27,290.67)}, rotate = 269.72] [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Shape: Boxed Line [id:dp48440839717486706] 
+\draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ]   (272.26,148.98) -- (313.12,148.2) ;
+\draw [shift={(315.12,148.16)}, rotate = 178.91] [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Shape: Boxed Line [id:dp8536081642103901] 
+\draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ]   (103.42,218.26) -- (75.92,248.49) ;
+\draw [shift={(74.58,249.97)}, rotate = 312.29] [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Shape: Boxed Line [id:dp8644886265042362] 
+\draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ]   (75.23,149.59) -- (34.37,150.29) ;
+\draw [shift={(32.37,150.33)}, rotate = 359.02] [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Shape: Boxed Line [id:dp9452351937909618] 
+\draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ]   (173.44,50.77) -- (173.81,9.9) ;
+\draw [shift={(173.83,7.9)}, rotate = 90.53] [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Shape: Boxed Line [id:dp7048061349041405] 
+\draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ]   (250.59,211.24) -- (280.89,242.09) ;
+\draw [shift={(282.29,243.52)}, rotate = 225.53] [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Shape: Boxed Line [id:dp2329429657696126] 
+\draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ]   (107.44,75.72) -- (77.76,44.27) ;
+\draw [shift={(76.39,42.82)}, rotate = 46.66] [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Shape: Boxed Line [id:dp9133367310686784] 
+\draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ]   (237,75.03) -- (264.63,44.91) ;
+\draw [shift={(265.99,43.44)}, rotate = 132.54] [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+
+% Text Node
+\draw (93.24,137.05) node  [font=\scriptsize] [align=left] {\begin{minipage}[lt]{9.45pt}\setlength\topsep{0pt}
+$\displaystyle dr$
+\end{minipage}};
+% Text Node
+\draw (173.75,149.28) node   [align=left] {\begin{minipage}[lt]{26.45pt}\setlength\topsep{0pt}
+$\displaystyle \mathrm{Vide}$
+\end{minipage}};
+% Text Node
+\draw (239.03,97.39) node  [font=\footnotesize] [align=left] {\begin{minipage}[lt]{25.43pt}\setlength\topsep{0pt}
+$\displaystyle T_{Terre}$
+\end{minipage}};
+% Text Node
+\draw (321.95,86.97) node   [align=left] {\begin{minipage}[lt]{27.13pt}\setlength\topsep{0pt}
+$\displaystyle \mathrm{Vide}$
+\end{minipage}};
+% Text Node
+\draw (174.21,71.54) node   [align=left] {\begin{minipage}[lt]{79.02pt}\setlength\topsep{0pt}
+$\displaystyle \mathrm{Coquille\ d'eau}$
+\end{minipage}};
+% Text Node
+\draw (259.8,268.4) node  [font=\footnotesize] [align=left] {\begin{minipage}[lt]{109.43pt}\setlength\topsep{0pt}
+$\displaystyle \mathrm{\textcolor[rgb]{0.82,0.01,0.11}{Rayonnement\ infrarouge}}$
+\end{minipage}};
+% Text Node
+\draw (253.8,123) node  [font=\footnotesize] [align=left] {\begin{minipage}[lt]{19.67pt}\setlength\topsep{0pt}
+$\displaystyle C_{eau}$
+\end{minipage}};
+% Text Node
+\draw (92,298) node [anchor=north west][inner sep=0.75pt]   [align=left] {\textbf{\underline{Schéma du modèle 1.2}}};
+
+
+\end{tikzpicture}
