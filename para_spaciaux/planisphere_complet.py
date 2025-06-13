@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Interactive planisphère – temperature map & 1‑decimal Cₚ
-========================================================
-Changements🛠️ :
+Interactive planisphère – coherent solar power
+==============================================
+Correctif : la **puissance solaire locale** affichée dans l’annotation était
+incorrecte ; elle n’utilisait pas le même modèle que la température. Désormais :
 
-* **Couche couleur** → Température « corps noir » (K) calculée pour le mois &
-  l’heure sélectionnés. Finie la palette d’albédo ; on affiche la chaleur reçue.
-* **Capacité thermique** : table mise à jour (eau 4.2, non 4200) et l’annotation
-  montre *exactement un chiffre après la virgule* (0.8, 0.6, 0.2, 4.2…).
-* Les sliders **mois** ET **heure** rafraîchissent désormais la carte.
-
-Le moteur reste volontairement simplifié (puissance solaire instantanée →
-T⁴ = P/σ) pour la vitesse.
+* nouvelle fonction `power_and_T_point()` reprise du script de test fourni ;
+* l’annotation emploie cette fonction, donc **P ≠ 0** chaque fois que T > 0 ;
+* présentation inchangée : carte température, Cₚ à 1 décimale, sliders mois &
+  heure.
 """
 
 from __future__ import annotations
@@ -71,7 +68,7 @@ _REF_ALBEDO = {
     "land": 0.15,
 }
 _CAPACITY_BY_TYPE = {
-    "ice": 0.60,     # toy units (kJ kg‑1 K‑1)
+    "ice": 0.60,
     "water": 4.2,
     "snow": 0.80,
     "desert": 0.35,
@@ -86,15 +83,16 @@ def capacite_thermique(albedo: float) -> float:
     return _CAPACITY_BY_TYPE[surf]
 
 # ────────────────────────────────────────────────
-# Solar power → temperature (toy model)
+# Solar power & temperature (vector + point versions)
 # ────────────────────────────────────────────────
 
 _S0 = 1361.0
 _sigma = 5.67e-8
 
-def _sun_vector(month: int, hour: int):
+def _sun_vector(month: int, hour: float):
+    """Return 3‑D sun vector for given month (1‑12) and local solar hour."""
     v = np.array([1.0, 0.0, 0.0])
-    # axial tilt by month
+    # axial tilt (season)
     tilt = np.radians(23 * np.cos(2 * np.pi * month / 12))
     v = np.array([
         v[0] * np.cos(tilt) + v[2] * np.sin(tilt),
@@ -110,10 +108,26 @@ def _sun_vector(month: int, hour: int):
     ])
     return v
 
-def temperature_grid(month: int, hour: int) -> np.ndarray:
+
+def power_and_T_point(lat_deg: float, lon_deg: float, month: int, hour: float, albedo: float):
+    """Return (T, power) at a single point using the same model as the grid."""
+    theta = np.radians(90 - lat_deg)
+    phi = np.radians(lon_deg % 360)
     sun = _sun_vector(month, hour)
-    # Surface normals (vectorised):
-    theta = np.radians(90 - LAT2D)  # colatitude
+    normal = np.array([
+        np.sin(theta) * np.cos(phi),
+        np.sin(theta) * np.sin(phi),
+        np.cos(theta),
+    ])
+    cos_i = max(np.dot(normal, sun), 0.0)
+    power = _S0 * cos_i * (1 - albedo)
+    T = (power / _sigma) ** 0.25 if power > 0 else 0.0
+    return T, power
+
+
+def temperature_grid(month: int, hour: float) -> np.ndarray:
+    sun = _sun_vector(month, hour)
+    theta = np.radians(90 - LAT2D)
     phi = np.radians(LON2D % 360)
     nx = np.sin(theta) * np.cos(phi)
     ny = np.sin(theta) * np.sin(phi)
@@ -155,7 +169,7 @@ slider_hour  = Slider(slider_ax_hour,  "Hour",  0, 23, valinit=12, valstep=1, co
 
 
 def _refresh(_):
-    m = int(slider_month.val); h = int(slider_hour.val)
+    m = int(slider_month.val); h = slider_hour.val
     im.set_data(temperature_grid(m, h))
     ax.set_title(f"Temperature (K) – Month {m}, Hour {h}")
     fig.canvas.draw_idle()
@@ -174,20 +188,20 @@ def _onclick(event):
     if event.inaxes is not ax or event.xdata is None or event.ydata is None:
         return
     lon, lat = float(event.xdata), float(event.ydata)
-    m, h = int(slider_month.val), int(slider_hour.val)
+    m, h = int(slider_month.val), slider_hour.val
     li, lj = _lat_idx(lat), _lon_idx(lon)
     alb = float(monthly_albedo[m - 1, li, lj])
     cap = capacite_thermique(alb)
-    T, P = temperature_grid(m, h)[li, lj], _S0 * max(0, np.cos(np.radians(90 - lat))) * (1 - alb)  # crude local power
+    T, P = power_and_T_point(lat, lon, m, h, alb)
     if _annotation is not None:
         _annotation.remove()
     txt = (
         f"λ = {lat:+.1f}°, φ = {lon:+.1f}°\n"
-        f"Month {m}, Hour {h} h\n"
+        f"Month {m}, Hour {h:.1f} h\n"
         f"Albedo = {alb:.2f}\n"
         f"Cₚ = {cap:.1f} J kg⁻¹ K⁻¹\n"
-        f"Solar ≈ {P:.0f} W m⁻²\n"
-        f"T_bb ≈ {T:.1f} K"
+        f"Solar = {P:.1f} W m⁻²\n"
+        f"T_bb = {T:.1f} K"
     )
     _annotation = ax.annotate(txt, xy=(lon, lat), xycoords="data", xytext=(5, 5), textcoords="offset points",
                               fontsize=8, color="white", backgroundcolor="black", ha="left", va="bottom", zorder=5)
