@@ -1,0 +1,80 @@
+
+
+
+\tikzset{every picture/.style={line width=0.75pt}} %set default line width to 0.75pt        
+
+\begin{tikzpicture}[x=0.75pt,y=0.75pt,yscale=-1,xscale=1]
+%uncomment if require: \path (0,487); %set diagram left start at 0, and has height of 487
+
+%Shape: Circle [id:dp10709203951042012] 
+\draw  [fill={rgb, 255:red, 210; green, 230; blue, 245 }  ,fill opacity=1 ] (89.4,235.8) .. controls (89.23,181.39) and (133.2,137.14) .. (187.61,136.97) .. controls (242.01,136.8) and (286.26,180.77) .. (286.43,235.18) .. controls (286.6,289.59) and (242.63,333.83) .. (188.22,334) .. controls (133.82,334.17) and (89.57,290.21) .. (89.4,235.8) -- cycle ;
+%Shape: Circle [id:dp7333357678260289] 
+\draw  [fill={rgb, 255:red, 255; green, 255; blue, 255 }  ,fill opacity=1 ] (122.45,236.44) .. controls (122.45,200.38) and (151.69,171.15) .. (187.75,171.15) .. controls (223.81,171.15) and (253.04,200.38) .. (253.04,236.44) .. controls (253.04,272.5) and (223.81,301.73) .. (187.75,301.73) .. controls (151.69,301.73) and (122.45,272.5) .. (122.45,236.44) -- cycle ;
+%Left Right Arrow [id:dp3548711510539092] 
+\draw   (89.4,235.8) -- (97.66,232.71) -- (97.66,234.25) -- (114.19,234.25) -- (114.19,232.71) -- (122.45,235.8) -- (114.19,238.89) -- (114.19,237.34) -- (97.66,237.34) -- (97.66,238.89) -- cycle ;
+%Shape: Boxed Line [id:dp5761949132092214] 
+\draw [color={rgb, 255:red, 189; green, 16; blue, 224 }  ,draw opacity=1 ]   (117.42,305.41) -- (89.92,335.64) ;
+\draw [shift={(88.58,337.12)}, rotate = 312.29] [color={rgb, 255:red, 189; green, 16; blue, 224 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Shape: Boxed Line [id:dp710493427707621] 
+\draw [color={rgb, 255:red, 189; green, 16; blue, 224 }  ,draw opacity=1 ]   (263.59,299.45) -- (295.81,328.29) ;
+\draw [shift={(297.3,329.63)}, rotate = 221.84] [color={rgb, 255:red, 189; green, 16; blue, 224 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Straight Lines [id:da5817699090225182] 
+\draw [color={rgb, 255:red, 189; green, 16; blue, 224 }  ,draw opacity=1 ]   (121.44,162.87) -- (91.61,131.55) ;
+\draw [shift={(90.23,130.1)}, rotate = 46.4] [color={rgb, 255:red, 189; green, 16; blue, 224 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Straight Lines [id:da049093464289267974] 
+\draw [color={rgb, 255:red, 189; green, 16; blue, 224 }  ,draw opacity=1 ]   (251.8,160.97) -- (279.52,130.94) ;
+\draw [shift={(280.87,129.47)}, rotate = 132.71] [color={rgb, 255:red, 189; green, 16; blue, 224 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Left Right Arrow [id:dp44750401955683583] 
+\draw   (122.45,235.84) -- (138.61,232.22) -- (138.61,234.03) -- (170.91,234.03) -- (170.91,232.22) -- (187.07,235.84) -- (170.91,239.46) -- (170.91,237.65) -- (138.61,237.65) -- (138.61,239.46) -- cycle ;
+%Shape: Circle [id:dp7708605695987275] 
+\draw  [dash pattern={on 0.84pt off 2.51pt}] (2.76,235.49) .. controls (2.76,133.23) and (85.65,50.33) .. (187.92,50.33) .. controls (290.18,50.33) and (373.08,133.23) .. (373.08,235.49) .. controls (373.08,337.75) and (290.18,420.65) .. (187.92,420.65) .. controls (85.65,420.65) and (2.76,337.75) .. (2.76,235.49) -- cycle ;
+%Straight Lines [id:da26295021483676906] 
+\draw    (286.43,235.18) -- (391,234.52) ;
+\draw [shift={(394,234.5)}, rotate = 179.64] [fill={rgb, 255:red, 0; green, 0; blue, 0 }  ][line width=0.08]  [draw opacity=0] (8.93,-4.29) -- (0,0) -- (8.93,4.29) -- cycle    ;
+\draw [shift={(286.43,235.18)}, rotate = 179.64] [color={rgb, 255:red, 0; green, 0; blue, 0 }  ][line width=0.75]    (0,5.59) -- (0,-5.59)   ;
+
+% Text Node
+\draw (107,450) node [anchor=north west][inner sep=0.75pt]   [align=left] {\underline{\textbf{Schéma du modèle 2.2}}};
+% Text Node
+\draw (107.24,224.21) node  [font=\scriptsize] [align=left] {\begin{minipage}[lt]{9.45pt}\setlength\topsep{0pt}
+$\displaystyle dr$
+\end{minipage}};
+% Text Node
+\draw (253.03,184.55) node  [font=\footnotesize] [align=left] {\begin{minipage}[lt]{25.43pt}\setlength\topsep{0pt}
+$\displaystyle T_{Terre}$
+\end{minipage}};
+% Text Node
+\draw (188.21,158.69) node   [align=left] {\begin{minipage}[lt]{79.02pt}\setlength\topsep{0pt}
+$\displaystyle \mathrm{Coquille\ d'eau}$
+\end{minipage}};
+% Text Node
+\draw (267.8,210.16) node  [font=\footnotesize] [align=left] {\begin{minipage}[lt]{19.67pt}\setlength\topsep{0pt}
+$\displaystyle C_{eau}$
+\end{minipage}};
+% Text Node
+\draw (157.07,229.56) node  [font=\scriptsize] [align=left] {\begin{minipage}[lt]{10.88pt}\setlength\topsep{0pt}
+$\displaystyle r$
+\end{minipage}};
+% Text Node
+\draw (513.92,109.38) node  [font=\footnotesize] [align=left] {\begin{minipage}[lt]{153.88pt}\setlength\topsep{0pt}
+$\displaystyle \textcolor[rgb]{0.74,0.06,0.88}{P}\textcolor[rgb]{0.74,0.06,0.88}{_{cond}}\textcolor[rgb]{0.74,0.06,0.88}{=}\textcolor[rgb]{0.74,0.06,0.88}{\mathrm{Puissance\ émise\ par\ conduction}}$
+\end{minipage}};
+% Text Node
+\draw (281.92,156.71) node  [font=\footnotesize] [align=left] {\begin{minipage}[lt]{22.41pt}\setlength\topsep{0pt}
+\textcolor[rgb]{0.07,0.11,1}{$\displaystyle \textcolor[rgb]{0.74,0.06,0.88}{P}\textcolor[rgb]{0.74,0.06,0.88}{_{cond}}$}
+\end{minipage}};
+% Text Node
+\draw (190.33,104.77) node   [align=left] {\begin{minipage}[lt]{167.73pt}\setlength\topsep{0pt}
+$\displaystyle \mathrm{Atmosphère\ à\ la\ température\ T}$
+\end{minipage}};
+% Text Node
+\draw (303,43) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle \mathrm{Vide}$};
+% Text Node
+\draw (167,196) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle \mathrm{Vide}$};
+% Text Node
+\draw (327.22,215.59) node   [align=left] {\begin{minipage}[lt]{16.32pt}\setlength\topsep{0pt}
+$\displaystyle \overrightarrow{dS}$
+\end{minipage}};
+
+
+\end{tikzpicture}
