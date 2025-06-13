@@ -12,9 +12,12 @@
 \textbf{Hypothèses}:
 \begin{itemize}
     \item Terre assimilée à une coquille d'eau avec intérieur non vide 
-    \item  conduction entre entre centre de la terre et croûte 
+    \item  conduction entre centre de la terre et croûte 
     \item  conduction entre croûte et air 
     \item  rayonnement de la croûte
+    \item On néglige le rayonnement de l'atmosphère
+    \item $T(t=0) = T_i$ \ \ \
+$T(t \to +\infty) = T_0$
     
     
     
@@ -27,7 +30,7 @@
 
 \[
 -\,h\bigl[T(r+dr)-T_0\bigr]\;4\pi
-\;-\;4\pi\,(r+dr)^2\,\sigma\,T^4(r+dr)
+\;-\;4\pi\,\cdot (r+dr)^2\,\sigma\,T^4(r+dr)
 \;-\;4\pi\,r^2\,\lambda\,\frac{\partial T}{\partial r}(r)
 \;=\;C\,\frac{dT}{dt}.
 \]
@@ -56,6 +59,7 @@ P_{r}
     r^2\sin\theta\;d\theta\,d\varphi\;\vec e_{r}
 = -\lambda\,4\pi\,r^2\,\frac{\partial T}{\partial r}.
 \]
+
 
 
  
