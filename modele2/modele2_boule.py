@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
 Modèle de refroidissement sur 12 heures (axe en heures).
 T(t) = T0 + (Ti − T0)·exp(−k·t)
+
+Ici la capacité thermique volumique de l’eau est utilisée ;
+on remplace simplement h par la valeur physique calculée ci‑dessus.
 """
 
 # ────────────────────────────────────
@@ -11,10 +13,10 @@ T(t) = T0 + (Ti − T0)·exp(−k·t)
 # ────────────────────────────────────
 c_eau      = 4_185.0       # J·kg⁻¹·K⁻¹    (chaleur massique de l’eau)
 rho_eau    = 1_000.0       # kg·m⁻³         (masse volumique de l’eau)
-h          = 3e-7          # W·m⁻²·K⁻¹      (coefficient d’échange très faible)
+h          = 2.7e-7        # W·m⁻²·K⁻¹      (coefficient d’échange – conduction)
 R_T        = 6_400.0       # m              (rayon caractéristique RT)
 
-Ti         = 288.0         # K  (température initiale)
+Ti         = 288.0         # K  (+15 °C, température initiale)         # K  (température initiale)
 T0         = 273.0         # K  (température ambiante)
 
 t_max_hours = 12.0         # heures (durée totale du tracé)
@@ -40,12 +42,10 @@ def T(t_seconds, T_inf=T0, T_init=Ti, k_val=k):
 secondes_par_heure = 3_600.0
 t_max_s            = t_max_hours * secondes_par_heure
 
-# Vecteur des temps en heures (pour l’affichage)
 t_hours   = np.linspace(0.0, t_max_hours, n_points)
 # Conversion en secondes pour la fonction T()
 t_seconds = t_hours * secondes_par_heure
 
-# Calcul de la température sur ces instants
 T_vals = T(t_seconds)
 
 # ────────────────────────────────────
@@ -57,7 +57,7 @@ plt.figure(figsize=(6,4))
 plt.plot(t_hours, T_vals, lw=2)
 plt.xlabel("Temps (heures)")
 plt.ylabel("Température (K)")
-plt.title("Refroidissement sur 12 heures (modèle)")
+plt.title("Refroidissement sur 12 heures (coefficient h = 2.7×10⁻⁷)")
 plt.grid(True)
 plt.tight_layout()
 plt.show()
