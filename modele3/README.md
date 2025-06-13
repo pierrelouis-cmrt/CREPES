@@ -1,5 +1,20 @@
-# Ce dossier contient toutes les informations relatives au modèle 3 :
 
- - Dans `rapport.tex`, on retrouve toute la théorie de ce modèle (hypothèses et équations).
- - Dans `modele3_coquille.py`, on retrouve le programme python pour tracer l'évolution de la température en fonction du temps.
- - Dans le dossier `figures`, on retrouve  la courbe d'évolution de la température sur 12 heures ainsi qu'un schéma du modèle.
+# Fichier README du modèle 3
+
+Récapitulatif du dossier `modèle 3`
+
+## Dossier _figures_
+
+Le dossier _figures_ contient : 
+- l'image du graphique du modèle 3
+- le schéma réalisé avec Mathcha du modèle 3, ainsi que la version en LaTeX
+
+## Codes _python_
+
+Le fichier `modele3_coquille.py` modélise la température de la Terre en fonction du temps pour une coquille entouré d'une atmosphère
+
+
+## Fichiers
+### Rapport
+
+Le fichier `rapport.tex`est un fichier LaTeX qui compile notre réflexion pour concevoir le modèle 3 ainsi que les équations.
