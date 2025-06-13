@@ -12,10 +12,10 @@
 \subsection{Bille remplie d'eau}
 \textbf{Hypothèses}:
 \begin{itemize}
-    \item Terre assimilé à boule d'eau, de température \(T_{\text{Terre}}\) telle que \(T_{\text{Terre}}\)> \(T_{\text{ext}}\)
+    \item Terre assimilée à une boule d'eau, de température \(T_{\text{Terre}}\) telle que \(T_{\text{Terre}}\)> \(T_{\text{ext}}\)
     \item  Sans atmosphère (dans le vide)
     \item  Sans puissance solaire reçue  
-    \item \(C= C_{\text{eau}} \sim C_{\text{terre}}\) 
+    \item \(c_{m}= c_{\text{m,eau}} \sim c_{\text{m,Terre}}\) 
     \item $T(t=0) = T_i$ \ \ \
 $T(t \to +\infty) = T_0$
    
@@ -26,10 +26,15 @@ $\rightarrow$ la terre perd de la température par rayonnement
 \[   P= \sigma T^4 
 \]
 
-\[    C \, \frac{dT}{dt} = - \sigma T^4 \, dt \times S
+\[    C \, \frac{dT}{dt} = - \sigma T^4 \,  \times S
 \]
 
 \[\frac{dT}{dt} = - \frac{4 \pi R_T^2 \sigma T^4}{C}\]  
+
+Avec 
+\(S= 4\pi r^2\)
+\ \ \ \
+\(\sigma=5,67 \cdot 10^{-8} W\cdot m^{-2} \cdot K^{-4}\)
 
 \textbf{Solution:} 
 \[
@@ -51,7 +56,7 @@ et \(C=c_{\text{m eau}}\times m=4,60 \cdot 10^{27} J\cdot K^{-1}\)
 \subsection{Coquille vide }
 \textbf{Hypothèses}:
 \begin{itemize}
-    \item Terre assimilée à une coquille d'eau, d'épaisseur dr, avec du vide à l'intérieur
+    \item On garde les hypothèses précédente excepté le système: la Terre est assimilée à une coquille d'eau, d'épaisseur dr, avec du vide à l'intérieur de la coquille 
     
 \end{itemize}
 $\rightarrow$ il faut donc recalculer la capacitée thermique 
@@ -61,10 +66,10 @@ $\rightarrow$ il faut donc recalculer la capacitée thermique
 m &= \rho_{\text{eau}} \left( \frac{4}{3} \pi (R_T + dr)^3 - \frac{4}{3} \pi R_T^3 \right) \\
 &\overset{DL}{\approx} \rho_{\text{eau}} \cdot 4\pi R_T^2 \cdot dr \\
 \\
-C &= c_{\text{eau}} \cdot \rho_{\text{eau}} \cdot 4\pi R_T^2 \cdot dr \\
+C &= c_{\text{m,eau}} \cdot \rho_{\text{eau}} \cdot 4\pi R_T^2 \cdot dr \\
 &= 4{,}31 \cdot 10^{20} \ \text{J} \cdot \text{K}^{-1} \\
 \\
-k &= \frac{4\pi h }{c_{\text{eau}} \cdot \rho_{\text{eau}} \cdot 4\pi R^2 \cdot dr}
+k &= \frac{\sigma }{c_{\text{eau}} \cdot \rho_{\text{eau}} \cdot dr}
 \end{align*}
 
     \includegraphics[width=0.8\linewidth]{../modele1/figures/modele1_coquille.png} 
