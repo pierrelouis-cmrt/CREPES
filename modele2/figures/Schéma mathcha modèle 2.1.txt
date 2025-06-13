@@ -1,0 +1,40 @@
+
+
+
+\tikzset{every picture/.style={line width=0.75pt}} %set default line width to 0.75pt        
+
+\begin{tikzpicture}[x=0.75pt,y=0.75pt,yscale=-1,xscale=1]
+%uncomment if require: \path (0,407); %set diagram left start at 0, and has height of 407
+
+%Shape: Circle [id:dp43152766040250723] 
+\draw  [color={rgb, 255:red, 210; green, 230; blue, 245 }  ,draw opacity=1 ][fill={rgb, 255:red, 210; green, 230; blue, 245 }  ,fill opacity=1 ] (211.44,200.89) .. controls (211.54,151.62) and (251.57,111.76) .. (300.84,111.87) .. controls (350.11,111.97) and (389.97,151.99) .. (389.87,201.26) .. controls (389.76,250.53) and (349.74,290.39) .. (300.47,290.29) .. controls (251.2,290.19) and (211.34,250.16) .. (211.44,200.89) -- cycle ;
+%Shape: Circle [id:dp8645376537806405] 
+\draw  [dash pattern={on 4.5pt off 4.5pt}] (128.4,201.08) .. controls (128.4,105.94) and (205.52,28.82) .. (300.65,28.82) .. controls (395.79,28.82) and (472.91,105.94) .. (472.91,201.08) .. controls (472.91,296.21) and (395.79,373.33) .. (300.65,373.33) .. controls (205.52,373.33) and (128.4,296.21) .. (128.4,201.08) -- cycle ;
+%Straight Lines [id:da4401497911676371] 
+\draw    (141,28.6) -- (198,65.6) ;
+%Straight Lines [id:da6938655101198683] 
+\draw    (300.84,111.87) -- (300.99,50.6) ;
+\draw [shift={(301,48.6)}, rotate = 90.14] [color={rgb, 255:red, 0; green, 0; blue, 0 }  ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Straight Lines [id:da06887781418389893] 
+\draw [color={rgb, 255:red, 189; green, 16; blue, 224 }  ,draw opacity=1 ]   (368,192.6) -- (448,192.6) ;
+\draw [shift={(450,192.6)}, rotate = 180] [color={rgb, 255:red, 189; green, 16; blue, 224 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+
+% Text Node
+\draw (531.66,91.34) node [anchor=north west][inner sep=0.75pt]  [font=\large,rotate=-359.99] [align=left] {$\displaystyle \mathrm{Vide}$};
+% Text Node
+\draw (248.67,131.67) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle T_{T\mathrm{erre}}$};
+% Text Node
+\draw (248,154) node [anchor=north west][inner sep=0.75pt]   [align=left] {{\footnotesize $\displaystyle \mathrm{C=C_{e}{}_{a}{}_{u} \sim C_{T}{}_{e}{}_{r}{}_{r}{}_{e}}$} };
+% Text Node
+\draw (243,213) node [anchor=north west][inner sep=0.75pt]  [font=\large] [align=left] {$\displaystyle \mathrm{Boule\ d'eau}$};
+% Text Node
+\draw (2,5) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle \mathrm{Atmosphère\ à\ température\ T}$};
+% Text Node
+\draw (306,74) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle \overrightarrow{\mathrm{dS}}$};
+% Text Node
+\draw (392,161) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle \mathrm{\textcolor[rgb]{0.74,0.06,0.88}{P}\textcolor[rgb]{0.74,0.06,0.88}{_{c}{}}\textcolor[rgb]{0.74,0.06,0.88}{_{o}{}}\textcolor[rgb]{0.74,0.06,0.88}{_{n}{}}\textcolor[rgb]{0.74,0.06,0.88}{_{d}}}$};
+% Text Node
+\draw (0,385) node [anchor=north west][inner sep=0.75pt]  [font=\small] [align=left] {$\displaystyle \mathrm{\textcolor[rgb]{0.74,0.06,0.88}{P_{c}{}_{o}{}_{n}{}_{d} =Puissance\ libérée\ par\ conduction}}$};
+
+
+\end{tikzpicture}

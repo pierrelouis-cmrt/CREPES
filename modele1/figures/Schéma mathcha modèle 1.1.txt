@@ -1,0 +1,45 @@
+
+
+
+\tikzset{every picture/.style={line width=0.75pt}} %set default line width to 0.75pt        
+
+\begin{tikzpicture}[x=0.75pt,y=0.75pt,yscale=-1,xscale=1]
+%uncomment if require: \path (0,300); %set diagram left start at 0, and has height of 300
+
+%Shape: Circle [id:dp43152766040250723] 
+\draw  [color={rgb, 255:red, 210; green, 230; blue, 245 }  ,draw opacity=1 ][fill={rgb, 255:red, 210; green, 230; blue, 245 }  ,fill opacity=1 ] (214.44,149.89) .. controls (214.54,100.62) and (254.57,60.76) .. (303.84,60.87) .. controls (353.11,60.97) and (392.97,100.99) .. (392.87,150.26) .. controls (392.76,199.53) and (352.74,239.39) .. (303.47,239.29) .. controls (254.2,239.19) and (214.34,199.16) .. (214.44,149.89) -- cycle ;
+%Straight Lines [id:da6409463003824896] 
+\draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ]   (214.44,149.89) -- (172.44,148.94) ;
+\draw [shift={(170.44,148.89)}, rotate = 1.3] [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Shape: Boxed Line [id:dp5811399472355563] 
+\draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ]   (234.15,208.18) -- (207.98,241.04) ;
+\draw [shift={(206.73,242.6)}, rotate = 308.54] [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Shape: Boxed Line [id:dp036188693491132407] 
+\draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ]   (389.52,121.75) -- (427.55,103.88) ;
+\draw [shift={(429.36,103.03)}, rotate = 154.83] [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Shape: Boxed Line [id:dp566257167889954] 
+\draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ]   (387.87,178.91) -- (427.14,193.83) ;
+\draw [shift={(429.01,194.54)}, rotate = 200.81] [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Shape: Boxed Line [id:dp19906686979646304] 
+\draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ]   (258.54,71.86) -- (236.72,35.96) ;
+\draw [shift={(235.68,34.25)}, rotate = 58.71] [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Shape: Boxed Line [id:dp3831144664920272] 
+\draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ]   (329.57,234.92) -- (346.51,273.36) ;
+\draw [shift={(347.32,275.19)}, rotate = 246.21] [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+%Shape: Boxed Line [id:dp6433671975078195] 
+\draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ]   (341.8,71.01) -- (349.68,55.52) -- (360.84,33.56) ;
+\draw [shift={(361.75,31.78)}, rotate = 116.95] [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+
+% Text Node
+\draw (108.66,42.34) node [anchor=north west][inner sep=0.75pt]  [font=\large,rotate=-359.99] [align=left] {$\displaystyle \mathrm{Vide}$};
+% Text Node
+\draw (251.67,80.67) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle T_{T\mathrm{erre}}$};
+% Text Node
+\draw (251,103) node [anchor=north west][inner sep=0.75pt]   [align=left] {{\footnotesize $\displaystyle \mathrm{C=C_{e}{}_{a}{}_{u} \sim C_{T}{}_{e}{}_{r}{}_{r}{}_{e}}$} };
+% Text Node
+\draw (246,162) node [anchor=north west][inner sep=0.75pt]  [font=\large] [align=left] {$\displaystyle \mathrm{Boule\ d'eau}$};
+% Text Node
+\draw (374,237) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle \mathrm{\textcolor[rgb]{0.82,0.01,0.11}{Rayonnement\ infrarouge}}$};
+
+
+\end{tikzpicture}
