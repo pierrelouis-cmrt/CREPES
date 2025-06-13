@@ -3,7 +3,7 @@ glace = 0.60
 eau = 4200
 neige = 0.80
 desert = 0.35
-foret = 0.20
+foret = 0.15
 terre = 0.15
 
 def capacité_thermique(lat, lng) :
