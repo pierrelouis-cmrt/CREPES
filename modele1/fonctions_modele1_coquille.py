@@ -1,6 +1,10 @@
 import numpy as np
 import shapefile
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
+from matplotlib.cm import ScalarMappable
+
+
 
 
 Tmax = 388
@@ -71,7 +75,7 @@ def calc_power_temp(time, mois, sun_vector, x, y, z, phi, theta, constante_solai
 def update_plot(time, mois, ax, fig, shapes, x, y, z, constante_solaire, sigma, phi, theta, rayon_astre_m, list_albedo, latitudes, longitudes, Tmax):
     """
     Fonction prend en entrée l'heure de la journée et le mois (par défaut, Mars : sera modifié quand on clique sur les boutons à gauche de la modélisation), l'axe, la figure, shapes, les coordonnées (x,y,z), les constantes :sigma, phi, theta, rayon_astre_m, la liste d'albedo, la latitude et la longitude 
-    Elle calcule la puissance emise par la terre avec la fonction calc_power_temp puis effet_de_serre. Puis elle met à jour le modèle : les lignes de côte sont tracées, puis la surface de la sphère est représentée en utilisant les valeurs de puissance calculées, avec des couleurs déterminées par une colormap (viridis).
+    Elle calcule la puissance emise par la terre avec la fonction calc_power_temp puis effet_de_serre. Puis elle met à jour le modèle : les lignes de côte sont tracées, puis la surface de la sphère est représentée en utilisant les valeurs de puissance calculées, avec des couleurs déterminées par une colormap (turbo).
     """
     sun_vector = np.array([1, 0, 0])
     _, temperature = calc_power_temp(time, mois, sun_vector, x, y, z, phi, theta, constante_solaire, sigma, rayon_astre_m, list_albedo, latitudes, longitudes)
@@ -83,8 +87,23 @@ def update_plot(time, mois, ax, fig, shapes, x, y, z, constante_solaire, sigma, 
             x_coast, y_coast, z_coast = result
             ax.plot(x_coast, y_coast, z_coast, color='black', zorder=5)
 
-    surf = ax.plot_surface(x, y, z, facecolors=plt.cm.viridis(temperature / Tmax), rstride=1, cstride=1, linewidth=1, shade=False)
 
+    norm = Normalize(vmin=253, vmax=323)
+    cmap = plt.cm.turbo
+    facecolors = cmap(norm(temperature))
+    surf = ax.plot_surface(x, y, z, facecolors=facecolors, rstride=1, cstride=1, linewidth=1, shade=False)
+
+    if not hasattr(fig, "colorbar_added"):
+        mappable = ScalarMappable(norm=norm, cmap=cmap)
+        mappable.set_array([])
+
+        
+        cbar_ax = fig.add_axes([0.9, 0.25, 0.03, 0.5])  
+        fig.colorbar(mappable, cax=cbar_ax, label="Température (K)")
+        fig.colorbar_added = True  
+
+
+    
     ax.set_xlabel('X (m)')
     ax.set_ylabel('Y (m)')
     ax.set_zlabel('Z (m)')
@@ -108,3 +127,5 @@ def set_mois(mois, current_month, time_slider, ax, fig, shapes, x, y, z, constan
     """
     current_month[0] = mois
     slider_update(time_slider.val, current_month, ax, fig, shapes, x, y, z, constante_solaire, sigma, phi, theta, rayon_astre_m, list_albedo, latitudes, longitudes)
+
+

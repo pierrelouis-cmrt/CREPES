@@ -85,17 +85,6 @@ for i, mois in enumerate(mois_labels):
 
 
 
-def onclick(event):
-    x,y,z = (event.xdata, event.ydata, event.zdata)
-    print(x,y,z)
-        #temp = calc_power_temp(lat, lon)
-        #alb = albedo(lat, lon)
-        #temperature_text.set_text(f'Latitude: {lat:.2f}\nLongitude: {lon:.2f}\nTempérature: {temp:.2f} °C\nAlbédo: {alb:.2f}')
-        #plt.draw()
-
-
-
-
 # Affichage de la figure
 plt.show()
 
