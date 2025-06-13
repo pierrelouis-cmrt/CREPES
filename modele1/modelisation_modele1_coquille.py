@@ -83,5 +83,20 @@ for i, mois in enumerate(mois_labels):
     btn.on_clicked(lambda event, m=i + 1: set_mois(m, current_month, time_slider, ax, fig, shapes, x, y, z, constante_solaire, sigma, phi, theta, rayon_astre_m, list_albedo, latitudes, longitudes))
     btn_mois.append(btn)
 
+
+
+def onclick(event):
+    x,y,z = (event.xdata, event.ydata, event.zdata)
+    print(x,y,z)
+        #temp = calc_power_temp(lat, lon)
+        #alb = albedo(lat, lon)
+        #temperature_text.set_text(f'Latitude: {lat:.2f}\nLongitude: {lon:.2f}\nTempérature: {temp:.2f} °C\nAlbédo: {alb:.2f}')
+        #plt.draw()
+
+
+
+
 # Affichage de la figure
 plt.show()
+
+
