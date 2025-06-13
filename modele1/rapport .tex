@@ -7,8 +7,11 @@
 \usepackage{caption}
 \usepackage{setspace} % Espacement des lignes
 \usepackage{tikz}
+\usepackage{titlesec}
+\titleformat{\part}[display]
+  {\normalfont\Huge\bfseries}{}{0pt}{}
 \begin{document}
-\section{Modèle 1:}
+\part{Modèle 1:}
 \subsection{Bille remplie d'eau}
 \textbf{Hypothèses}:
 \begin{itemize}
@@ -49,7 +52,7 @@ et \(C=c_{\text{m eau}}\times m=4,60 \cdot 10^{27} J\cdot K^{-1}\)
 
 
 \bigskip
-\textbf{Modélisation:} 
+\textbf{Modélisation graphique:} 
     
     \includegraphics[width=0.8\linewidth]{../modele1/figures/modele1.png}
 \\
@@ -59,7 +62,7 @@ et \(C=c_{\text{m eau}}\times m=4,60 \cdot 10^{27} J\cdot K^{-1}\)
     \item On garde les hypothèses précédente excepté le système: la Terre est assimilée à une coquille d'eau, d'épaisseur dr, avec du vide à l'intérieur de la coquille 
     
 \end{itemize}
-$\rightarrow$ il faut donc recalculer la capacitée thermique 
+$\rightarrow$ il faut donc recalculer la capacité thermique 
 
 
 \begin{align*}
@@ -72,6 +75,9 @@ C &= c_{\text{m,eau}} \cdot \rho_{\text{eau}} \cdot 4\pi R_T^2 \cdot dr \\
 k &= \frac{\sigma }{c_{\text{eau}} \cdot \rho_{\text{eau}} \cdot dr}
 \end{align*}
 
-    \includegraphics[width=0.8\linewidth]{../modele1/figures/modele1_coquille.png} 
+\textbf{Modélisation graphique:}    \includegraphics[width=0.8\linewidth]{../modele1/figures/modele1_coquille.png} 
+
+
+\subsection{Critique du modèle}
 
 \end{document}

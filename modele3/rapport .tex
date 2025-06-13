@@ -7,14 +7,17 @@
 \usepackage{caption}
 \usepackage{setspace} % Espacement des lignes
 \usepackage{tikz}
+\usepackage{titlesec}
+\titleformat{\part}[display]
+  {\normalfont\Huge\bfseries}{}{0pt}{}
 \begin{document}
-\section{Modèle 3: Avec intérieur de la coquille non vide }
+\part{Modèle 3: Avec intérieur de la coquille non vide }
 \textbf{Hypothèses}:
 \begin{itemize}
     \item Terre assimilée à une coquille d'eau avec intérieur non vide 
-    \item  conduction entre centre de la terre et croûte 
-    \item  conduction entre croûte et air 
-    \item  rayonnement de la croûte
+    \item  conduction entre centre de la terre et croûte (\(P_r\))
+    \item  conduction entre croûte et air (\(P_{th,cond}\))
+    \item  rayonnement de la croûte (\(P_{th,ray}\))
     \item On néglige le rayonnement de l'atmosphère
     \item $T(t=0) = T_i$ \ \ \
 $T(t \to +\infty) = T_0$
@@ -23,7 +26,9 @@ $T(t \to +\infty) = T_0$
     
 \end{itemize}
 
+\textbf{Équations de transfert thermique}
 
+On applique le premier principe appliqué au système \{ Coquille non vide  \}
 \[
 (-P_{\mathrm{th,cond}} - P_{\mathrm{th,ray}} + P_r)\,dt = C\,dT.
 \]
@@ -52,7 +57,7 @@ Avec
 \[
 P_{r}
 = \iint\vec j_{\mathrm{thr}}\cdot d\vec S
-= \iint -\lambda\,\nabla T\cdot d\vec S
+= \iint -\lambda\,\vec{ \nabla } T\cdot d\vec S
 = -\lambda
   \int_{0}^{\pi}\!\!\int_{0}^{2\pi}
     \frac{\partial T}{\partial r}\,\vec e_{r}\,
@@ -60,9 +65,12 @@ P_{r}
 = -\lambda\,4\pi\,r^2\,\frac{\partial T}{\partial r}.
 \]
 
+\textbf{Modélisation graphique :} 
+    
+    \includegraphics[width=0.8\linewidth]{../modele3/figures/modele3_coquille-conduction-rayonnement.png}    
 
 
- 
+\textbf{Critique du modèle}
 \vspace{1cm}
 
 \end{document}
