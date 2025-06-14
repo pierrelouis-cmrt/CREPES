@@ -8,11 +8,12 @@
 \usepackage{setspace} % Espacement des lignes
 \usepackage{tikz}
 \usepackage{titlesec}
-\titleformat{\part}[display]
-  {\normalfont\Huge\bfseries}{}{0pt}{}
+\titleformat*{\section}{\LARGE\bfseries}
+\titleformat*{\subsection}{\Large\bfseries}
+\titleformat*{\subsubsection}{\normalsize\bfseries}
 \begin{document}
-\part{Modèle 3: Avec intérieur de la coquille non vide }
-\textbf{Hypothèses}:
+\section*{Modèle 3: Avec intérieur de la coquille non vide }
+\subsubsection*{Hypothèses}:
 \begin{itemize}
     \item Terre assimilée à une coquille d'eau avec intérieur non vide 
     \item  conduction entre centre de la terre et croûte (\(P_r\))
@@ -26,10 +27,16 @@ $T(t \to +\infty) = T_0$
     
 \end{itemize}
 
-\textbf{Schéma}
-   \includegraphics[width=0.8\linewidth]{../modele3/figures/}   
+\subsubsection*{Schéma:} 
+\noindent\textcolor{gray}{\rule{\linewidth}{0.4pt}}
 
-\textbf{Équations de transfert thermique}
+    
+\begin{center}
+  \input{modele3/figures/Schéma modèle 3 coquille.txt}
+\end{center}
+\noindent\textcolor{gray}{\rule{\linewidth}{0.4pt}}
+
+\subsubsection*{Équations de transfert thermique}
 
 On applique le premier principe appliqué au système \{ Coquille non vide  \}
 \[
