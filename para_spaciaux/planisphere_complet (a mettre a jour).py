@@ -67,13 +67,15 @@ _REF_ALBEDO = {
     "forest": 0.20,
     "land": 0.15,
 }
+
+#capacité thermique MASSIQUE (en kJ/kg/K)
 _CAPACITY_BY_TYPE = {
-    "ice": 0.60,
-    "water": 4.2,
-    "snow": 0.80,
-    "desert": 0.35,
-    "forest": 0.15,
-    "land": 0.15,
+    "ice": 2,
+    "water": 4.18,
+    "snow": 2,
+    "desert": 0.8,
+    "forest": 1,
+    "land": 1,
 }
 
 def capacite_thermique(albedo: float) -> float:
