@@ -9,7 +9,7 @@ import xarray as xr
 
 # ──────────────────── 1.  Charger le jeu horaire ────────────────────────────
 data_dir = Path("para_spaciaux")
-fname = "CERES_EBAF-TOA_Ed4.2_Subset.nc"      # à adapter si besoin
+fname = "C:\\Users\\chloe\\Documents\\GitHub\\CREPES\\para_spaciaux\\CERES_EBAF-TOA_Ed4.2_Subset.nc"      # à adapter si besoin
 ds = xr.open_dataset(data_dir / fname, decode_times=True)
 
 # ──────────────────── 2.  Sélection des flux TOA ────────────────────────────
@@ -36,15 +36,15 @@ cloud_alb_inst = xr.where(
 # On réduit « time » sur janvier 2025 (inclus) après avoir lissé les NaN.
 cloud_alb_month = (
     cloud_alb_inst
-    .sel(time=slice("2025-01-01", "2025-01-31"))
+    .sel(time=slice("2024-10-01", "2024-10-30"))
     .mean(dim="time", skipna=True)
 )
 
 # ──────────────────── 6.  Extraction du point 45° N / 5° E ──────────────────
 val = (
     cloud_alb_month
-    .sel(lat=45, lon=5, method="nearest")
+    .sel(lat=9, lon=8, method="nearest") #japon : 36 138
     .item()
 )
 
-print(f"Albédo nuageux (jour-seulement) – janv 2025, 45° N 5° E : {val:.3f}")
+print(f"Albédo nuageux (jour-seulement) – janv 2025, 9° N 8.6° E : {val:.3f}")
