@@ -1,90 +1,93 @@
 #!/usr/bin/env python3
 """
-Simulation 0‑D de la température de surface à Paris avec la méthode récurrente
-(Euler explicite) et Δt = 60 s.
+simulation.py
+Simulation 0‑D de la température de surface à Paris avec schéma récurrent
+(Euler explicite, Δt = 60 s).
+Le flux solaire est calculé **exactement** avec le script fourni.
+
+Exécution :
+    python simulation.py
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
-from math import pi
 import datetime as dt
 
 from fonction import solve_ode_recurrent
 
 # ---------- constantes physiques ----------
-S0    = 1361.0                     # constante solaire (W m⁻²)
-sigma = 5.670374419e-8             # Stefan‑Boltzmann (W m⁻² K⁻⁴)
-alpha = 0.25                       # albédo de surface (—)
-Tatm  = 253.15                     # T radiative atmosphérique (K)
+constante_solaire = 1361          # W/m² (script fourni)
+sigma = 5.67e-8                   # W/m²·K⁴ (script fourni)
+alpha = 0.25                       # albédo de surface (on passera alpha à la fonction)
+Tatm  = 253.15                     # température radiative atmosphère (K)
 C     = 8.36e5                     # capacité surfacique (J m⁻² K⁻¹)
 
 # ---------- localisation ----------
-lat_deg = 49.0                     # latitude Paris (°N)
-lon_deg = 2.0                      # longitude Paris (°E)
+lat_deg = 49.0                     # Paris
+lon_deg = 2.0
 
 # ---------- discrétisation temporelle ----------
 dt_sec = 60.0                      # pas de temps (s)
 
-# ---------- géométrie solaire ----------
+# ---------- script flux solaire copié tel quel ----------
 
-def update_sun_vector(month: int, sun_vector: np.ndarray) -> np.ndarray:
-    """Applique l’inclinaison axiale pour le mois donné au vecteur Soleil→Terre."""
-    obliquité = np.radians(23.44)
-    angle_saisonnier = obliquité * np.cos(2 * pi * (month - 1) / 12)
-    R_saison = np.array([
-        [np.cos(angle_saisonnier), 0, np.sin(angle_saisonnier)],
+def update_sun_vector(mois, sun_vector):
+    angle_inclinaison = np.radians(23 * np.cos(2 * np.pi * mois / 12))
+    rotation_matrix_saison = np.array([
+        [np.cos(angle_inclinaison), 0, np.sin(angle_inclinaison)],
         [0, 1, 0],
-        [-np.sin(angle_saisonnier), 0, np.cos(angle_saisonnier)]
+        [-np.sin(angle_inclinaison), 0, np.cos(angle_inclinaison)]
     ])
-    return R_saison @ sun_vector
+    return np.dot(rotation_matrix_saison, sun_vector)
 
 
-def puissance_recue_point(lat: float, lon: float, month: int, hour: float,
-                          albedo: float = alpha) -> float:
-    """Flux solaire net absorbé par le point de surface (W m⁻²)."""
-    theta = np.radians(90 - lat)
-    phi   = np.radians(lon % 360)
+def puissance_recue_point(lat_deg, lon_deg, mois, time, albedo=0.3):
+    theta = np.radians(90 - lat_deg)  # colatitude
+    phi = np.radians(lon_deg % 360)
+    sun_vector = np.array([1, 0, 0])
 
-    # Soleil situé à +∞ sur l’axe +x
-    sun_vec = np.array([1.0, 0.0, 0.0])
-    sun_vec = update_sun_vector(month, sun_vec)
+    # Inclinaison saisonnière
+    sun_vector = update_sun_vector(mois, sun_vector)
 
-    # rotation diurne
-    omega = 2 * pi * hour / 24.0
-    R_heure = np.array([
-        [np.cos(omega), -np.sin(omega), 0],
-        [np.sin(omega),  np.cos(omega), 0],
+    # Rotation diurne
+    angle_rotation = (time / 24) * 2 * np.pi
+    rotation_matrix = np.array([
+        [np.cos(angle_rotation), -np.sin(angle_rotation), 0],
+        [np.sin(angle_rotation),  np.cos(angle_rotation), 0],
         [0, 0, 1]
     ])
-    sun_vec = R_heure @ sun_vec
+    sun_vector = np.dot(rotation_matrix, sun_vector)
 
-    # normale au point
+    # Vecteur normal du point
     normal = np.array([
         np.sin(theta) * np.cos(phi),
         np.sin(theta) * np.sin(phi),
         np.cos(theta)
     ])
 
-    cos_inc = max(np.dot(normal, sun_vec), 0.0)
-    return S0 * cos_inc * (1 - albedo)
+    cos_incidence = max(np.dot(normal, sun_vector), 0)
+    puissance_recue = constante_solaire * cos_incidence * (1 - albedo)
+    temperature = (puissance_recue / sigma) ** 0.25
+    return temperature, puissance_recue
 
+# ---------- utilitaire calendrier ----------
 
 def day_to_month(day_of_year: int) -> int:
+    """Convertit un jour de l’année (1‑365/366) en mois (1‑12)."""
     date_ref = dt.date(2025, 1, 1) + dt.timedelta(days=day_of_year - 1)
     return date_ref.month
-
-
-def phi_net(day_of_year: int, hour: float) -> float:
-    return puissance_recue_point(lat_deg, lon_deg, day_to_month(day_of_year),
-                                 hour, alpha)
 
 # ---------- RHS de l’EDO ----------
 
 def rhs_temperature(t: float, T: float) -> float:
     day_of_year = int(t // 86400) + 1
     hour = (t % 86400) / 3600.0
-    phinet = phi_net(day_of_year, hour)
-    return (phinet + sigma * Tatm**4 - sigma * T**4) / C
+    mois = day_to_month(day_of_year)
+
+    # Puissance absorbée (on extrait la 2ᵉ composante du tuple)
+    _, flux_abs = puissance_recue_point(lat_deg, lon_deg, mois, hour, alpha)
+
+    return (flux_abs + sigma * Tatm**4 - sigma * T**4) / C
 
 # ---------- fonctions utilitaires ----------
 
