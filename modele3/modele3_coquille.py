@@ -2,13 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Constantes physiques
-sigma = 5.67e-8       # Constante de Stefan-Boltzmann (W/m²·K⁻⁴)
+sigma = 5.67e-8             # Constante de Stefan-Boltzmann (W/m²·K⁻⁴)
 h = 3*10**-7                # Coefficient d'échange thermique (W/m²·K)
 c = 4.31*10**20             # Capacité thermique surfacique (J·K)
-T0 = 273              # Température ambiante (K)
-T_init = 288          # Température initiale (K)
+T0 = 273                    # Température ambiante (K)
+T_init = 288                # Température initiale (K)
 r = 6750*10**3              # Rayon (m)
-dr = 1          # Épaisseur (m)
+dr = 1                      # Épaisseur (m)
 
 # Constantes regroupées
 A = 4 * np.pi * h
@@ -28,7 +28,7 @@ for i in range(1, len(t_vals_s)):
     T_vals[i] = T + dTdt * dt
 
 # Conversion en heures pour affichage
-t_vals_h = t_vals_s / 3600  # secondes -> heures
+t_vals_h = t_vals_s / 3600 
 
 # Tracé
 plt.figure(figsize=(8, 5))

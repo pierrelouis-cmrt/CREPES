@@ -1,3 +1,5 @@
+# Non fonctionnel, il nous manque le fichier .nc dans sa version horaire et non mensuelle
+
 from pathlib import Path
 import numpy as np
 import xarray as xr

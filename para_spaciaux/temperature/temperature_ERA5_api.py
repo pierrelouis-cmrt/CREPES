@@ -1,22 +1,10 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-era5_temperature_annual_plot.py
-
-Télécharge la température ERA5 via l'API CDS, l'interpole à une altitude
-donnée et affiche la courbe d'évolution sur l'année.
-
-Dépendances :
-    pip install cdsapi xarray netCDF4 numpy pandas matplotlib
-
-ATTENTION : une clé d'API Copernicus est nécessaire pour éxecuter ce script.
-"""
+# ATTENTION : une clé d'API Copernicus est nécessaire pour éxecuter ce script.
 
 # =======================  CONFIGURATION  =====================================
-LATITUDE = 48.858  # latitude décimale  (ex. Tour Eiffel)
-LONGITUDE = 2.295  # longitude décimale (ex. Tour Eiffel)
-ALTITUDE_M = 324.0  # altitude en mètres
-ANNEE = "2024"  # année d'intérêt (YYYY)
+LATITUDE = 48.858    # latitude décimale  (ex. Tour Eiffel)
+LONGITUDE = 2.295    # longitude décimale (ex. Tour Eiffel)
+ALTITUDE_M = 324.0   # altitude en mètres
+ANNEE = "2024"       # année d'intérêt (YYYY)
 # ============================================================================
 
 import cdsapi

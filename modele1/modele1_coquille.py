@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# --- Modèle simplifié de refroidissement de la Terre ---
 sigma = 5.67e-8        # W·m⁻²·K⁻⁴
 R = 6.371e6            # m
 C = 4.31e20            # J/K (valeur calculée)

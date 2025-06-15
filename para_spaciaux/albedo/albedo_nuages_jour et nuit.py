@@ -1,12 +1,3 @@
-"""
-Calcule une approximation de l’albédo dû aux nuages (SW CRE / F☉) pour
-janvier 2025 à 45° N – 5° E, à partir du jeu de données CERES EBAF-TOA Ed4.2.
-
-Notes :
-- On laisse les valeurs négatives intactes (NaN) pour repérer les situations
-  où les nuages augmentent au contraire l’absorption SW.
-- Les longitudes sont ramenées dans l’intervalle [-180°, +180°].
-"""
 
 from pathlib import Path
 import xarray as xr

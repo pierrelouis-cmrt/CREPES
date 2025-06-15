@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Interactive planisphère – coherent solar power
-==============================================
-Correctif : la **puissance solaire locale** affichée dans l’annotation était
-incorrecte ; elle n’utilisait pas le même modèle que la température. Désormais :
-
-* nouvelle fonction `power_and_T_point()` reprise du script de test fourni ;
-* l’annotation emploie cette fonction, donc **P ≠ 0** chaque fois que T > 0 ;
-* présentation inchangée : carte température, Cₚ à 1 décimale, sliders mois &
-  heure.
-"""
 
 from __future__ import annotations
 import pathlib

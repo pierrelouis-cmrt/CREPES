@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-Refroidissement (12 h) d’une coquille d’eau mince entourée d’atmosphère :
-T(t) = T0 + (Ti − T0)·exp(−k·t)          avec  k = h A / C
-Les pertes ne sont que conductives (h = 2,7 × 10⁻⁷ W m⁻² K⁻¹),
-⇒ τ ≈ 1 × 10⁵ ans : variation imperceptible sur 12 h.
-"""
 
 # ───────────────────────── 1. Constantes ─────────────────────────
 import numpy as np

@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Modèle de refroidissement sur 12 heures (axe en heures).
-T(t) = T0 + (Ti − T0)·exp(−k·t)
-
-Ici la capacité thermique volumique de l’eau est utilisée ;
-on remplace simplement h par la valeur physique calculée ci‑dessus.
-"""
 
 # ────────────────────────────────────
 # 1) PARAMÈTRES « MODULABLES »

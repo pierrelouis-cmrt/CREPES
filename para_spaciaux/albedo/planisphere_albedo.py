@@ -1,30 +1,3 @@
-"""
-Interactive global albedo map – monthly selector
-------------------------------------------------
-This script extends the previous *interactive_albedo_map.py* by letting you
-choose **any single month** (1–12) whose albedo field is rendered on the
-planisphere.  A Matplotlib *Slider* at the bottom of the figure updates the map
-live.  Clicking on the map continues to reveal the albedo value at the clicked
-location for the chosen month.
-
-⚠️  Requirements
-    • Python ≥3.9
-    • pandas, numpy, matplotlib
-    • (Optional) cartopy — for coastlines overlay. If missing, the script still
-      runs but without coastlines.
-
-Usage
------
-$ python interactive_albedo_map.py        # opens window with slider (default)
-
-Inside a Jupyter notebook:
-```python
-%matplotlib widget   # or %matplotlib qt
-%run interactive_albedo_map.py
-```
-Move the *Month* slider or press ←/→ while the slider has focus.  Then click
-anywhere on the map to read the local albedo.
-"""
 
 from __future__ import annotations
 import pathlib

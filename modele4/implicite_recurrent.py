@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Simulation 0‑D de la température de surface à Paris avec schéma récurrent
-(Euler explicite, Δt = 60 s).
-Le flux solaire est calculé **exactement** avec le script fourni.
-"""
 
 import numpy as np
 import matplotlib.pyplot as plt

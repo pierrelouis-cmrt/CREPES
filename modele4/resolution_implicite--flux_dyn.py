@@ -1,6 +1,6 @@
 # ---------------------------------------------------------------
-# Backward-Euler implicite pour l’équation 0-D de température
-# Version intégrant le calcul du flux solaire par matrices de rotation
+# Backward-Euler implicite pour l’équa diff
+# Avec flux dynamique
 # ---------------------------------------------------------------
 
 import numpy as np
