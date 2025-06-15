@@ -43,13 +43,13 @@ def puissance_recue_point(lat_deg, lon_deg, mois, time, albedo=0.3):
     temperature = (puissance_recue / sigma) ** 0.25
     return temperature, puissance_recue
 
-# 🧪 Paramètres de simulation
+# Paramètres de simulation
 lat = 49   # Paris
 lon = 2
 mois = 7
 albedo = 0.3
 
-# ⏱️ Simulation sur 24h
+# Simulation sur 24h
 temps = np.linspace(0, 24, 200)
 temperatures = []
 puissances = []
@@ -59,7 +59,7 @@ for t in temps:
     temperatures.append(temp)
     puissances.append(p)
 
-# 📈 Tracé de la puissance et température au cours du temps
+# Tracé de la puissance et température au cours du temps
 fig, ax1 = plt.subplots(figsize=(10, 5))
 
 color = 'tab:red'
