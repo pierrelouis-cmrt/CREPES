@@ -83,5 +83,24 @@ $T(t) = T_0 + (T_i - T_0)e^{-kt}$ \quad avec $k = \frac{4\pi h}{C}$
 
 \subsection*{Critique du modèle}
 
+\begin{itemize}
+    \item Température de la Terre subjective.
+    \item Épaisseur de la coquille.
+    \item Prise en compte de l’atmosphère donc utilisation de la loi de Newton :
+    \begin{itemize}
+        \item MAIS problème de définition de la couche limite puisqu’on ne souhaite pas prendre en compte la convection pour le moment.
+    \end{itemize}
+    \item Dans les codes \texttt{modele2\_coquille.py} et \texttt{modele2\_boule.py}, on a posé $h = \lambda_{\text{air}} / \delta$ avec $\lambda_{\text{air}} = 0{,}027 \, \mathrm{W/(K \cdot m)}$.
+    \begin{itemize}
+        \item On a pris $\delta = 100\, \mathrm{km}$ comme longueur de la couche limite pour ne pas se préoccuper de la convection avant la thermosphère (85 km – 600 km).
+        \item Mais cette hypothèse ne semble pas pertinente, puisque la loi de Newton est adaptée à un modèle conducto-convectif.
+        \item On peut donc prendre un $\delta$ plus raisonnable, de l’ordre de 50 cm.
+    \end{itemize}
+    \item Problème de définition de $T_0$ :
+    \begin{itemize}
+        \item Si on suit notre modèle, ce serait la température au-delà de la thermosphère.
+        \item Or on a posé $T_0 = 273\, \mathrm{K}$ dans nos codes Python.
+    \end{itemize}
+\end{itemize}
 
 \end{document}
