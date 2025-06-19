@@ -2,7 +2,7 @@
 
 
 % Pattern Info
- 
+
 \tikzset{
 pattern size/.store in=\mcSize, 
 pattern size = 5pt,
@@ -18,11 +18,14 @@ pattern radius = 1pt}
 {\pgfpoint{\mcSize}{\mcSize}}
 {
 \pgfsetcolor{\tikz@pattern@color}
+\usetikzlibrary{patterns}
 \pgfsetlinewidth{\mcThickness}
+\usetikzlibrary{patterns}
 \pgfpathmoveto{\pgfqpoint{0pt}{\mcSize}}
 \pgfpathlineto{\pgfpoint{\mcSize+\mcThickness}{-\mcThickness}}
 \pgfusepath{stroke}
 }}
+
 \makeatother
 \tikzset{every picture/.style={line width=0.75pt}} %set default line width to 0.75pt        
 
@@ -48,9 +51,10 @@ pattern radius = 1pt}
 %Straight Lines [id:da6426936489553212] 
 \draw    (180.4,245.11) -- (180.99,398) ;
 \draw [shift={(181,400)}, rotate = 269.78] [color={rgb, 255:red, 0; green, 0; blue, 0 }  ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
-%Straight Lines [id:da21597626441475448] 
-\draw    (181,400) -- (180.12,234.89) ;
-\draw [shift={(180.11,232.89)}, rotate = 89.7] [color={rgb, 255:red, 0; green, 0; blue, 0 }  ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
+\draw [shift={(180.11,232.89)}, rotate=89.7, color={rgb,255:red,0;green,0;blue,0}, line width=0.75] 
+      (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) 
+      .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29);
+
 %Shape: Parallelogram [id:dp09646812396527993] 
 \draw  [draw opacity=0][pattern=_1sj3oqyt6,pattern size=16.950000000000003pt,pattern thickness=0.75pt,pattern radius=0pt, pattern color={rgb, 255:red, 192; green, 234; blue, 250}] (271.97,327.27) -- (446,327.27) -- (374.9,398.33) -- (200.87,398.33) -- cycle ;
 %Straight Lines [id:da9354751179129625] 
@@ -70,10 +74,9 @@ pattern radius = 1pt}
 \draw (340.89,168) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle \textcolor[rgb]{0.55,0.34,0.16}{\sigma T}\textcolor[rgb]{0.55,0.34,0.16}{^{4}}$};
 % Text Node
 \draw (237.89,237) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle \textcolor[rgb]{0.82,0.01,0.11}{(}\textcolor[rgb]{0.82,0.01,0.11}{1-A}\textcolor[rgb]{0.82,0.01,0.11}{)}\textcolor[rgb]{0.82,0.01,0.11}{\varphi }\textcolor[rgb]{0.82,0.01,0.11}{_{s}}$};
-% Text Node
-\draw (420.89,43) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle  \begin{array}{{>{\displaystyle}l}}
-Atmosphère\ \\
-T_{atm} =-20\degree C
+\draw (420.89,43) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\begin{array}{l}
+\text{Atmosphère} \\
+T_{atm} = -20\,^\circ\mathrm{C}
 \end{array}$};
 % Text Node
 \draw (239,91) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle \textcolor[rgb]{0.82,0.01,0.11}{\varphi }\textcolor[rgb]{0.82,0.01,0.11}{_{s}}$};

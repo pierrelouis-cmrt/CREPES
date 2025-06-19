@@ -95,7 +95,7 @@ $\displaystyle T_{Terre}$
 \end{minipage}};
 % Text Node
 \draw (519.5,224.13) node  [font=\footnotesize] [align=left] {\begin{minipage}[lt]{159.8pt}\setlength\topsep{0pt}
-$\displaystyle \textcolor[rgb]{0.96,0.65,0.14}{P}\textcolor[rgb]{0.96,0.65,0.14}{_{reçue}}\textcolor[rgb]{0.96,0.65,0.14}{=}\textcolor[rgb]{0.96,0.65,0.14}{\mathrm{Puissance\ reçue\ par\ conduction}}$
+$\displaystyle \textcolor[rgb]{0.96,0.65,0.14}{P}\textcolor[rgb]{0.96,0.65,0.14}{_{\text{reçue}}}\textcolor[rgb]{0.96,0.65,0.14}{=}\textcolor[rgb]{0.96,0.65,0.14}{\mathrm{Puissance\ \text{reçue}\ par\ conduction}}$
 \end{minipage}};
 % Text Node
 \draw (188.21,158.69) node   [align=left] {\begin{minipage}[lt]{79.02pt}\setlength\topsep{0pt}
@@ -104,7 +104,7 @@ $\displaystyle \mathrm{Coquille\ d'eau}$
 % Text Node
 \draw (485.67,146.89) node  [font=\footnotesize] [align=left] {\begin{minipage}[lt]{116.05pt}\setlength\topsep{0pt}
 $\displaystyle  \begin{array}{{>{\displaystyle}l}}
-\textcolor[rgb]{0.82,0.01,0.11}{P}\textcolor[rgb]{0.82,0.01,0.11}{_{ray}}\textcolor[rgb]{0.82,0.01,0.11}{=}\textcolor[rgb]{0.82,0.01,0.11}{\mathrm{Puissance\ émise\ par\ rayonnement}}\\
+\textcolor[rgb]{0.82,0.01,0.11}{P}\textcolor[rgb]{0.82,0.01,0.11}{_{ray}}\textcolor[rgb]{0.82,0.01,0.11}{=}\textcolor[rgb]{0.82,0.01,0.11}{\mathrm{Puissance\ \text{émise}\ par\ rayonnement}}\\
 \textcolor[rgb]{0.82,0.01,0.11}{\ \ \ \ \ \ \ \ \ \ \ }\textcolor[rgb]{0.82,0.01,0.11}{\mathrm{\ infrarouge}}
 \end{array}$
 \end{minipage}};
@@ -118,7 +118,7 @@ $\displaystyle r$
 \end{minipage}};
 % Text Node
 \draw (513.92,109.38) node  [font=\footnotesize] [align=left] {\begin{minipage}[lt]{153.88pt}\setlength\topsep{0pt}
-$\displaystyle \textcolor[rgb]{0.74,0.06,0.88}{P}\textcolor[rgb]{0.74,0.06,0.88}{_{cond}}\textcolor[rgb]{0.74,0.06,0.88}{=}\textcolor[rgb]{0.74,0.06,0.88}{\mathrm{Puissance\ émise\ par\ conduction}}$
+$\displaystyle \textcolor[rgb]{0.74,0.06,0.88}{P}\textcolor[rgb]{0.74,0.06,0.88}{_{cond}}\textcolor[rgb]{0.74,0.06,0.88}{=}\textcolor[rgb]{0.74,0.06,0.88}{\mathrm{Puissance\ \text{émise}\ par\ conduction}}$
 \end{minipage}};
 % Text Node
 \draw (281.92,156.71) node  [font=\footnotesize] [align=left] {\begin{minipage}[lt]{22.41pt}\setlength\topsep{0pt}
@@ -130,17 +130,17 @@ $\displaystyle \textcolor[rgb]{0.82,0.01,0.11}{P}\textcolor[rgb]{0.82,0.01,0.11}
 \end{minipage}};
 % Text Node
 \draw (181.6,290.85) node  [font=\footnotesize] [align=left] {\begin{minipage}[lt]{24.93pt}\setlength\topsep{0pt}
-$\displaystyle \textcolor[rgb]{0.96,0.65,0.14}{P}\textcolor[rgb]{0.96,0.65,0.14}{_{reçue}}$
+$\displaystyle \textcolor[rgb]{0.96,0.65,0.14}{P}\textcolor[rgb]{0.96,0.65,0.14}{_{\text{reçue}}}$
 \end{minipage}};
 % Text Node
 \draw (482.33,360.77) node   [align=left] {\begin{minipage}[lt]{167.73pt}\setlength\topsep{0pt}
-$\displaystyle \mathrm{Atmosphère\ à\ la\ température\ T}$
+$\displaystyle \mathrm{\text{\text{atmosphère}}\ \text{à}\ la\ température\ T}$
 \end{minipage}};
 % Text Node
 \draw (511.76,188.74) node  [font=\footnotesize] [align=left] {\begin{minipage}[lt]{154.83pt}\setlength\topsep{0pt}
 $\displaystyle  \begin{array}{{>{\displaystyle}l}}
-\textcolor[rgb]{0.82,0.01,0.11}{P}\textcolor[rgb]{0.82,0.01,0.11}{_{non\ abs}}\textcolor[rgb]{0.82,0.01,0.11}{=}\textcolor[rgb]{0.82,0.01,0.11}{\mathrm{Puissance\ non\ absorbé\ par\ }}\\
-\textcolor[rgb]{0.82,0.01,0.11}{\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }\textcolor[rgb]{0.82,0.01,0.11}{\mathrm{l'atmosphère}}
+\textcolor[rgb]{0.82,0.01,0.11}{P}\textcolor[rgb]{0.82,0.01,0.11}{_{non\ abs}}\textcolor[rgb]{0.82,0.01,0.11}{=}\textcolor[rgb]{0.82,0.01,0.11}{\mathrm{Puissance\ non\ \text{absorbée}\ par\ }}\\
+\textcolor[rgb]{0.82,0.01,0.11}{\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }\textcolor[rgb]{0.82,0.01,0.11}{\mathrm{l'\text{atmosphère}}}
 \end{array}$
 \end{minipage}};
 % Text Node
@@ -151,7 +151,7 @@ $\displaystyle \textcolor[rgb]{0.49,0.83,0.13}{P}\textcolor[rgb]{0.49,0.83,0.13}
 \end{minipage}};
 % Text Node
 \draw (423,255.75) node  [font=\footnotesize] [align=left] {\begin{minipage}[lt]{28.56pt}\setlength\topsep{0pt}
-$\displaystyle \textcolor[rgb]{0.49,0.83,0.13}{P}\textcolor[rgb]{0.49,0.83,0.13}{_{renv}}\textcolor[rgb]{0.49,0.83,0.13}{=}\textcolor[rgb]{0.49,0.83,0.13}{\mathrm{Puissance\ renvoyé\ par\ l'atmosphère}}$
+$\displaystyle \textcolor[rgb]{0.49,0.83,0.13}{P}\textcolor[rgb]{0.49,0.83,0.13}{_{renv}}\textcolor[rgb]{0.49,0.83,0.13}{=}\textcolor[rgb]{0.49,0.83,0.13}{\mathrm{Puissance\ \text{renvoyée}\ par\ l'\text{atmosphère}}}$
 \end{minipage}};
 % Text Node
 \draw (145,202) node [anchor=north west][inner sep=0.75pt]  [font=\footnotesize]  {$\mathrm{T=constante}$};
