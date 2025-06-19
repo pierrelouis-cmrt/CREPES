@@ -57,7 +57,7 @@ $\displaystyle r$
 \end{minipage}};
 % Text Node
 \draw (513.92,109.38) node  [font=\footnotesize] [align=left] {\begin{minipage}[lt]{153.88pt}\setlength\topsep{0pt}
-$\displaystyle \textcolor[rgb]{0.74,0.06,0.88}{P}\textcolor[rgb]{0.74,0.06,0.88}{_{cond}}\textcolor[rgb]{0.74,0.06,0.88}{=}\textcolor[rgb]{0.74,0.06,0.88}{\mathrm{Puissance\ émise\ par\ conduction}}$
+$\displaystyle \textcolor[rgb]{0.74,0.06,0.88}{P}\textcolor[rgb]{0.74,0.06,0.88}{_{cond}}\textcolor[rgb]{0.74,0.06,0.88}{=}\textcolor[rgb]{0.74,0.06,0.88}{\mathrm{Puissance\ \text{émise}\ par\ conduction}}$
 \end{minipage}};
 % Text Node
 \draw (281.92,156.71) node  [font=\footnotesize] [align=left] {\begin{minipage}[lt]{22.41pt}\setlength\topsep{0pt}
@@ -65,7 +65,7 @@ $\displaystyle \textcolor[rgb]{0.74,0.06,0.88}{P}\textcolor[rgb]{0.74,0.06,0.88}
 \end{minipage}};
 % Text Node
 \draw (190.33,104.77) node   [align=left] {\begin{minipage}[lt]{167.73pt}\setlength\topsep{0pt}
-$\displaystyle \mathrm{Atmosphère\ à\ la\ température\ T}$
+$\displaystyle \mathrm{\text{Atmosphère}\ \text{à}\ la\ \text{température}\ T}$
 \end{minipage}};
 % Text Node
 \draw (303,43) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle \mathrm{Vide}$};
