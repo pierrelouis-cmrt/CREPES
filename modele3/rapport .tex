@@ -82,5 +82,12 @@ P_{r}
 
 \textbf{Critique du modèle}
 \vspace{1cm}
-
+\begin{itemize}
+    \item La convection n’est pas prise en compte.
+    \item Problème de définition de $T_0$ :
+    \begin{itemize}
+        \item Si on suit notre modèle, ce serait la température au-delà de la thermosphère.
+        \item Or on a posé $T_0 = 273\, \mathrm{K}$ dans nos codes Python.
+    \end{itemize}
+\end{itemize}
 \end{document}
