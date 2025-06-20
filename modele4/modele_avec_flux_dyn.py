@@ -115,7 +115,6 @@ def lisser_donnees_annuelles(valeurs_mensuelles: np.ndarray, sigma: float):
     return valeurs_lissees
 
 
-# ... (fonctions astronomiques inchangées) ...
 def declination(day):
     day_in_year = (day - 1) % 365 + 1
     return np.radians(23.44) * np.sin(2 * pi * (284 + day_in_year) / 365)
@@ -259,7 +258,7 @@ def tracer_comparaison(
 if __name__ == "__main__":
     jours_de_simulation = 365 * 2
     jour_a_afficher = 182
-    lat_paris, lon_paris = 90, 2.35
+    lat_paris, lon_paris = 40.4, 74
     print(f"Lancement de la simulation pour Paris ({lat_paris}N, {lon_paris}E)...")
     T_full, alb_full, C_full = backward_euler(
         jours_de_simulation, lat_paris, lon_paris
