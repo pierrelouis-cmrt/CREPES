@@ -1,8 +1,6 @@
 # ---------------------------------------------------------------
 # Modèle 0-D de température de surface – Backward-Euler implicite
 #
-# ... (autres commentaires inchangés) ...
-#
 # LISSAGE (NOUVEAU):
 # - Lissage des données mensuelles (albédo, capacité thermique)
 #   par convolution gaussienne pour obtenir des variations journalières
@@ -23,8 +21,6 @@ sigma = 5.670374419e-8  # Stefan‑Boltzmann (SI)
 Tatm = 223.15  # atmosphère radiative (‑50 °C)
 dt = 1800.0  # pas de temps : 30 min
 MASSE_SURFACIQUE_ACTIVE = 4.0e2  # kg m-2
-
-# ... (fonctions load_albedo_series, capacite_thermique_massique inchangées) ...
 
 # ────────────────────────────────────────────────
 # DATA – Chargement de l'albédo mensuel (depuis Script 2)
@@ -117,7 +113,6 @@ def lisser_donnees_annuelles(valeurs_mensuelles: np.ndarray, sigma: float):
     return valeurs_lissees
 
 
-# ... (fonctions astronomiques inchangées) ...
 def declination(day):
     day_in_year = (day - 1) % 365 + 1
     return np.radians(23.44) * np.sin(2 * pi * (284 + day_in_year) / 365)
@@ -261,7 +256,7 @@ def tracer_comparaison(
 if __name__ == "__main__":
     jours_de_simulation = 365 * 2
     jour_a_afficher = 182
-    lat_paris, lon_paris = 90, 2.35
+    lat_paris, lon_paris = 40.4, 74
     print(f"Lancement de la simulation pour Paris ({lat_paris}N, {lon_paris}E)...")
     T_full, alb_full, C_full = backward_euler(
         jours_de_simulation, lat_paris, lon_paris

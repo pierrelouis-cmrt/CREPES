@@ -32,14 +32,13 @@
     \item On prend en compte l'albédo du sol en fonction de la position et du mois de l'année 
     \item la capacité thermique dépend de l'espace 
     \item On considère $T(t=0) = T_i$ \  indépendant de l'espace  
-    \item On suppose que la chaleur latente constante($\pm 86 W.M^{-2}$)
-    
-    
+    \item 
     
     
 \end{itemize}
 
 \subsubsection*{Schéma:} 
+
 \noindent\textcolor{gray}{\rule{\linewidth}{0.4pt}}
 
   
@@ -50,10 +49,10 @@
 
 \subsubsection*{Équations de transfert thermique}
 
-On applique le premier principe appliqué au système \{ Un pavé de hauteur h, de surface S de la Terre \}
+On applique le premier principe au système \{ Un pavé de hauteur h, de surface S de la Terre \}
 \ \ 
 \[
-
+C_{sol} \frac{dT}{dt} =(1-A_1)(1-A_2)\phi-\sigma T^4+\sigma T_{atm}^4
 \]
 
 \subsubsection*{Calculs capacités calorifiques en fonction de la composition des surfaces}
@@ -136,5 +135,8 @@ $\rho_w$ (eau) & \SI{1000}{\kilogram\per\cubic\metre} \\
 
 \textbf{Critique du modèle}
 \vspace{1cm}
+\begin{itemize}
+    \item On néglige la conduco-convexion.
+\end{itemize}
 
 \end{document}
