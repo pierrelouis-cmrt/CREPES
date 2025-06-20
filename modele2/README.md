@@ -6,8 +6,8 @@ Récapitulatif du dossier `modèle 2`
 ## Dossier _figures_
 
 Le dossier _figures_ contient : 
-- les images des graphiques du modèle 2, la version boule d'eau et la version coquille
-- les schémas réalisés avec Mathcha des modèles 2.1 et 2.2, ainsi que les versions en LaTeX
+- les images des graphiques du modèle 2, la version boule d'eau (2.1) et la version coquille (2.2)
+- les schémas réalisés avec Mathcha des modèles 2.1 et 2.2, ainsi que les versions en LaTeX.
 
 ## Codes _python_
 

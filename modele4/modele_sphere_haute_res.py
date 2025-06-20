@@ -1,9 +1,10 @@
 # ---------------------------------------------------------------
-# Modèle 0-D de température de surface – Sphère 3D HAUTE RÉSOLUTION - CORRIGÉ
+# Modèle 0-D de température de surface – Sphère 3D HAUTE RÉSOLUTION - AMÉLIORÉ
 #
 # DESCRIPTION :
 # - Combine la simulation haute résolution et la visualisation sur une sphère 3D.
-# - Correction du bogue de mise à jour des couleurs.
+# - Ajout des contours des continents en noir.
+# - Suppression des arêtes des polygones pour un rendu lisse.
 # ---------------------------------------------------------------
 import numpy as np
 import matplotlib.pyplot as plt
@@ -19,7 +20,16 @@ from scipy.interpolate import RegularGridInterpolator
 from tqdm import tqdm
 import os
 
-# --- (Le code de simulation est identique et correct) ---
+# Optionnel : utiliser cartopy pour le tracé des côtes
+try:
+    import cartopy.feature as cfeature
+    USE_CARTOPY = True
+except ImportError:
+    USE_CARTOPY = False
+    print("Avertissement: Cartopy non trouvé. Les côtes ne seront pas affichées.")
+    print("Pour l'installer : pip install cartopy shapely")
+
+# --- (Le code de simulation haute résolution est identique et correct) ---
 # ---------- constantes physiques et de simulation ----------
 constante_solaire = 1361.0  # W m-2
 sigma = 5.670374419e-8  # Stefan‑Boltzmann (SI)
@@ -30,7 +40,6 @@ MASSE_SURFACIQUE_ACTIVE = 4.0e2  # kg m-2
 # ────────────────────────────────────────────────
 # DATA – Chargement et sur-échantillonnage
 # ────────────────────────────────────────────────
-
 def load_albedo_series(
     csv_dir: str | pathlib.Path, pattern: str = "albedo{:02d}.csv"
 ):
@@ -75,15 +84,9 @@ def upscale_data(data_lowres, lat_low, lon_low, lat_hi, lon_hi):
 
 monthly_albedo = upscale_data(monthly_albedo_lowres, LAT_lowres, LON_lowres, LAT, LON)
 
-# ... (Le reste des fonctions de physique et de simulation est identique) ...
-_REF_ALBEDO = {
-    "ice": 0.60, "water": 0.10, "snow": 0.80, "desert": 0.35,
-    "forest": 0.20, "land": 0.15,
-}
-_CAPACITY_BY_TYPE = {
-    "ice": 2.0, "water": 4.18, "snow": 2.0, "desert": 0.8,
-    "forest": 1.0, "land": 1.0,
-}
+# ... (Le reste des fonctions de physique et de simulation est inchangé) ...
+_REF_ALBEDO = {"ice": 0.60, "water": 0.10, "snow": 0.80, "desert": 0.35, "forest": 0.20, "land": 0.15}
+_CAPACITY_BY_TYPE = {"ice": 2.0, "water": 4.18, "snow": 2.0, "desert": 0.8, "forest": 1.0, "land": 1.0}
 def capacite_thermique_massique(albedo: float) -> float:
     if np.isnan(albedo): return _CAPACITY_BY_TYPE["land"]
     surf = min(_REF_ALBEDO, key=lambda k: abs(albedo - _REF_ALBEDO[k]))
@@ -154,7 +157,6 @@ if __name__ == "__main__":
     SIM_DAYS = 365
     T_grid_all_times = run_full_simulation(SIM_DAYS)
 
-    # --- Le code de tracé est identique au script basse résolution corrigé ---
     plt.close("all")
     fig = plt.figure(figsize=(10, 9))
     ax = fig.add_subplot(111, projection="3d")
@@ -183,9 +185,24 @@ if __name__ == "__main__":
     face_colors = cmap(norm(T_slice))
     surf = ax.plot_surface(
         X, Y, Z, facecolors=face_colors, rstride=1, cstride=1,
-        antialiased=False, shade=False
+        antialiased=False, shade=False,
+        edgecolor='none'  # MODIFIÉ : Supprime les arêtes
     )
     ax.set_axis_off()
+
+    # NOUVEAU : Ajout des côtes
+    if USE_CARTOPY:
+        R_coast = 1.005  # Léger décalage pour la visibilité
+        coastline_feature = cfeature.COASTLINE
+        for geometry in coastline_feature.geometries():
+            for line in (geometry if hasattr(geometry, 'geoms') else [geometry]):
+                lons, lats = line.xy
+                lon_c_rad = np.radians(np.array(lons))
+                lat_c_rad = np.radians(90 - np.array(lats))
+                Xc = R_coast * np.sin(lat_c_rad) * np.cos(lon_c_rad)
+                Yc = R_coast * np.sin(lat_c_rad) * np.sin(lon_c_rad)
+                Zc = R_coast * np.cos(lat_c_rad)
+                ax.plot(Xc, Yc, Zc, color='black', linewidth=0.5)
 
     m = cm.ScalarMappable(cmap=cmap, norm=norm)
     m.set_array([])
@@ -194,37 +211,25 @@ if __name__ == "__main__":
 
     plt.subplots_adjust(bottom=0.25)
     ax_slider_day = plt.axes([0.2, 0.1, 0.6, 0.03])
-    slider_day = Slider(
-        ax_slider_day, "Jour", 0, SIM_DAYS - 1, valinit=0, valstep=1, color="0.5"
-    )
-
+    slider_day = Slider(ax_slider_day, "Jour", 0, SIM_DAYS - 1, valinit=0, valstep=1, color="0.5")
     ax_slider_hour = plt.axes([0.2, 0.05, 0.6, 0.03])
-    slider_hour = Slider(
-        ax_slider_hour, "Heure", 0, 23, valinit=12, valstep=1, color="0.5"
-    )
+    slider_hour = Slider(ax_slider_hour, "Heure", 0, 23, valinit=12, valstep=1, color="0.5")
 
     def _refresh(val):
         day = int(slider_day.val)
         hour = int(slider_hour.val)
-
         steps_per_day = int(24 * 3600 / dt)
         steps_per_hour = int(3600 / dt)
         time_step_index = day * steps_per_day + hour * steps_per_hour
         time_step_index = min(time_step_index, T_grid_sphere.shape[0] - 1)
-
         T_slice = T_grid_sphere[time_step_index, :, :]
-
         new_colors_3d = cmap(norm(T_slice))
-
-        # CORRECTION : Aplatir le tableau de couleurs pour set_facecolors.
         face_colors_flat = new_colors_3d[:-1, :-1, :].reshape(-1, 4)
         surf.set_facecolors(face_colors_flat)
-
         ax.set_title(f"Jour {day}, Heure {hour}", y=0.95)
         fig.canvas.draw_idle()
 
     slider_day.on_changed(_refresh)
     slider_hour.on_changed(_refresh)
     _refresh(0)
-
     plt.show()

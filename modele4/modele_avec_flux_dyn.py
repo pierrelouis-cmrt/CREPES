@@ -1,8 +1,6 @@
 # ---------------------------------------------------------------
 # Modèle 0-D de température de surface – Backward-Euler implicite
 #
-# ... (autres commentaires inchangés) ...
-#
 # LISSAGE (NOUVEAU):
 # - Lissage des données mensuelles (albédo, capacité thermique)
 #   par convolution gaussienne pour obtenir des variations journalières
@@ -20,7 +18,7 @@ from scipy.ndimage import gaussian_filter1d
 # ---------- constantes physiques ----------
 constante_solaire = 1361.0  # W m-2
 sigma = 5.670374419e-8  # Stefan‑Boltzmann (SI)
-Tatm = 223.15  # atmosphère radiative (‑20 °C)
+Tatm = 223.15  # atmosphère radiative (‑50 °C)
 dt = 1800.0  # pas de temps : 30 min
 MASSE_SURFACIQUE_ACTIVE = 4.0e2  # kg m-2
 
