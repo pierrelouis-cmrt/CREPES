@@ -24,8 +24,6 @@ Tatm = 223.15  # atmosphère radiative (‑20 °C)
 dt = 1800.0  # pas de temps : 30 min
 MASSE_SURFACIQUE_ACTIVE = 4.0e2  # kg m-2
 
-# ... (fonctions load_albedo_series, capacite_thermique_massique inchangées) ...
-
 # ────────────────────────────────────────────────
 # DATA – Chargement de l'albédo mensuel (depuis Script 2)
 # ────────────────────────────────────────────────
