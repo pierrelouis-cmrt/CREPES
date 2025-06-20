@@ -1,8 +1,6 @@
 # ---------------------------------------------------------------
 # Modèle 0-D de température de surface – Backward-Euler implicite
 #
-# ... (autres commentaires inchangés) ...
-#
 # LISSAGE (NOUVEAU):
 # - Lissage des données mensuelles (albédo, capacité thermique)
 #   par convolution gaussienne pour obtenir des variations journalières
