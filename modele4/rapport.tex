@@ -26,6 +26,7 @@
     \item  rayonnement de la croûte (\(P_{th,ray}\))
     \item On considère la température de l'atmosphère constante dans l'espace et  au cours du temps 
     \item On prend en compte l'albédo du sol en fonction de la position et du mois de l'année 
+    \item On prend en compte l'albedo des nuages.
     \item la capacité thermique dépend de la localisation
     \item On considère $T(t=0) = T_i$ \  indépendant de l'espace  
     
@@ -48,9 +49,9 @@
 On applique le premier principe appliqué au système \{ Un pavé de hauteur h, de surface S de la Terre \}
 \ \ 
 \[
-\frac{C}{S} \frac{dT}{dt} =(1-A)\phi-\sigma T^4+\sigma T_{atm}^4
+C \frac{dT}{dt} =(1-A_1)(1-A_2)\phi-\sigma T^4+\sigma T_{atm}^4
 \]
-
+Avec \(C\) la capacité thermique surfacique en \(J\cdot K^{-1}\cdot m^{-2}\)
 \subsubsection*{Modélisation graphique (à Paris) :} 
 \begin{itemize}
     \item Modèle adaptatif
@@ -91,6 +92,7 @@ On applique le premier principe appliqué au système \{ Un pavé de hauteur h, 
 \begin{itemize}
     \item On néglige la conducto-convexion
     \item On considère la température de l'atmosphère homogène et constante au cours du temps
+    \item On néglige l'effet de la chaleur latente
 \end{itemize}
 
 \end{document}
