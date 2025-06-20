@@ -25,8 +25,7 @@ Le dossier _figures_ contient l'ensemble des graphiques générés par les progr
 - Fichier `modele_avec_flux_dyn_mat_rot.py`
 - Fichier `modele_avec_flux_dyn_planisphere.py`
 - Fichier `modele_avec_flux_dyn.py`
-- Fichier `temps1.py`
-- Fichier `tempscte.py`
+- Fichier `temps1.py` & `tempscte.py` : Modèle d'évolution de la température incohérent 
 
 ## Fichiers
 ### Rapport
