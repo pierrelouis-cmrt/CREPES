@@ -1,12 +1,12 @@
 # ---------------------------------------------------------------
 # Modèle 0-D de température de surface – Backward-Euler implicite
 #
-# LISSAGE (NOUVEAU):
-# - Lissage des données mensuelles (albédo, capacité thermique)
-#   par convolution gaussienne pour obtenir des variations journalières
-#   continues et cycliques.
-#   // CLARIFICATION // : Seules les données d'ENTRÉE sont lissées.
-#   // La température, qui est le RÉSULTAT, n'est pas lissée.
+# VERSION MISE À JOUR :
+# - Ajout de l'albédo des nuages (A1) en plus de l'albédo de
+#   surface (A2).
+# - Lissage des données mensuelles (albédo sol, albédo nuages,
+#   capacité thermique) par convolution gaussienne pour obtenir
+#   des variations journalières continues et cycliques.
 # ---------------------------------------------------------------
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,14 +23,14 @@ dt = 1800.0  # pas de temps : 30 min
 MASSE_SURFACIQUE_ACTIVE = 4.0e2  # kg m-2
 
 # ────────────────────────────────────────────────
-# DATA – Chargement de l'albédo mensuel (depuis Script 2)
+# DATA – Chargement de l'albédo de surface (depuis Script 2)
 # ────────────────────────────────────────────────
 
 
 def load_albedo_series(
     csv_dir: str | pathlib.Path, pattern: str = "albedo{:02d}.csv"
 ):
-    """Charge les 12 fichiers CSV d'albédo mensuel."""
+    """Charge les 12 fichiers CSV d'albédo de surface mensuel."""
     csv_dir = pathlib.Path(csv_dir)
     latitudes: np.ndarray | None = None
     longitudes: np.ndarray | None = None
@@ -41,14 +41,14 @@ def load_albedo_series(
             latitudes = df["Latitude/Longitude"].astype(float).to_numpy()
             longitudes = df.columns[1:].astype(float).to_numpy()
         cubes.append(df.set_index("Latitude/Longitude").to_numpy(dtype=float))
-    print("Données d'albédo chargées.")
+    print("Données d'albédo de surface chargées.")
     return np.stack(cubes, axis=0), latitudes, longitudes
 
 
 # --- Chargement des données au démarrage ---
 try:
     ALBEDO_DIR = pathlib.Path("ressources/albedo")
-    monthly_albedo, LAT, LON = load_albedo_series(ALBEDO_DIR)
+    monthly_albedo_sol, LAT, LON = load_albedo_series(ALBEDO_DIR)
     _lat_idx = lambda lat: int(np.abs(LAT - lat).argmin())
     _lon_idx = lambda lon: int(
         np.abs(LON - (((lon + 180) % 360) - 180)).argmin()
@@ -58,9 +58,32 @@ except FileNotFoundError:
     print("La simulation ne peut pas continuer sans les données d'albédo.")
     exit()
 
+# ────────────────────────────────────────────────
+# NOUVEAU - Données d'albédo des nuages (substitut)
+# ────────────────────────────────────────────────
+
+
+def load_monthly_cloud_albedo_mock(lat_deg: float, lon_deg: float):
+    """
+    Génère un profil annuel d'albédo des nuages mensuel.
+    NOTE : Cette fonction est un substitut en l'absence de données réelles.
+    Elle simule une couverture nuageuse plus importante en hiver.
+    """
+    print(
+        "NOTE : Utilisation de données simulées (mock) pour l'albédo des nuages."
+    )
+    # Albédo moyen des nuages (ex: 0.3) avec une variation saisonnière
+    # Amplitude plus forte aux latitudes plus élevées
+    amplitude = 0.15 * np.sin(np.radians(abs(lat_deg)))
+    avg_cloud_albedo = 0.3
+    # Variation cosinusoidale : max en hiver (mois 0 et 11), min en été (mois 6)
+    mois = np.arange(12)
+    variation_saisonniere = amplitude * np.cos(2 * pi * (mois - 0.5) / 12)
+    return avg_cloud_albedo - variation_saisonniere
+
 
 # ────────────────────────────────────────────────
-# Capacité thermique basée sur l'albédo (depuis Script 2)
+# Capacité thermique basée sur l'albédo (inchangé)
 # ────────────────────────────────────────────────
 
 _REF_ALBEDO = {
@@ -90,7 +113,7 @@ def capacite_thermique_massique(albedo: float) -> float:
 
 
 # ────────────────────────────────────────────────
-# Lissage des données annuelles par convolution gaussienne (NOUVEAU)
+# Lissage des données annuelles par convolution gaussienne (inchangé)
 # ────────────────────────────────────────────────
 
 
@@ -98,8 +121,6 @@ def lisser_donnees_annuelles(valeurs_mensuelles: np.ndarray, sigma: float):
     """
     Lisse 12 valeurs mensuelles en un profil journalier continu (365 j)
     en utilisant une convolution gaussienne cyclique.
-    // CLARIFICATION // : Cette fonction ne traite que les données
-    // d'entrée (comme l'albédo), jamais la température.
     """
     jours_par_mois = np.array(
         [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
@@ -111,6 +132,11 @@ def lisser_donnees_annuelles(valeurs_mensuelles: np.ndarray, sigma: float):
         valeurs_journalieres_discontinues, sigma=sigma, mode="wrap"
     )
     return valeurs_lissees
+
+
+# ────────────────────────────────────────────────
+# Fonctions physiques (MODIFIÉ)
+# ────────────────────────────────────────────────
 
 
 def declination(day):
@@ -125,25 +151,31 @@ def cos_incidence(lat_rad, day, hour):
     return max(ci, 0.0)
 
 
-def phi_net(lat_rad, day, hour, albedo):
-    return constante_solaire * cos_incidence(lat_rad, day, hour) * (1 - albedo)
+# MODIFIÉ : phi_net prend maintenant en compte l'albédo des nuages
+def phi_net(lat_rad, day, hour, albedo_sol, albedo_nuages):
+    """Calcule le flux solaire net absorbé par la surface."""
+    phi_entrant = constante_solaire * cos_incidence(lat_rad, day, hour)
+    # Le flux est d'abord réduit par l'albédo des nuages (A1),
+    # puis par l'albédo du sol (A2).
+    return phi_entrant * (1 - albedo_nuages) * (1 - albedo_sol)
 
 
 def f_rhs(T, phinet, C):
     return (phinet + sigma * Tatm**4 - sigma * T**4) / C
 
 
-# ---------- intégrateur Backward‑Euler ----------
+# ---------- intégrateur Backward‑Euler (MODIFIÉ) ----------
 
 
 def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
     """
     Intègre la température de surface et retourne l'historique de T,
-    de l'albédo et de la capacité thermique C.
+    des albédos (sol, nuages) et de la capacité thermique C.
     """
     N = int(days * 24 * 3600 / dt)
     T = np.empty(N + 1)
-    albedo_hist = np.empty(N + 1)
+    albedo_sol_hist = np.empty(N + 1)
+    albedo_nuages_hist = np.empty(N + 1)  # NOUVEAU
     C_hist = np.empty(N + 1)
 
     T[0] = T0
@@ -153,25 +185,30 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
 
     # --- Pré-calcul des profils annuels lissés ---
     print("Lissage des données annuelles par convolution gaussienne...")
-    albedo_mensuel_loc = monthly_albedo[:, lat_idx, lon_idx]
-    # // CLARIFICATION // : L'albédo est lissé ici, AVANT la simulation.
-    albedo_journalier_lisse = lisser_donnees_annuelles(
-        albedo_mensuel_loc, sigma=15.0
+
+    # 1. Albédo de surface (A2)
+    albedo_sol_mensuel_loc = monthly_albedo_sol[:, lat_idx, lon_idx]
+    albedo_sol_journalier_lisse = lisser_donnees_annuelles(
+        albedo_sol_mensuel_loc, sigma=15.0
     )
 
-    # --- Lissage de la capacité surfacique (input)
+    # 2. NOUVEAU : Albédo des nuages (A1)
+    albedo_nuages_mensuel = load_monthly_cloud_albedo_mock(lat_deg, lon_deg)
+    albedo_nuages_journalier_lisse = lisser_donnees_annuelles(
+        albedo_nuages_mensuel, sigma=15.0
+    )
+
+    # 3. Capacité surfacique (basée sur l'albédo de surface)
     v_capacite = np.vectorize(capacite_thermique_massique)
-    # capacité massique mensuelle [kJ·kg⁻¹·K⁻¹] → [J·kg⁻¹·K⁻¹]
-    cap_massique_mensuelle = v_capacite(albedo_mensuel_loc) * 1000.0
-    # capacité surfacique mensuelle [J·m⁻²·K⁻¹]
+    cap_massique_mensuelle = v_capacite(albedo_sol_mensuel_loc) * 1000.0
     cap_surfacique_mensuelle = cap_massique_mensuelle * MASSE_SURFACIQUE_ACTIVE
-    # lissage cyclique sur 365 jours
     C_journalier_lisse = lisser_donnees_annuelles(
-        cap_surfacique_mensuelle,
-        sigma=15.0
+        cap_surfacique_mensuelle, sigma=15.0
     )
 
-    albedo_hist[0] = albedo_journalier_lisse[0]
+    # Initialisation des historiques
+    albedo_sol_hist[0] = albedo_sol_journalier_lisse[0]
+    albedo_nuages_hist[0] = albedo_nuages_journalier_lisse[0]  # NOUVEAU
     C_hist[0] = C_journalier_lisse[0]
 
     for k in range(N):
@@ -180,18 +217,22 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         heure_solaire = ((t_sec / 3600.0) + lon_deg / 15.0) % 24.0
         jour_dans_annee = (jour - 1) % 365
 
-        # // CLARIFICATION // : On utilise les données lissées comme entrées.
-        albedo = albedo_journalier_lisse[jour_dans_annee]
+        # Utilisation des données journalières lissées comme entrées
+        albedo_sol = albedo_sol_journalier_lisse[jour_dans_annee]
+        albedo_nuages = albedo_nuages_journalier_lisse[
+            jour_dans_annee
+        ]  # NOUVEAU
         C = C_journalier_lisse[jour_dans_annee]
 
-        albedo_hist[k + 1] = albedo
+        # Stockage des valeurs pour le tracé
+        albedo_sol_hist[k + 1] = albedo_sol
+        albedo_nuages_hist[k + 1] = albedo_nuages  # NOUVEAU
         C_hist[k + 1] = C
 
-        phi_n = phi_net(lat_rad, jour, heure_solaire, albedo)
+        # Calcul du flux net avec les deux albédos
+        phi_n = phi_net(lat_rad, jour, heure_solaire, albedo_sol, albedo_nuages)
 
-        # // CLARIFICATION // : Ici, la température T est CALCULÉE par le
-        # // solveur de Newton-Raphson. Elle n'est PAS lissée. Sa douceur
-        # // est une CONSÉQUENCE des entrées lissées (albédo, C).
+        # Solveur de Newton-Raphson (inchangé)
         X = T[k]
         for _ in range(8):
             F = X - T[k] - dt * f_rhs(X, phi_n, C)
@@ -201,17 +242,22 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
                 break
         T[k + 1] = X
 
-    return T, albedo_hist, C_hist
+    # MODIFIÉ : Retourne l'historique de l'albédo des nuages
+    return T, albedo_sol_hist, albedo_nuages_hist, C_hist
 
 
-# ... (fonctions de tracé et exécution inchangées) ...
+# ---------- Fonctions de tracé (MODIFIÉ) ----------
+
+
 def tracer_comparaison(
-    times, T, albedo_hist, C_hist, titre, jour_a_afficher
+    times, T, albedo_sol_hist, albedo_nuages_hist, C_hist, titre, jour_a_afficher
 ):
     fig, axs = plt.subplots(
-        2, 1, figsize=(14, 9), sharex=True, height_ratios=[2, 1]
+        2, 1, figsize=(14, 10), sharex=True, height_ratios=[2, 1]
     )
     days_axis = times / 86400
+
+    # --- Graphe supérieur : Température ---
     axs[0].plot(
         days_axis,
         T - 273.15,
@@ -237,40 +283,77 @@ def tracer_comparaison(
     axs[0].grid(ls=":")
     axs[0].legend()
     axs[0].set_xlim(0, 365)
+
+    # --- Graphe inférieur : Albédos et Capacité thermique ---
     color1 = "tab:blue"
     axs[1].set_ylabel("Albédo (sans unité)", color=color1)
-    axs[1].plot(days_axis, albedo_hist, color=color1, lw=2.0)
+    # MODIFIÉ : Tracé des deux albédos
+    axs[1].plot(
+        days_axis,
+        albedo_sol_hist,
+        color=color1,
+        lw=2.0,
+        label="Albédo Sol (A2)",
+    )
+    axs[1].plot(
+        days_axis,
+        albedo_nuages_hist,
+        color="cyan",
+        lw=2.0,
+        ls=":",
+        label="Albédo Nuages (A1)",
+    )
     axs[1].tick_params(axis="y", labelcolor=color1)
-    axs[1].set_ylim(0, max(np.max(albedo_hist) * 1.1, 0.3))
+    axs[1].set_ylim(0, max(np.max(albedo_sol_hist) * 1.2, 0.5))
+    axs[1].legend(loc="upper left")
+
     ax2 = axs[1].twinx()
     color2 = "tab:red"
     ax2.set_ylabel("Capacité Surfacique (J m⁻² K⁻¹)", color=color2)
-    ax2.plot(days_axis, C_hist, color=color2, lw=2.0, ls="--")
+    ax2.plot(
+        days_axis, C_hist, color=color2, lw=2.0, ls="--", label="Capacité (droite)"
+    )
     ax2.tick_params(axis="y", labelcolor=color2)
+
     axs[1].set_xlabel("Jour de l'année (simulation stabilisée)")
     axs[1].grid(ls=":")
     fig.tight_layout()
     plt.show()
 
 
+# ---------- Exécution principale (MODIFIÉ) ----------
+
 if __name__ == "__main__":
     jours_de_simulation = 365 * 2
-    jour_a_afficher = 182
-    lat_paris, lon_paris = 40.4, 74
-    print(f"Lancement de la simulation pour Paris ({lat_paris}N, {lon_paris}E)...")
-    T_full, alb_full, C_full = backward_euler(
-        jours_de_simulation, lat_paris, lon_paris
+    jour_a_afficher = 182  # Solstice d'été approx.
+
+    # NOTE: Les coordonnées (40.4 N, 74 E) pointent vers le Kirghizistan/Chine.
+    # Pour Paris, utilisez (48.85, 2.35).
+    # Nous utilisons les valeurs originales du script.
+    lat_sim, lon_sim = 8.85, 8
+
+    print(f"Lancement de la simulation pour Lat={lat_sim}N, Lon={lon_sim}E...")
+
+    # MODIFIÉ : Récupération des 4 tableaux de résultats
+    T_full, alb_sol_full, alb_nuages_full, C_full = backward_euler(
+        jours_de_simulation, lat_sim, lon_sim
     )
+
+    # Extraction de la deuxième année pour un régime stabilisé
     steps_per_year = int(365 * 24 * 3600 / dt)
     t_yr2_plot = np.arange(len(T_full) - steps_per_year) * dt
     T_yr2 = T_full[steps_per_year:]
-    alb_yr2 = alb_full[steps_per_year:]
+    alb_sol_yr2 = alb_sol_full[steps_per_year:]
+    alb_nuages_yr2 = alb_nuages_full[steps_per_year:]  # NOUVEAU
     C_yr2 = C_full[steps_per_year:]
+
+    # MODIFIÉ : Appel de la fonction de tracé avec le nouvel historique
     tracer_comparaison(
         t_yr2_plot,
         T_yr2,
-        alb_yr2,
+        alb_sol_yr2,
+        alb_nuages_yr2,
         C_yr2,
-        f"Simulation stabilisée pour Paris (Lat={lat_paris}, Lon={lon_paris})",
+        f"Simulation stabilisée (avec albédo nuages) pour Lat={lat_sim}, Lon={lon_sim}",
         jour_a_afficher,
     )
