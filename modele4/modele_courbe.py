@@ -330,7 +330,7 @@ if __name__ == "__main__":
     # NOTE: Les coordonnées (40.4 N, 74 E) pointent vers le Kirghizistan/Chine.
     # Pour Paris, utilisez (48.85, 2.35).
     # Nous utilisons les valeurs originales du script.
-    lat_sim, lon_sim = 8.85, 8
+    lat_sim, lon_sim = 48, 2
 
     print(f"Lancement de la simulation pour Lat={lat_sim}N, Lon={lon_sim}E...")
 
