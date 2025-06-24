@@ -8,8 +8,6 @@
 #   par convolution gaussienne.
 # - Utilisation de GeoPandas pour une détection précise
 #   des continents.
-# - Calcul direct du flux de chaleur latente journalier
-#   via une fonction continue (cosinus).
 # - Visualisation du flux de chaleur latente (Q) dans
 #   le graphique de sortie.
 # - CORRIGÉ : Gestion des géométries nulles dans le shapefile.
@@ -17,9 +15,11 @@
 #   par un calcul basé sur les données CERES (fichier .nc).
 # - NOUVEAU : La capacité thermique est calculée à partir des
 #   données d'humidité du sol (RZSM).
-# - NOUVEAU (votre demande) : Le flux de chaleur latente (Q) est
-#   maintenant calculé à partir des taux d'évaporation annuels
-#   par continent.
+# - NOUVEAU : Le flux de chaleur latente (Q) est calculé à partir
+#   des taux d'évaporation annuels par continent.
+# - NOUVEAU (votre demande) : La variation saisonnière de Q est
+#   supprimée. Q est une valeur de base constante (positive le
+#   jour, négative la nuit).
 # ---------------------------------------------------------------
 import numpy as np
 import matplotlib.pyplot as plt
@@ -93,7 +93,6 @@ try:
     )
 except FileNotFoundError:
     print("ERREUR: Le dossier 'ressources/albedo' est introuvable.")
-    print("La simulation ne peut pas continuer sans les données d'albédo.")
     exit()
 
 # ────────────────────────────────────────────────
@@ -149,15 +148,14 @@ except (FileNotFoundError, RuntimeError) as e:
     exit()
 
 # ────────────────────────────────────────────────
-# MODIFIÉ - Données de chaleur latente (Q) via évaporation
+# Données de chaleur latente (Q) via évaporation (inchangé)
 # ────────────────────────────────────────────────
 
-# --- NOUVEAU : Calcul de Q basé sur l'évaporation annuelle ---
-Delta_hvap = 2453000  # J/kg
-rho_eau = 1000  # kg/m^3
-Delta_t = 31557600  # 1 an en s
+Delta_hvap = 2453000
+rho_eau = 1000
+Delta_t = 31557600
 
-evap_Eur = 0.49 / Delta_t  # m/s
+evap_Eur = 0.49 / Delta_t
 evap_Am_Nord = 0.47 / Delta_t
 evap_Am_sud = 0.94 / Delta_t
 evap_oceanie = 0.41 / Delta_t
@@ -173,7 +171,6 @@ phi_Afr = Delta_hvap * rho_eau * evap_Afr
 phi_Asi = Delta_hvap * rho_eau * evap_Asi
 phi_ocean = Delta_hvap * rho_eau * evap_ocean
 
-# Dictionnaire des valeurs de Q par continent, utilisé par le détecteur de continent
 Q_LATENT_CONTINENT = {
     "Europe": phi_Eur,
     "North America": phi_Am_Nord,
@@ -182,9 +179,8 @@ Q_LATENT_CONTINENT = {
     "Africa": phi_Afr,
     "Asia": phi_Asi,
     "Océan": phi_ocean,
-    "Antarctica": 0.0,  # Pas de données d'évaporation, on garde 0.0
+    "Antarctica": 0.0,
 }
-# --- FIN DU NOUVEAU CALCUL ---
 
 SHAPEFILE_PATH = (
     pathlib.Path("ressources/map") / "ne_110m_admin_0_countries.shp"
@@ -193,12 +189,10 @@ SHAPEFILE_PATH = (
 
 def create_continent_finder(shapefile_path: pathlib.Path):
     if not GEOPANDAS_AVAILABLE:
-        print("AVERTISSEMENT: GeoPandas non installé. Q sera celui de l'océan.")
         return lambda lat, lon: "Océan"
     try:
         world = gpd.read_file(shapefile_path).to_crs(epsg=4326)
     except Exception as e:
-        print(f"ERREUR: Impossible de charger le shapefile : {e}")
         return lambda lat, lon: "Océan"
 
     def find_continent_for_point(lat: float, lon: float) -> str:
@@ -217,27 +211,12 @@ continent_finder = create_continent_finder(SHAPEFILE_PATH)
 def get_q_latent_base(lat: float, lon: float) -> float:
     """Récupère la valeur de Q (W m-2) de base pour un point géographique."""
     continent = continent_finder(lat, lon)
-    # MODIFIÉ : Utilise le nouveau dictionnaire Q_LATENT_CONTINENT
     q_val = Q_LATENT_CONTINENT.get(continent, Q_LATENT_CONTINENT["Océan"])
     print(
         f"Coordonnées ({lat:.2f}, {lon:.2f}) détectées sur : "
         f"{continent} (Q base = {q_val:.2f} W m⁻²)"
     )
     return q_val
-
-
-def get_daily_q_latent(
-    q_base: float, lat_deg: float, day_of_year: int
-) -> float:
-    """Calcule la variation saisonnière du flux de chaleur latente."""
-    if q_base == 0 or q_base == Q_LATENT_CONTINENT["Océan"]:
-        return q_base
-    amplitude = 0.4 * q_base
-    day_phase_shift = 196 if lat_deg >= 0 else 15
-    variation_saisonniere = amplitude * np.cos(
-        2 * pi * (day_of_year - day_phase_shift) / 365
-    )
-    return q_base + variation_saisonniere
 
 
 # ────────────────────────────────────────────────
@@ -321,7 +300,7 @@ def f_rhs(T, phinet, C, q_latent):
 
 
 # ────────────────────────────────────────────────
-# Intégrateur Backward‑Euler (inchangé)
+# Intégrateur Backward‑Euler (MODIFIÉ pour Q)
 # ────────────────────────────────────────────────
 
 
@@ -338,6 +317,7 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         _lon_idx(lon_deg),
     )
 
+    # MODIFIÉ : q_base est maintenant la valeur constante pour toute la simulation
     q_base = get_q_latent_base(lat_deg, lon_deg)
 
     print("Lissage des données annuelles (albédo)...")
@@ -367,12 +347,13 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         f"C={C_const:.2e} J m⁻² K⁻¹"
     )
 
-    albedo_sol_hist[0], albedo_nuages_hist[0], C_hist[0] = (
+    # Initialisation des tableaux d'historique
+    albedo_sol_hist[0], albedo_nuages_hist[0], C_hist[0], q_latent_hist[0] = (
         albedo_sol_journalier_lisse[0],
         albedo_nuages_journalier_lisse[0],
         C_const,
+        q_base,  # MODIFIÉ
     )
-    q_latent_hist[0] = get_daily_q_latent(q_base, lat_deg, 0)
 
     for k in range(N):
         t_sec = k * dt
@@ -382,9 +363,8 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
 
         albedo_sol = albedo_sol_journalier_lisse[jour_dans_annee]
         albedo_nuages = albedo_nuages_journalier_lisse[jour_dans_annee]
-        q_latent_daily = get_daily_q_latent(
-            q_base, lat_deg, jour_dans_annee
-        )
+        # MODIFIÉ : q_latent_daily est maintenant la valeur de base constante
+        q_latent_daily = q_base
 
         albedo_sol_hist[k + 1], albedo_nuages_hist[k + 1], C_hist[
             k + 1
@@ -398,6 +378,7 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         phi_n = phi_net(
             lat_rad, jour, heure_solaire, albedo_sol, albedo_nuages
         )
+        # La logique d'inversion jour/nuit est conservée
         q_latent_step = q_latent_daily if phi_n > 0 else -q_latent_daily
 
         X = T[k]
@@ -477,12 +458,13 @@ def tracer_comparaison(
 
     color_q = "tab:green"
     axs[2].set_ylabel("Flux Chaleur Latente (W m⁻²)", color=color_q)
+    # Le graphique affichera une ligne constante pour Q
     axs[2].plot(
         days_axis,
         q_latent_hist,
         color=color_q,
         lw=2.0,
-        label="Flux Latent (Q)",
+        label="Flux Latent de base (Q)",
     )
     axs[2].tick_params(axis="y", labelcolor=color_q)
     axs[2].legend(loc="upper left")
@@ -550,6 +532,6 @@ if __name__ == "__main__":
         alb_nuages_yr2,
         C_yr2,
         q_latent_yr2,
-        f"Simulation (C via RZSM, Q via évaporation) pour Lat={lat_sim}, Lon={lon_sim}",
+        f"Simulation (Q constant) pour Lat={lat_sim}, Lon={lon_sim}",
         jour_a_afficher,
     )
