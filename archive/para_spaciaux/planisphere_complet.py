@@ -10,6 +10,13 @@ import subprocess
 
 
 try:
+    import sys
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", sys])
+    import sys
+    
+try:
     import numpy
 except ImportError:
     print("OpenCV non trouvé. Installation en cours...")

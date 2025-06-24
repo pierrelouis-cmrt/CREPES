@@ -10,9 +10,17 @@ from math import pi
 import pathlib
 import pandas as pd
 import fonctions as f
+import sys
 import subprocess
 
 
+try:
+    import sys
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", sys])
+    import sys
+    
 try:
     import numpy
 except ImportError:
