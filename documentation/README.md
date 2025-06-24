@@ -5,4 +5,4 @@ Récapitulatif du dossier `documentation`
 ## Fichiers
 ### Rapport
 
-Le fichier `rapport.tex` est un fichier LaTeX qui compile tous les rapports réaliser pour chacun des modèles que nous avons réaliser.
+- `rapport.tex` :  fichier LaTeX qui résume tous les rapports réalisés pour chacun des modèles que nous avons conçus

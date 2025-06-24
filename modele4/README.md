@@ -30,4 +30,4 @@ Le dossier _figures_ contient l'ensemble des graphiques générés par les progr
 ## Fichiers
 ### Rapport
 
-Le fichier `rapport.tex`est un fichier LaTeX qui compile notre réflexion pour concevoir le modèle 4 ainsi que les équations. Il est facilement lisible au format pdf avec `rapport.pdf`.
+Le fichier `rapport.tex`est un fichier LaTeX qui compile notre réflexion pour concevoir le modèle 4 ainsi que les équations.

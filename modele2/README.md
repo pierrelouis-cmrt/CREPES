@@ -3,20 +3,21 @@
 
 Récapitulatif du dossier `modèle 2`
 
+
+## Dossier _codes python_
+
+- `modele2_boule.py` : graphique de la **température** de la Terre en fonction du temps pour une **boule d'eau** entourée d'une **atmosphère**
+- `modele2_coquille.py` : graphique de la **température** de la Terre en fonction du temps pour une **coquille d'eau à intérieur vide** entourée d'une **atmosphère**
+
+
 ## Dossier _figures_
 
 Le dossier _figures_ contient : 
-- les images des graphiques du modèle 2, la version boule d'eau (2.1) et la version coquille (2.2)
-- les schémas réalisés avec Mathcha des modèles 2.1 et 2.2, ainsi que les versions en LaTeX.
-
-## Codes _python_
-
-Le fichier `modele2_boule.py` modélise la température de la Terre en fonction du temps pour une boule d'eau entouré d'une atmosphère
-
-Le fichier `modele2_coquille.py` modélise la température de la Terre en fonction du temps pour une coquille entouré d'une atmosphère
+- les images des **graphiques** du modèle 2, la version **boule d'eau (2.1)** et la version **coquille (2.2)**
+- les **schémas** réalisés avec Mathcha des modèles 2.1 et 2.2, ainsi que les versions en LaTeX.
 
 
 ## Fichiers
 ### Rapport
 
-Le fichier `rapport.tex`est un fichier LaTeX qui compile notre réflexion pour concevoir le modèle 2 ainsi que les équations.
+- `rapport.tex` :  fichier LaTeX qui résume notre réflexion liée au modèle 2 ainsi que les équations établies

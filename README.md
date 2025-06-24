@@ -1,13 +1,14 @@
 # Projet CREPES 2025
+Organisation des dossiers du projet CREPES
 
+## Dossier _documentation_
+- Ce dossier contient un **rapport global** résumant les rapports de chacun des modèles que nous avons conçus.
 
-## Organisation des dossiers :
+## Dossier _modèle x_
+- Ces dossiers contiennent toutes les **informations relatives au modèle x** : le README, le rapport, les codes ainsi que les figures.
 
-- "Modèle <x>" = Dossier comportant les figures et codes des modèles. Un README dans chaque dossier y est présent pour expliquer le modèle
-
-- Documentation : Dossier avec le rapport de documentation global du groupe
-
-- Ressources : Dossier comprenant les ressources utiles aux programmes python : les valeurs d'albedo, du traçage de la carte...
+## Dossier _ressources_
+- Ce dossier contient les **valeurs d'albédo** en fonction de la position ainsi que les **délimitations des continents**.
 
 
 ## Contributeurs
