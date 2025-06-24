@@ -32,6 +32,7 @@ import pathlib
 import pandas as pd
 from scipy.ndimage import gaussian_filter1d
 import sys
+import cftime
 import subprocess
 
 
@@ -41,7 +42,21 @@ except ImportError:
     print("OpenCV non trouvé. Installation en cours...")
     subprocess.check_call([sys.executable, "-m", "pip", "install", sys])
     import sys
-    
+
+try:
+    import cftime
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", cftime])
+    import cftime
+
+try:
+    import xarray
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", xarray])
+    import xarray
+
 try:
     import numpy
 except ImportError:
