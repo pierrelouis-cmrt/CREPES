@@ -8,7 +8,7 @@ Organisation des dossiers du projet CREPES
 - Ces dossiers contiennent toutes les **informations relatives au modèle x** : le README, le rapport, les codes ainsi que les figures.
 
 ## Dossier _ressources_
-- Ce dossier contient les **valeurs d'albédo** en fonction de la position ainsi que les **délimitations des continents**.
+- Ce dossier contient les ressources utiles par les script python tels que **valeurs d'albédo** en fonction de la position, les **délimitations des continents**, les valeurs d"**humidité** des sols.
 
 
 ## Contributeurs
