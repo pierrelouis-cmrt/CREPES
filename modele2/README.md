@@ -7,7 +7,7 @@ Récapitulatif du dossier `modèle 2`
 ## Dossier _codes python_
 
 - `modele2_boule.py` : graphique de la **température** de la Terre en fonction du temps pour une **boule d'eau** entourée d'une **atmosphère**
-- `modele2_coquille.py` : graphique de la **température** de la Terre en fonction du temps pour une **coquille d'eau à entourée d'une atmosphère**
+- `modele2_coquille.py` : graphique de la **température** de la Terre en fonction du temps pour une **coquille d'eau** entourée d'une **atmosphère**
 
 
 ## Dossier _figures_
