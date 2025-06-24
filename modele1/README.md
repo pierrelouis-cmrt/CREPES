@@ -13,7 +13,7 @@ Récapitulatif du dossier `modèle 1`
 
     - `fonctions_modele1_coquille.py` : fonctions utiles pour `modelisation_modele1_coquille.py`
 
-    - `modelisation_modele1_coquille.py` : **sphère 3D** avec représentation de la température de la Terre en tant que coquille d'eau selon les mois et l'heure
+    - `modelisation_modele1_coquille.py` : sphère 3D avec représentation de la température de la Terre en tant que **coquille d'eau** selon les mois et l'heure
 
 
 ## Dossier _figures_
