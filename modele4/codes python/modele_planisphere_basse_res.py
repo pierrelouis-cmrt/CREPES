@@ -18,11 +18,11 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 import pathlib
 from scipy.ndimage import gaussian_filter1d
-from scipy.stats import binned_statistic_2d
 import pandas as pd
 from tqdm import tqdm
 import os
 import xarray as xr
+import sys
 
 # Import des fonctions de modélisation depuis les fichiers fournis
 import fonctions as f
@@ -38,11 +38,19 @@ except ImportError:
     USE_CARTOPY = False
 
 # ---------- constantes physiques et de simulation ----------
+<<<<<<< Updated upstream
 # (Utilise les constantes définies dans lib.py et fonctions.py)
 sigma = lib.sigma
 Tatm = lib.Tatm
 dt = lib.dt
 EPAISSEUR_ACTIVE = f.EPAISSEUR_ACTIVE
+=======
+# CORRIGÉ : Les constantes sont importées depuis lib.py pour la cohérence
+sigma = lib.sigma
+Tatm = lib.Tatm
+dt = lib.dt
+EPAISSEUR_ACTIVE = lib.EPAISSEUR_ACTIVE
+>>>>>>> Stashed changes
 
 # --- Chargement des données au démarrage ---
 try:
@@ -52,6 +60,7 @@ try:
     NLAT, NLON = len(LAT), len(LON)
 
     # 2. Données d'humidité du sol (RZSM) pour la capacité thermique
+<<<<<<< Updated upstream
     RZSM_CSV_PATH = pathlib.Path("ressources/Cp_humidity/average_rzsm_tout.csv")
     df_rzsm = pd.read_csv(RZSM_CSV_PATH)
     df_rzsm["lon"] = ((df_rzsm["lon"] + 180) % 360) - 180
@@ -63,13 +72,27 @@ try:
         values=df_rzsm["RZSM"],
         statistic="mean",
         bins=[lon_bins, lat_bins],
+=======
+    # CORRIGÉ : Chemin défini localement et appel de la fonction de `fonctions.py`
+    RZSM_CSV_PATH = pathlib.Path(
+        "ressources/Cp_humidity/average_rzsm_tout.csv"
+>>>>>>> Stashed changes
     )
-    RZSM_GRID = RZSM_GRID.T  # Transposer pour avoir (lat, lon)
+    RZSM_GRID, lat_bins, lon_bins = f.load_and_grid_rzsm_data(RZSM_CSV_PATH)
     print("Données d'humidité du sol (RZSM) chargées et grillées.")
 
     # 3. Données d'albédo des nuages (CERES)
+<<<<<<< Updated upstream
     CERES_FILE_PATH = f.CERES_FILE_PATH
     ds_ceres = xr.open_dataset(CERES_FILE_PATH, decode_times=True)
+=======
+    # CORRIGÉ : Chemin défini localement
+    CERES_FILE_PATH = (
+        pathlib.Path("ressources/albedo")
+        / "CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc"
+    )
+    ds_ceres = xr.open_dataset(CERES_FILE_PATH, decode_times=True).load()
+>>>>>>> Stashed changes
     ds_ceres = ds_ceres.assign_coords(
         lon=(((ds_ceres.lon + 180) % 360) - 180)
     ).sortby("lon")
@@ -86,7 +109,7 @@ try:
 
 except FileNotFoundError as e:
     print(f"ERREUR: Un fichier de ressources est introuvable : {e}")
-    exit()
+    sys.exit()
 
 
 # ────────────────────────────────────────────────
@@ -160,7 +183,6 @@ def integrate_point_temperature(
             lat_rad, jour, heure_solaire, albedo_sol, albedo_nuages
         )
 
-        # Newton pour Backward-Euler
         X = T[k]
         for _ in range(8):
             F = X - T[k] - dt * f_rhs(X, phi_n, C_const, q_latent_step)
@@ -177,7 +199,7 @@ def run_full_simulation(days, result_file=None):
     if result_file is None:
         npy_dir = pathlib.Path("ressources/npy")
         npy_dir.mkdir(parents=True, exist_ok=True)
-        result_file = npy_dir / "grid_advanced_model.npy"
+        result_file = npy_dir / "grid_lowres.npy"
     else:
         result_file = pathlib.Path(result_file)
         result_file.parent.mkdir(parents=True, exist_ok=True)
@@ -190,10 +212,14 @@ def run_full_simulation(days, result_file=None):
     N_steps = int(days * 24 * 3600 / dt) + 1
     T_grid = np.zeros((N_steps, NLAT, NLON))
 
-    for i in tqdm(range(NLAT), desc="Progression (latitude)"):
-        for j in range(NLON):
-            lat, lon = LAT[i], LON[j]
+    # Désactiver temporairement les messages de lib.P_em_surf_evap
+    # pour ne pas inonder la console
+    with open(os.devnull, "w") as f_null:
+        for i in tqdm(range(NLAT), desc="Progression (latitude)"):
+            for j in range(NLON):
+                lat, lon = LAT[i], LON[j]
 
+<<<<<<< Updated upstream
             # 1. Albédo de surface
             albedo_mensuel_loc = monthly_albedo_sol[:, i, j]
             alb_sol_daily = f.lisser_donnees_annuelles(
@@ -239,6 +265,54 @@ def run_full_simulation(days, result_file=None):
                 T0,
             )
             T_grid[:, i, j] = T_series
+=======
+                albedo_mensuel_loc = monthly_albedo_sol[:, i, j]
+                alb_sol_daily = f.lisser_donnees_annuelles(
+                    albedo_mensuel_loc, sigma=15.0
+                )
+
+                alb_nuages_m = CERES_CLIM_DATA.sel(
+                    lat=lat, lon=lon, method="nearest"
+                ).to_numpy()
+                alb_nuages_daily = f.lisser_donnees_annuelles(
+                    alb_nuages_m, sigma=15.0
+                )
+
+                lat_idx_rzsm = min(
+                    np.abs(lat_bins[:-1] - lat).argmin(), RZSM_GRID.shape[0] - 1
+                )
+                lon_idx_rzsm = min(
+                    np.abs(lon_bins[:-1] - lon).argmin(), RZSM_GRID.shape[1] - 1
+                )
+                rzsm_val = RZSM_GRID[lat_idx_rzsm, lon_idx_rzsm]
+                cp_kj = (
+                    f.compute_cp_from_rzsm(np.array([rzsm_val]))[0]
+                    if not np.isnan(rzsm_val)
+                    else f.CP_SEC
+                )
+                C_const = (cp_kj * 1000.0) * f.RHO_BULK * EPAISSEUR_ACTIVE
+
+                # CORRIGÉ : Appel "silencieux" pour éviter de spammer la console
+                continent = f.continent_finder(lat, lon)
+                q_base = lib.Q_LATENT_CONTINENT.get(
+                    continent, lib.Q_LATENT_CONTINENT["Océan"]
+                )
+                if lat > 75:  # Correction Arctique
+                    q_base = 0.0
+
+                T0 = 288.15 - 30 * np.sin(np.radians(lat)) ** 2
+                T_series = integrate_point_temperature(
+                    days,
+                    np.radians(lat),
+                    lon,
+                    alb_sol_daily,
+                    alb_nuages_daily,
+                    C_const,
+                    q_base,
+                    T0,
+                )
+                T_grid[:, i, j] = T_series
+>>>>>>> Stashed changes
 
     print(f"Sauvegarde des résultats dans '{result_file}'...")
     np.save(result_file, T_grid)
@@ -249,7 +323,7 @@ def run_full_simulation(days, result_file=None):
 # Exécution principale et tracé interactif
 # ────────────────────────────────────────────────
 if __name__ == "__main__":
-    SIM_DAYS = 365  # Simuler une année complète pour la stabilisation
+    SIM_DAYS = 365
     T_grid_all_times = run_full_simulation(SIM_DAYS)
 
     plt.close("all")
@@ -266,34 +340,33 @@ if __name__ == "__main__":
 
     if proj is not None:
         im = ax.imshow(
-            initial_T_grid,
+            initial_T_grid - 273.15,  # Affichage en Celsius
             origin=_ORIGIN,
             extent=[-180, 180, -90, 90],
             transform=proj,
             cmap="inferno",
-            vmin=220,
-            vmax=320,
+            vmin=-50,
+            vmax=50,
         )
         if USE_CARTOPY:
             ax.add_feature(cfeature.COASTLINE, linewidth=0.5, edgecolor="k")
             ax.set_global()
     else:
         im = ax.imshow(
-            initial_T_grid,
+            initial_T_grid - 273.15,  # Affichage en Celsius
             origin=_ORIGIN,
             extent=[-180, 180, -90, 90],
             cmap="inferno",
             interpolation="nearest",
-            vmin=220,
-            vmax=320,
+            vmin=-50,
+            vmax=50,
         )
         ax.set_xlabel("Longitude")
         ax.set_ylabel("Latitude")
 
     cb = fig.colorbar(im, ax=ax, orientation="vertical", fraction=0.03, pad=0.04)
-    cb.set_label("Température de surface (K)")
+    cb.set_label("Température de surface (°C)")
 
-    # --- Curseurs interactifs pour le jour et l'heure ---
     plt.subplots_adjust(bottom=0.25)
     ax_slider_day = plt.axes([0.2, 0.1, 0.6, 0.03])
     slider_day = Slider(
@@ -315,12 +388,14 @@ if __name__ == "__main__":
         time_step_index = min(time_step_index, T_grid_all_times.shape[0] - 1)
 
         T_slice = T_grid_all_times[time_step_index, :, :]
-        im.set_data(T_slice)
-        ax.set_title(f"Température de surface (K) - Jour {day}, Heure {hour}")
+        im.set_data(T_slice - 273.15)  # Affichage en Celsius
+        ax.set_title(
+            f"Température de surface (°C) - Jour {day}, Heure {hour}"
+        )
         fig.canvas.draw_idle()
 
     slider_day.on_changed(_refresh)
     slider_hour.on_changed(_refresh)
-    _refresh(0)  # Initialiser la vue
+    _refresh(0)
 
     plt.show()

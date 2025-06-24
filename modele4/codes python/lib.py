@@ -56,15 +56,17 @@ def P_em_surf_thermal(T: float):
     return sigma * (T**4)
 
 
-def P_em_surf_evap(lat: float, lon: float) -> float:
+def P_em_surf_evap(lat: float, lon: float, verbose: bool = False) -> float:
     """Récupère la valeur de Q (W m-2) pour un point géographique."""
     continent = f.continent_finder(lat, lon)
     q_val = Q_LATENT_CONTINENT.get(continent, Q_LATENT_CONTINENT["Océan"])
-    print(
-        f"Coordonnées ({lat:.2f}, {lon:.2f}) détectées sur : "
-        f"{continent} (Q base = {q_val:.2f} W m⁻²)"
-    )
-    # Correction pour l'Arctique qui est un océan mais sans évaporation
+    
+    if verbose:
+        print(
+            f"Coordonnées ({lat:.2f}, {lon:.2f}) détectées sur : "
+            f"{continent} (Q base = {q_val:.2f} W m⁻²)"
+        )
+        
     if lat > 75:
         return 0.0
     return q_val
