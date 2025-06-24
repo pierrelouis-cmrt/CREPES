@@ -27,6 +27,7 @@ import pandas as pd
 import lib as lib 
 import fonctions as f
 
+
 # ---------- constantes physiques ----------
 constante_solaire = 1361.0  # W m-2
 sigma = 5.670374419e-8  # Stefan‑Boltzmann (SI)
@@ -54,8 +55,6 @@ except FileNotFoundError:
     print("ERREUR: Le dossier 'ressources/albedo' est introuvable.")
     print("La simulation ne peut pas continuer sans les données d'albédo.")
     exit()
-
-
 
 
 # ---------- RHS de l’EDO ----------
