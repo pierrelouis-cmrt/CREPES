@@ -18,6 +18,51 @@ from math import pi
 import pathlib
 import pandas as pd
 from scipy.ndimage import gaussian_filter1d
+import subprocess
+
+
+try:
+    import numpy
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", numpy])
+    import numpy
+
+try:
+    import matplotlib
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", matplotlib])
+    import matplotlib
+
+try:
+    import math
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", math])
+    import math
+
+try:
+    import pathlib
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", pathlib])
+    import pathlib
+
+try:
+    import pandas
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", pandas])
+    import pandas
+
+try:
+    import scipy
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", scipy])
+    import scipy
+
 
 # Bloc try/except pour vérifier si GeoPandas est installé
 try:

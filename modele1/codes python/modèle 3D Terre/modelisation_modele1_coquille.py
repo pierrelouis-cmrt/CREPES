@@ -16,14 +16,12 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", numpy])
     import numpy
 
-
 try:
     import shapefile
 except ImportError:
     print("OpenCV non trouvé. Installation en cours...")
     subprocess.check_call([sys.executable, "-m", "pip", "install", pyshp])
     import shapefile
-
 
 try:
     import matplotlib
@@ -32,14 +30,12 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", matplotlib])
     import matplotlib
 
-
 try:
     import pandas
 except ImportError:
     print("OpenCV non trouvé. Installation en cours...")
     subprocess.check_call([sys.executable, "-m", "pip", "install", pandas])
     import pandas
-
 
 
 # Charger les données SHP

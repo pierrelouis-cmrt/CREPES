@@ -21,7 +21,6 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", pyshp])
     import shapefile
 
-
 try:
     import matplotlib
 except ImportError:

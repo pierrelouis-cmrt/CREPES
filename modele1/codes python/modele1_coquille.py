@@ -9,7 +9,6 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", matplotlib])
     import matplotlib
 
-
 try:
     import numpy
 except ImportError:
