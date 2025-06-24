@@ -368,7 +368,11 @@ if __name__ == "__main__":
     lat_sim, lon_sim = 48.5, 2.3
     # Pour l'Amazonie (Amérique du Sud, Q élevé)
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     #lat_sim, lon_sim = -3.46, -62.21
+=======
+    # lat_sim, lon_sim = -3.46, -62.21
+>>>>>>> Stashed changes
 =======
     # lat_sim, lon_sim = -3.46, -62.21
 >>>>>>> Stashed changes
