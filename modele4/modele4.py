@@ -18,7 +18,6 @@
 #   → plus de décalage horaire explicite à gérer
 # ---------------------------------------------------------------
  
-
 import numpy as np
 import matplotlib.pyplot as plt
 from math import pi
@@ -55,6 +54,8 @@ except FileNotFoundError:
     print("ERREUR: Le dossier 'ressources/albedo' est introuvable.")
     print("La simulation ne peut pas continuer sans les données d'albédo.")
     exit()
+
+
 
 
 # ---------- RHS de l’EDO ----------
