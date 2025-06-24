@@ -1,38 +1,88 @@
 # lib.py
-
-# conventions:
-# lat: float (radian), 0 is at equator, -pi/2 is at south pole, and +pi/2 is at north pole
-# long: float (radian), 0 is at greenwich meridiant
-# t: float (s), 0 is at 00:00 (greenwich time) january 1, 365*24*60*60 is at the end of the year
+# ==============================================================================
+# BIBLIOTHÈQUE DE CONSTANTES ET FORMULES PHYSIQUES
+# Rôle : Centralise les constantes physiques universelles et les équations
+#        fondamentales du modèle de bilan énergétique (rayonnement, flux...).
+# ==============================================================================
 
 import numpy as np
 import fonctions as f
 
-# ---------- constantes physiques centralisées ----------
-constante_solaire = 1361.0  # W m-2
-sigma = 5.670374419e-8  # Stefan‑Boltzmann (SI)
-Tatm = 223.15  # atmosphère radiative (-50 °C)
-dt = 1800.0  # pas de temps : 30 min
-EPAISSEUR_ACTIVE = 0.5  # m
+# ---------- CONSTANTES PHYSIQUES CENTRALISÉES ----------
+constante_solaire = 1361.0  # Irradiance solaire au sommet de l'atmosphère [W m⁻²]
+sigma = 5.670374419e-8  # Constante de Stefan-Boltzmann [W m⁻² K⁻⁴]
+Tatm = 223.15  # Température effective de l'atmosphère pour le rayonnement IR [-50 °C, en K]
+dt = 1800.0  # Pas de temps de la simulation [s], soit 30 minutes
+EPAISSEUR_ACTIVE = 0.5  # Épaisseur de la couche de surface active [m]
 
 # ────────────────────────────────────────────────
-# Données de chaleur latente (Q) via évaporation
+# FORMULES DE FLUX RADIATIFS
 # ────────────────────────────────────────────────
+def P_inc_solar(lat_rad, day, hour, albedo_sol, albedo_nuages):
+    """
+    Calcule la puissance solaire nette absorbée par la surface.
 
-Delta_hvap = 2453000  # J/kg
-rho_eau = 1000  # kg/m^3
-Delta_t_an = 365.25 * 24 * 3600  # s/an
+    Prend en compte l'angle d'incidence, l'albédo des nuages (A1) et
+    l'albédo du sol (A2).
 
-# Taux d'évaporation en m/an, convertis en m/s
-evap_Eur = (0.49 / Delta_t_an)
-evap_Am_Nord = (0.47 / Delta_t_an)
-evap_Am_sud = (0.94 / Delta_t_an)
-evap_oceanie = (0.41 / Delta_t_an)
-evap_Afr = (0.58 / Delta_t_an)
-evap_Asi = (0.37 / Delta_t_an)
-evap_ocean = (1.40 / Delta_t_an)
+    IN:
+        lat_rad (float): Latitude [radians].
+        day (int): Jour de l'année (1-365).
+        hour (float): Heure solaire locale (0-24).
+        albedo_sol (float): Albédo de la surface (0-1).
+        albedo_nuages (float): Albédo des nuages (0-1).
 
-# Flux de chaleur latente en W/m^2 (J/s/m^2)
+    OUT:
+        float: Puissance solaire nette absorbée [W m⁻²].
+    """
+    phi_entrant = constante_solaire * f.cos_incidence(lat_rad, day, hour)
+    # Le flux traverse les nuages (1-A1) puis est réfléchi par le sol (1-A2)
+    return phi_entrant * (1 - albedo_nuages) * (1 - albedo_sol)
+
+
+def P_em_surf_thermal(T: float):
+    """
+    Calcule la puissance thermique émise par la surface (loi de Stefan-Boltzmann).
+
+    IN:
+        T (float): Température de la surface [K].
+
+    OUT:
+        float: Puissance thermique émise [W m⁻²].
+    """
+    return sigma * (T**4)
+
+
+def P_em_atm_thermal(T_atm: float):
+    """
+    Calcule la puissance thermique émise par l'atmosphère vers la surface.
+
+    IN:
+        T_atm (float): Température radiative de l'atmosphère [K].
+
+    OUT:
+        float: Puissance thermique reçue de l'atmosphère [W m⁻²].
+    """
+    return sigma * (T_atm**4)
+
+
+# ────────────────────────────────────────────────
+# DONNÉES DE CHALEUR LATENTE (Q) VIA ÉVAPORATION
+# ────────────────────────────────────────────────
+Delta_hvap = 2453000  # Enthalpie de vaporisation de l'eau [J kg⁻¹]
+rho_eau = 1000  # Masse volumique de l'eau [kg m⁻³]
+Delta_t_an = 365.25 * 24 * 3600  # Durée d'une année en secondes [s]
+
+# Taux d'évaporation moyens par continent [m an⁻¹], convertis en [m s⁻¹]
+evap_Eur = 0.49 / Delta_t_an
+evap_Am_Nord = 0.47 / Delta_t_an
+evap_Am_sud = 0.94 / Delta_t_an
+evap_oceanie = 0.41 / Delta_t_an
+evap_Afr = 0.58 / Delta_t_an
+evap_Asi = 0.37 / Delta_t_an
+evap_ocean = 1.40 / Delta_t_an
+
+# Flux de chaleur latente correspondants [W m⁻²]
 Q_LATENT_CONTINENT = {
     "Europe": Delta_hvap * rho_eau * evap_Eur,
     "North America": Delta_hvap * rho_eau * evap_Am_Nord,
@@ -41,54 +91,55 @@ Q_LATENT_CONTINENT = {
     "Africa": Delta_hvap * rho_eau * evap_Afr,
     "Asia": Delta_hvap * rho_eau * evap_Asi,
     "Océan": Delta_hvap * rho_eau * evap_ocean,
-    "Antarctica": 0.0,
+    "Antarctica": 0.0,  # Pas d'évaporation en Antarctique
 }
 
 
-def P_inc_solar(lat_rad, day, hour, albedo_sol, albedo_nuages):
-    """Puissance radiative du Soleil (W m-2) à la surface terrestre en prenant l'albédo en compte."""
-    phi_entrant = constante_solaire * f.cos_incidence(lat_rad, day, hour)
-    return phi_entrant * (1 - albedo_nuages) * (1 - albedo_sol)
-
-
-def P_em_surf_thermal(T: float):
-    """Puissance thermique émise par la surface (W m-2)."""
-    return sigma * (T**4)
-
-
 def P_em_surf_evap(lat: float, lon: float, verbose: bool = False) -> float:
-    """Récupère la valeur de Q (W m-2) pour un point géographique."""
+    """
+    Récupère la valeur du flux de chaleur latente (Q) pour un point géographique.
+
+    IN:
+        lat (float): Latitude [degrés].
+        lon (float): Longitude [degrés].
+        verbose (bool): Si True, affiche le continent détecté.
+
+    OUT:
+        float: Flux de chaleur latente de base [W m⁻²].
+    """
     continent = f.continent_finder(lat, lon)
     q_val = Q_LATENT_CONTINENT.get(continent, Q_LATENT_CONTINENT["Océan"])
-    
+
     if verbose:
         print(
             f"Coordonnées ({lat:.2f}, {lon:.2f}) détectées sur : "
             f"{continent} (Q base = {q_val:.2f} W m⁻²)"
         )
-        
+
+    # Heuristique pour les zones polaires glacées
     if lat > 75:
         return 0.0
     return q_val
 
 
-def P_em_atm_thermal(T_atm: float):
-    """Puissance thermique émise par l'atmosphère (W m-2)."""
-    return sigma * (T_atm**4)
-
-
-# Fonctions prévues pour un modèle plus complexe
+# ────────────────────────────────────────────────
+# FONCTIONS PRÉVUES POUR UN MODÈLE PLUS COMPLEXE (non utilisées ici)
+# ────────────────────────────────────────────────
 def P_em_surf_conv(lat: float, long: float, t: float):
+    """Flux de chaleur par convection (placeholder)."""
     return 0
 
 
 def P_abs_atm_solar(lat: float, long: float, t: float, Pinc: float):
+    """Absorption solaire par l'atmosphère (placeholder)."""
     return 0
 
 
 def P_em_atm_thermal_up(lat: float, long: float, t: float):
+    """Émission thermique de l'atmosphère vers le haut (placeholder)."""
     return 0
 
 
 def P_em_atm_thermal_down(lat: float, long: float, t: float):
+    """Émission thermique de l'atmosphère vers le bas (placeholder)."""
     return 0
