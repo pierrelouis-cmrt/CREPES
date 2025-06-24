@@ -11,8 +11,8 @@ pattern thickness = 0.3pt,
 pattern radius/.store in=\mcRadius, 
 pattern radius = 1pt}
 \makeatletter
-\pgfutil@ifundefined{pgf@pattern@name@_2eif9t7y7}{
-\pgfdeclarepatternformonly[\mcThickness,\mcSize]{_2eif9t7y7}
+\pgfutil@ifundefined{pgf@pattern@name@_2eu6kkmus}{
+\pgfdeclarepatternformonly[\mcThickness,\mcSize]{_2eu6kkmus}
 {\pgfqpoint{0pt}{-\mcThickness}}
 {\pgfpoint{\mcSize}{\mcSize}}
 {\pgfpoint{\mcSize}{\mcSize}}
@@ -27,7 +27,7 @@ pattern radius = 1pt}
 \tikzset{every picture/.style={line width=0.75pt}} %set default line width to 0.75pt        
 
 \begin{tikzpicture}[x=0.75pt,y=0.75pt,yscale=-1,xscale=1]
-%uncomment if require: \path (0,478); %set diagram left start at 0, and has height of 478
+%uncomment if require: \path (0,477); %set diagram left start at 0, and has height of 477
 
 %Shape: Cube [id:dp18964859541101564] 
 \draw   (200.55,231.08) -- (272.57,159.05) -- (447.27,159.05) -- (447.27,327.12) -- (375.25,399.14) -- (200.55,399.14) -- cycle ; \draw   (447.27,159.05) -- (375.25,231.08) -- (200.55,231.08) ; \draw   (375.25,231.08) -- (375.25,399.14) ;
@@ -50,15 +50,13 @@ pattern radius = 1pt}
 \draw    (181,400) -- (180.12,234.89) ;
 \draw [shift={(180.11,232.89)}, rotate = 89.7] [color={rgb, 255:red, 0; green, 0; blue, 0 }  ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
 %Shape: Parallelogram [id:dp09646812396527993] 
-\draw  [draw opacity=0][pattern=_2eif9t7y7,pattern size=16.950000000000003pt,pattern thickness=0.75pt,pattern radius=0pt, pattern color={rgb, 255:red, 192; green, 234; blue, 250}] (271.97,327.27) -- (446,327.27) -- (374.9,398.33) -- (200.87,398.33) -- cycle ;
+\draw  [draw opacity=0][pattern=_2eu6kkmus,pattern size=16.950000000000003pt,pattern thickness=0.75pt,pattern radius=0pt, pattern color={rgb, 255:red, 192; green, 234; blue, 250}] (271.97,327.27) -- (446,327.27) -- (374.9,398.33) -- (200.87,398.33) -- cycle ;
 %Straight Lines [id:da9354751179129625] 
 \draw [color={rgb, 255:red, 189; green, 16; blue, 224 }  ,draw opacity=1 ][line width=2.25]    (408,83.18) -- (407.89,177) ;
 \draw [shift={(407.89,181)}, rotate = 270.07] [color={rgb, 255:red, 189; green, 16; blue, 224 }  ,draw opacity=1 ][line width=2.25]    (17.49,-5.26) .. controls (11.12,-2.23) and (5.29,-0.48) .. (0,0) .. controls (5.29,0.48) and (11.12,2.23) .. (17.49,5.26)   ;
 %Straight Lines [id:da6393320190851794] 
 \draw [color={rgb, 255:red, 139; green, 87; blue, 42 }  ,draw opacity=1 ][line width=1.5]    (325.89,213) -- (326,124.18) ;
 \draw [shift={(326,121.18)}, rotate = 90.07] [color={rgb, 255:red, 139; green, 87; blue, 42 }  ,draw opacity=1 ][line width=1.5]    (14.21,-4.28) .. controls (9.04,-1.82) and (4.3,-0.39) .. (0,0) .. controls (4.3,0.39) and (9.04,1.82) .. (14.21,4.28)   ;
-%Image [id:dp43625183433979053] 
-\draw (202,111.9) node  {\includegraphics[width=76.5pt,height=37.35pt]{7c35c332-1025-43a6-b95f-1ef51e97d216.jpg}};
 %Straight Lines [id:da864754981576419] 
 \draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=4.5]    (210,129.8) -- (258,216) ;
 %Straight Lines [id:da7791113494130547] 
@@ -69,6 +67,8 @@ pattern radius = 1pt}
 %Straight Lines [id:da44181835953265336] 
 \draw [color={rgb, 255:red, 219; green, 142; blue, 11 }  ,draw opacity=1 ][line width=1.5]    (367.89,182) -- (368.98,26.17) ;
 \draw [shift={(369,23.18)}, rotate = 90.4] [color={rgb, 255:red, 219; green, 142; blue, 11 }  ,draw opacity=1 ][line width=1.5]    (14.21,-4.28) .. controls (9.04,-1.82) and (4.3,-0.39) .. (0,0) .. controls (4.3,0.39) and (9.04,1.82) .. (14.21,4.28)   ;
+%Shape: Polygon Curved [id:ds9166065741106091] 
+\draw   (206.5,88.8) .. controls (220.5,91.55) and (222,103.05) .. (222,105.55) .. controls (222,108.05) and (225.75,103.8) .. (230.75,106.8) .. controls (235.75,109.8) and (235.5,116.8) .. (235.25,117.55) .. controls (235,118.3) and (244,113.8) .. (247.5,122.3) .. controls (251,130.8) and (239.48,128.57) .. (236,128.8) .. controls (232.52,129.03) and (229.5,127.55) .. (224,129.55) .. controls (218.5,131.55) and (212.75,128.55) .. (210,129.8) .. controls (207.25,131.05) and (205.25,133.05) .. (199.25,131.8) .. controls (193.25,130.55) and (191,126.8) .. (186.75,129.55) .. controls (182.5,132.3) and (171,130.05) .. (169,131.05) .. controls (167,132.05) and (151.75,133.3) .. (151.75,125.55) .. controls (151.75,117.8) and (163.25,119.8) .. (162.5,118.8) .. controls (161.75,117.8) and (159.5,104.55) .. (170.75,99.8) .. controls (182,95.05) and (186,103.05) .. (186,101.3) .. controls (186,99.55) and (192.5,86.05) .. (206.5,88.8) -- cycle ;
 
 % Text Node
 \draw (155,305.89) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle h$};
@@ -80,7 +80,7 @@ pattern radius = 1pt}
 \draw (329.44,191.09) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle \textcolor[rgb]{0.55,0.34,0.16}{\sigma T}\textcolor[rgb]{0.55,0.34,0.16}{^{4}}$};
 % Text Node
 \draw (515.89,90) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle  \begin{array}{{>{\displaystyle}l}}
-\text{Atmosphère}\ \\
+Atmosphère\ \\
 T_{atm} =-50\degree C
 \end{array}$};
 % Text Node
@@ -96,7 +96,7 @@ T_{atm} =-50\degree C
 % Text Node
 \draw (237,83) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle \textcolor[rgb]{0.82,0.01,0.11}{(}\textcolor[rgb]{0.82,0.01,0.11}{1-A}\textcolor[rgb]{0.82,0.01,0.11}{_{1}}\textcolor[rgb]{0.82,0.01,0.11}{)}\textcolor[rgb]{0.82,0.01,0.11}{A}\textcolor[rgb]{0.82,0.01,0.11}{_{2}}\textcolor[rgb]{0.82,0.01,0.11}{\varphi }\textcolor[rgb]{0.82,0.01,0.11}{_{s}}$};
 % Text Node
-\draw (373,39.4) node [anchor=north west][inner sep=0.75pt]    {$\textcolor[rgb]{0.86,0.56,0.04}{Q}\textcolor[rgb]{0.86,0.56,0.04}{_{lat}}\textcolor[rgb]{0.86,0.56,0.04}{=constante\ en\ W/m}\textcolor[rgb]{0.86,0.56,0.04}{^{2}}$};
+\draw (373,39.4) node [anchor=north west][inner sep=0.75pt]    {$\textcolor[rgb]{0.86,0.56,0.04}{\upvarphi _{lat}}\textcolor[rgb]{0.86,0.56,0.04}{=constante\ en\ W/m}\textcolor[rgb]{0.86,0.56,0.04}{^{2}}$};
 
 
 \end{tikzpicture}
