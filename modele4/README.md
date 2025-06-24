@@ -2,11 +2,8 @@
 
 Récapitulatif du dossier `modèle 4`
 
-## Dossier _figures_
 
-Le dossier _figures_ contient l'ensemble des graphiques générés par les programmes _python_ du dossier `modèle 4`.
-
-## Codes _python_
+## Dossier _codes python_
 
 - Fichier `fonctions.py` : gère les fonctions liées à la modélisation climatique simplifiée.
 - Fichier `lib.py` : Module contenant l'ensemble des fonctions calculant l'ensemble des puissances thermiques intervenant dans nos modèles.
@@ -15,6 +12,12 @@ Le dossier _figures_ contient l'ensemble des graphiques générés par les progr
 - Fichier `modele_planisphere_haute_res.py` : Idem qu'au dessus (60x60 carreaux)
 - Fichier `modele_sphere_basse_res.py` : Affichage de la courbe sur une sphère (30x30)
 - Fichier `modele_sphere_haute_res.py` : Idem (60x60)
+
+
+## Dossier _figures_
+
+Le dossier _figures_ contient l'ensemble des graphiques générés par les programmes _python_ du dossier `modèle 4`.
+
 
 ## Fichiers
 ### Rapport

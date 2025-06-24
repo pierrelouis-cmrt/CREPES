@@ -6,7 +6,8 @@ Récapitulatif du dossier `ressources`
 
 ## Dossier _Cp_humidity_
 
-- `average_rzsm_tout.csv` : découpe la Terre en 
+- `average_rzsm_tout.csv` : **découpe la Terre en petites surfaces** de 0,25° de latitude et de longitude et y associe une **valeur de l'humidité**
+- `ZZ_cp.py` : calcule la valeur de la **capacité thermique du sol** en fonction de la valeur de l'humidité
 
 
 ## Dossier _albedo_
