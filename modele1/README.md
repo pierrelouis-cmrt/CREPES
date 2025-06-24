@@ -14,10 +14,11 @@ Le dossier _figures_ contient :
 
 - `modele1_coquille.py` : graphique de la température de la Terre en fonction du temps pour une coquille d'eau à intérieur vide dans le vide
 
-### Dossier _modèle 3D Terre_
+    #### Dossier _modèle 3D Terre_
 
-- `fonctions_modele1_coquille.py` : fonctions utiles pour `modelisation_modele1_coquille.py`
-- `modelisation_modele1_coquille.py` : représentation de la température de la Terre en tant que coquille d'eau
+    - `fonctions_modele1_coquille.py` : fonctions utiles pour `modelisation_modele1_coquille.py`
+    
+    - `modelisation_modele1_coquille.py` : représentation de la température de la Terre en tant que coquille d'eau
 
 ## Fichiers
 ### Rapport
