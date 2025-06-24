@@ -54,7 +54,7 @@ def P_em_surf_thermal(T: float):
 def P_em_surf_conv(lat: float, long: float, t: float):
     return 0
 
-
+#--- Q (chaleur latente) ---
 def P_em_surf_evap(lat: float, lon: float) -> float:
     """Récupère la valeur de Q (W m-2) pour un point géographique .
     Latitude : en degrés 
@@ -74,6 +74,24 @@ def P_em_surf_evap(lat: float, lon: float) -> float:
         f"{continent} (Q = {q_val} W m⁻²)"
     )
     return q_val
+
+def get_daily_q_latent(
+    q_base: float, lat_deg: float, day_of_year: int
+) -> float:
+    """
+    Calcule le flux de chaleur latente pour un jour donné en utilisant
+    une fonction cosinus continue pour la variation saisonnière.
+    """
+    if q_base == 0 or q_base == Q_CONTINENT["Océan"]:
+        return q_base
+
+    amplitude = 0.4 * q_base
+    day_phase_shift = 196 if lat_deg >= 0 else 15
+
+    variation_saisonniere = amplitude * np.cos(
+        2 * pi * (day_of_year - day_phase_shift) / 365
+    )
+    return q_base + variation_saisonniere
 
 
 

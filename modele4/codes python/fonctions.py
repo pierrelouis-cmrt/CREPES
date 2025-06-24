@@ -7,6 +7,8 @@ Ce script regroupe plusieurs fonctions liées à la modélisation climatique sim
 - Détection du continent correspondant à des coordonnées géographiques via un shapefile (optionnel avec GeoPandas).
 - Attribution d’une puissance latente (Q) en fonction du continent détecté.
 - Simulation d’une série mensuelle d’albédo des nuages selon la latitude.
+- Détermine la capacité thermique massique (c_p) et la masse volumique (rho) d'une surface en se basant sur son albédo comme proxy.
+
 
 Ce module peut servir de base à une modélisation énergétique de la surface terrestre à l’échelle globale.
 """
@@ -18,6 +20,17 @@ from math import pi
 import pathlib
 import pandas as pd
 from scipy.ndimage import gaussian_filter1d
+
+# ---------- constantes physiques ----------
+constante_solaire = 1361.0  # W m-2
+sigma = 5.670374419e-8  # Stefan‑Boltzmann (SI)
+Tatm = 223.15  # atmosphère radiative (‑50 °C)
+dt = 1800.0  # pas de temps : 30 min
+# SUPPRIMÉ : La masse surfacique est maintenant calculée dynamiquement.
+# MASSE_SURFACIQUE_ACTIVE = 4.0e2  # kg m-2
+# NOUVEAU : Épaisseur de la couche de sol active pour le calcul de C.
+EPAISSEUR_ACTIVE = 0.2  # m (20 cm)
+
 
 # Bloc try/except pour vérifier si GeoPandas est installé
 try:
@@ -72,9 +85,16 @@ def capacite_thermique_massique(albedo: float) -> float:
 
 # Applique un lissage gaussien à des données mensuelles étendues en journalières
 def lisser_donnees_annuelles(valeurs_mensuelles: np.ndarray, sigma: float):
-    jours_par_mois = np.array([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
-    valeurs_journalieres_discontinues = np.repeat(valeurs_mensuelles, jours_par_mois)
-    return gaussian_filter1d(valeurs_journalieres_discontinues, sigma=sigma, mode="wrap")
+    jours_par_mois = np.array(
+        [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    )
+    valeurs_journalieres_discontinues = np.repeat(
+        valeurs_mensuelles, jours_par_mois
+    )
+    return gaussian_filter1d(
+        valeurs_journalieres_discontinues, sigma=sigma, mode="wrap"
+    )
+
 
 # Charge les données d’albédo mensuel depuis une série de fichiers CSV
 def load_albedo_series(
@@ -147,3 +167,56 @@ def load_monthly_cloud_albedo_mock(lat_deg: float, lon_deg: float):
     mois = np.arange(12)
     variation_saisonniere = amplitude * np.cos(2 * pi * (mois - 0.5) / 12)
     return avg_cloud_albedo - variation_saisonniere
+
+
+
+# ────────────────────────────────────────────────
+# MODIFIÉ - Capacité thermique et lissage
+# ────────────────────────────────────────────────
+
+
+# MODIFIÉ : La fonction retourne maintenant c_p et rho
+def proprietes_thermiques_surface(
+    albedo: float,
+) -> tuple[float, float]:
+    """
+    Détermine la capacité thermique massique (c_p) et la masse volumique (rho)
+    d'une surface en se basant sur son albédo comme proxy.
+
+    Retourne:
+        tuple[float, float]: (capacité massique [kJ kg-1 K-1], densité [kg m-3])
+    """
+    if np.isnan(albedo):
+        return 1.0, 1500.0  # Valeurs par défaut pour la terre
+
+    _REF_ALBEDO = {
+        "ice": 0.60,
+        "water": 0.10,
+        "snow": 0.80,
+        "desert": 0.35,
+        "forest": 0.20,
+        "land": 0.15,
+    }
+    # Capacité thermique massique en kJ kg-1 K-1
+    _CAPACITY_BY_TYPE = {
+        "ice": 2.0,
+        "water": 4.18,
+        "snow": 2.0,
+        "desert": 0.8,
+        "forest": 1.0,
+        "land": 1.0,
+    }
+    # NOUVEAU : Masse volumique (densité) en kg m-3
+    _DENSITY_BY_TYPE = {
+        "ice": 917.0,
+        "water": 1000.0,
+        "snow": 300.0,  # Neige tassée
+        "desert": 1600.0,  # Sable sec
+        "forest": 1300.0,  # Sol forestier
+        "land": 1500.0,  # Sol générique
+    }
+
+    surf = min(_REF_ALBEDO, key=lambda k: abs(albedo - _REF_ALBEDO[k]))
+    c_p = _CAPACITY_BY_TYPE[surf]
+    rho = _DENSITY_BY_TYPE[surf]
+    return c_p, rho
