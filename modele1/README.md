@@ -17,8 +17,8 @@ Le dossier _figures_ contient :
     #### Dossier _modèle 3D Terre_
 
     - `fonctions_modele1_coquille.py` : fonctions utiles pour `modelisation_modele1_coquille.py`
-    
-    - `modelisation_modele1_coquille.py` : représentation de la température de la Terre en tant que coquille d'eau
+
+    - `modelisation_modele1_coquille.py` : sphère 3D avec représentation de la température de la Terre en tant que coquille d'eau selon les mois et l'heure
 
 ## Fichiers
 ### Rapport
