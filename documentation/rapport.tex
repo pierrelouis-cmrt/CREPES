@@ -5,6 +5,7 @@
 \usepackage[T1]{fontenc}
 \usepackage{graphicx} 
 \usepackage{caption}
+\usepackage{hyperref}
 \usepackage{setspace} % Espacement des lignes
 \usepackage{tikz}
 \usepackage{soul}
@@ -23,28 +24,62 @@
 \begin{document}
 \begin{titlepage}
     \centering
-    \vspace*{3cm}
-    {\Huge \textbf{Document de Synthèse}\par}
-    \vspace{2cm}
-    {\Large Les Carcajous Callipyges\par}
+    % Logo en haut, optionnel
+    % \includegraphics[width=0.25\textwidth]{chemin/vers/logo.png}\par\vspace{1cm}
+
+    \vspace*{2cm}
+    
+    {\LARGE \textsc{CapECL}}\\[1.5cm] % Titre secondaire
+    
+    {\Huge \bfseries Document de Synthèse}\\[0.5cm]
+    {\Large \itshape}\\[2cm] % Sous-titre stylisé
+
+    \rule{\textwidth}{0.4pt}\\[0.4cm]
+    {\large Projet Climat}\\[0.2cm]
+    {\large  2024–2025}\\
+    \rule{\textwidth}{0.4pt}\\[2cm]
+    
     \vfill
-    {\large 2025\par}
+    
+    {\large Réalisé par :}\\
+    {\large  Les Carcajous Callipyges}\\[0.5cm]
+
+    {\large }\\
+    {\large Taha Thaïs Candice Léna Chloé Pierre-Louis Camille Romain Elise Melvin Elsa}\\[1cm]
+
+    \vfill
+
 \end{titlepage}
+
 \tableofcontents
 \newpage
 \addcontentsline{toc}{section}{Introduction}
-{\LARGE \textbf{Introduction}}
+{\LARGE \textbf{Introduction\\}}
 
 
-\begin{center}
+Ce projet a pour but de modéliser de manière dynamique l'évolution de la température terrestre au cours du temps et de l'espace. L'idée est simple : partir d’une vision très simplifiée de notre planète, puis ajouter progressivement des éléments pour se rapprocher d’une description plus réaliste.
+
+Quatre modèles ont été développés, chacun apportant une amélioration supplémentaire : 
+
+\begin{itemize}
+    \item \hyperref[sec:modèle 1]{\textbf{Modèle 1}} : La Terre est vue comme une simple sphère (ou coquille) d’eau dans le vide, sans atmosphère ni apport solaire. Elle perd sa chaleur uniquement par rayonnement.
     
-\end{center}
+    \item \hyperref[sec:modèle 2]{\textbf{Modèle 2}} : Une atmosphère est introduite. Elle permet à la Terre d’échanger de la chaleur avec l’extérieur par conduction thermique.
+    
+    \item \hyperref[sec:modèle 3]{\textbf{Modèle 3}} : L’intérieur de la coquille n’est plus vide. On considère donc  les échanges thermiques internes entre le centre de la Terre et sa surface.
+    
+    \item \hyperref[sec:modèle 4]{\textbf{Modèle 4}} : C’est le modèle le plus complet. Il prend en compte la géographie réelle (continents, océans), l’albédo du sol et des nuages, la chaleur latente, les capacités thermiques variables selon les régions, et des données climatiques réelles.
+\end{itemize}
+
+Les schémas ci-dessous montrent l’évolution des modèles :
+
+
+
    \includegraphics[width=1\textwidth, angle=0]{evolution_projet_1.pdf}
-\end{center}
+
 
 \\
 \\
-
 \begin{center}
    \includegraphics[width=1\textwidth, angle=0]{evolution_projet_2.pdf}
 \end{center}
@@ -52,6 +87,7 @@
 \newpage
   
 \section{Modèle 1: }
+\label{sec:modèle 1}
 \subsection{Boule d’eau rayonnante dans le vide}
 \addcontentsline{toc}{subsubsection}{Hypothèses} 
 \textbf{Hypothèses}
@@ -86,14 +122,13 @@ $\rightarrow$ la terre perd de la température par \textbf{rayonnement}
 \vspace{1cm}
 
 \addcontentsline{toc}{subsubsection}{Equation}
-\textbf{Equation}
-\[   P = \sigma T^4 \cdot S
-\]
+\textbf{Équation}
 
-\[    C \, \frac{dT}{dt} = - \sigma T^4 \,  \cdot S
-\]
-
-\[\frac{dT}{dt} = - \frac{4 \pi R_T^2 \sigma T^4}{C}\]  
+\begin{align*}
+P &= \sigma T^4 \cdot S \\
+C \, \frac{dT}{dt} &= - \sigma T^4 \cdot S \\
+\frac{dT}{dt} &= \boxed{ - \frac{4 \pi R_T^2 \sigma T^4}{C} }
+\end{align*}
 
 Avec 
 \(S= 4\pi r^2\)
@@ -103,11 +138,14 @@ Avec
 \vspace{0.5cm} 
 \addcontentsline{toc}{subsubsection}{Solution}
 \textbf{Solution} 
+\\
 
-\[
+\boxed{
 T(t) = \left( \frac{C}{C/T_i^3 + 12\pi R^2 \sigma t} \right)^{1/3} 
-= \frac{T_i}{\left(1 + 3k T_i^3 t \right)^{1/3}}
-\]
+= \frac{T_i}{\left(1 + 3k T_i^3 t \right)^{1/3}}}
+\\
+\vspace{0,2cm}
+\\
 avec \(k=\frac{4\pi R_T^2 \sigma}{C}\)  
 et \(C=c_{\text{m eau}}\times m=4{,}60 \cdot 10^{27} \, \mathrm{J \cdot K^{-1}}\)
 
@@ -160,7 +198,7 @@ m &= \rho_{\text{eau}} \left( \frac{4}{3} \pi (R_T + dr)^3 - \frac{4}{3} \pi R_T
 C &= c_{\text{m,eau}} \cdot \rho_{\text{eau}} \cdot 4\pi R_T^2 \cdot dr \\
 &= 4{,}31 \cdot 10^{20} \ \text{J} \cdot \text{K}^{-1} \\
 \\
-k &= \frac{\sigma }{c_{\text{eau}} \cdot \rho_{\text{eau}} \cdot dr}
+k &= \boxed{\frac{\sigma }{c_{\text{eau}} \cdot \rho_{\text{eau}} \cdot dr}}
 \end{align*}
 \vspace{0.5cm}
 \subsubsection*{Modélisation graphique}   
@@ -174,7 +212,7 @@ k &= \frac{\sigma }{c_{\text{eau}} \cdot \rho_{\text{eau}} \cdot dr}
 
 \begin{itemize}
     \item Pas d’atmosphère, pas de rayonnement thermique reçu du Soleil, uniquement un transfert thermique émis par rayonnement.
-    \item La Terre est assimilée à de d’eau.
+    \item La Terre est assimilée à de l’eau.
     \item Température de la Terre subjective.
     \item Température du vide subjective.
     \item Épaisseur de la coquille arbitraire.
@@ -183,14 +221,15 @@ k &= \frac{\sigma }{c_{\text{eau}} \cdot \rho_{\text{eau}} \cdot dr}
 
 \newpage
 \section{Modèle 2 : Terre avec atmosphère conductrice}
+\label{sec:modèle 2}
 \subsection{Boule d’eau avec atmosphère conductrice }
 \addcontentsline{toc}{subsubsection}{Hypothèses}
 \textbf{Hypothèses}
 \begin{itemize}
-    \item Terre assimilée à boule d'eau, de température \(T_{\text{Terre}}\) 
-    \item  Atmosphère avec une température uniforme T 
+    \item Terre assimilée à une \textbf{boule d'eau}, de température \(T_{\text{Terre}}\) 
+    \item  \textbf{Atmosphère} avec une température uniforme T 
     \item  Sans puissance solaire reçue  
-    \item  Ignorance de la convection  
+    \item  Sans convection  
     \item \(c_m=c_{\text{m,Terre}}\sim c_{\text{m,eau}}\) 
     \item $T(t=0) = T_i$ \ \ \
 $T(t \to +\infty) = T_0$
@@ -198,15 +237,14 @@ $T(t \to +\infty) = T_0$
    
 \end{itemize}
 \vspace{0.5cm}
-\subsubsection*{Schéma} 
+\subsubsection*{Schéma :} 
 \noindent\textcolor{gray}{\rule{\linewidth}{0.4pt}}
 
-    
 \begin{center}
   \input{modele2/figures/Schéma mathcha modèle 2.1.txt}
 \end{center}
 \noindent\textcolor{gray}{\rule{\linewidth}{0.4pt}}
-
+\vspace{0.5cm}
 
 \addcontentsline{toc}{subsubsection}{Équations de transfert thermique}
 \textbf{Équations de transfert thermique}
@@ -214,12 +252,14 @@ $T(t \to +\infty) = T_0$
 On applique le premier principe au système \{ boule d'eau  \}
 
 \begin{align*}
-\delta Q &= C\, dT = -P_{\text{th,cond}} \cdot dt \\
-\Rightarrow -\int \int \vec{j_{\text{th,cond}}}\, \vec{dS}\,dt = C\, dT \\
-\Rightarrow -\int_{\theta=0}^\pi \int_{\phi=0}^{2\pi} h(T - T_0) \vec{e_{\text{r}}}\cdot r^2 \sin\theta\, d\theta\, d\varphi \vec{e_{\text{r}}}\, dt &=  C\, dT  \\
+\delta Q = C\, dT &= -P_{\text{th,cond}} \cdot dt \\
+\Rightarrow -\int \int \vec{j_{\text{th,cond}}}\, \vec{dS}\,dt &= C\, dT \\
+\Rightarrow -\int_{\theta=0}^\pi \int_{\phi=0}^{2\pi} h(T - T_0) \vec{e_{\text{r}}}\cdot r^2 \sin\theta\, d\theta\, d\varphi \vec{e_{\text{r}}}\, dt &= C\, dT \\
 \Rightarrow -h(T - T_0) \cdot 4\pi\, dt &= C\, dT \\
-\Rightarrow -T + T_0 = \frac{C}{h 4\pi} \frac{dT}{dt} \Rightarrow \frac{dT}{dt} &= -\frac{4\pi h}{C}(T - T_0)
+\Rightarrow -T + T_0 &= \frac{C}{h 4\pi} \frac{dT}{dt} \\
+\Rightarrow \frac{dT}{dt} &= -\frac{4\pi h}{C}(T - T_0)
 \end{align*}
+
 
 \vspace{0.5cm}
 
@@ -239,7 +279,7 @@ $T(t) = T_0 + (T_i - T_0)e^{-kt}$ \quad avec $k = \frac{4\pi h}{C}$
 \subsection{Coquille d’eau avec atmosphère conductrice }
 \addcontentsline{toc}{subsubsection}{Hypothèses}
 \begin{itemize}
-    \item On garde les hypothèses précédentes, en ajoutant l'atmosphère \end{itemize}
+    \item On garde les hypothèses précédentes, en ajoutant l'\textbf{atmosphère} \end{itemize}
 \vspace{1cm}
 \addcontentsline{toc}{subsubsection}{Schéma}
 \textbf{Schéma}
@@ -267,28 +307,29 @@ $T(t) = T_0 + (T_i - T_0)e^{-kt}$ \quad avec $k = \frac{4\pi h}{C}$
     \item Épaisseur de la coquille.
     \item Prise en compte de l’atmosphère donc utilisation de la loi de Newton :
     \begin{itemize}
-        \item MAIS problème de définition de la couche limite puisqu’on ne souhaite pas prendre en compte la convection pour le moment.
+        \item problème de définition de la couche limite : convection non prise en compte
     \end{itemize}
-    \item Dans les codes \texttt{modele2\_coquille.py} et \texttt{modele2\_boule.py}, on a posé $h = \lambda_{\text{air}} / \delta$ avec $\lambda_{\text{air}} = 0{,}027 \, \mathrm{W/(K \cdot m)}$.
+    \item Dans les codes {\href{https://github.com/pierrelouis-cmrt/CREPES/blob/main/modele2/codes%20python/modele2_coquille.py}{modele2\_coquille.py}} et {\href{https://github.com/pierrelouis-cmrt/CREPES/blob/main/modele2/codes%20python/modele2_boule.py}{modele2\_boule.py}}, on a posé $h = \lambda_{\text{air}} / \delta$ avec $\lambda_{\text{air}} = 0{,}027 \, \mathrm{W/(K \cdot m)}$.
     \begin{itemize}
-        \item On a pris $\delta = 100\, \mathrm{km}$ comme longueur de la couche limite pour ne pas se préoccuper de la convection avant la thermosphère (85 km – 600 km).
-        \item Mais cette hypothèse ne semble pas pertinente, puisque la loi de Newton est adaptée à un modèle conducto-convectif.
-        \item On peut donc prendre un $\delta$ plus raisonnable, de l’ordre de 50 cm.
+        \item $\delta = 100\, \mathrm{km}$ : longueur de la couche limite surestimée
+        
     \end{itemize}
     \item Problème de définition de $T_0$ :
     \begin{itemize}
-        \item Si on suit notre modèle, ce serait la température au-delà de la thermosphère.
-        \item Or on a posé $T_0 = 273\, \mathrm{K}$ dans nos codes Python.
+        \item température au-delà de la thermosphère (or on a posé $T_0 = 273\, \mathrm{K}$ dans nos codes Python).
     \end{itemize}
 \end{itemize}
 
 \newpage
 \section{Modèle 3 : Coquille d’eau avec intérieur conducteur }
-{\LARGE \textbf{Conduction interne + rayonnement externe}}
+\label{sec:modèle 3}
+{\Large \textbf{Conduction interne + rayonnement externe}}
 \addcontentsline{toc}{subsubsection}{Hypothèses}
+
+\vspace{0.5cm}
 \textbf{Hypothèses}
 \begin{itemize}
-    \item Terre assimilée à une coquille d'eau avec intérieur non vide 
+    \item Terre assimilée à une \textbf{coquille d'eau} avec intérieur \textbf{non vide}
     \item  conduction entre centre de la terre et croûte (\(P_r\))
     \item  conduction entre croûte et air (\(P_{th,cond}\))
     \item  rayonnement de la croûte (\(P_{th,ray}\))
@@ -298,8 +339,9 @@ $T(t \to +\infty) = T_0$
      
 \end{itemize}
 
-\vspace{0.5cm}
+
 \addcontentsline{toc}{subsubsection}{Schéma}
+
 \textbf{Schéma}
 \\
 \noindent\textcolor{gray}{\rule{\linewidth}{0.4pt}}
@@ -309,8 +351,9 @@ $T(t \to +\infty) = T_0$
   \input{modele3/figures/Schéma modèle 3 coquille.txt}
 \end{center}
 \noindent\textcolor{gray}{\rule{\linewidth}{0.4pt}}
-
+\vspace{0.5cm}
 \addcontentsline{toc}{subsubsection}{Équations de transfert thermique}
+
 \textbf{Équations de transfert thermique}
 
 On applique le premier principe au système \{ coquille non vide  \}
@@ -328,13 +371,14 @@ On applique le premier principe au système \{ coquille non vide  \}
 \medskip
 
 Or au \(1^{er}\) ordre en \(dr\), \(r+dr\approx r\) :
+\\
 
-\[
+\boxed{
 -4\pi\,h\bigl(T(r)-T_0\bigr)
 \;-\;4\pi\,r^2\,\sigma\,T(r)^4
 \;-\;4\pi\,r^2\,\lambda\,\frac{\partial T}{\partial r}(r)
-\;=\;C\,\frac{dT}{dt}.
-\]
+\;=\;C\,\frac{dT}{dt}}
+
 
 \medskip
 
@@ -359,21 +403,28 @@ P_{r}
 \vspace{1cm}
 \textbf{Critiques du modèle :}
 \begin{itemize}
-    \item La convection n’est pas prise en compte.
+    \item Sans convection
     \item dr doit être choisi de façon à ce que la température ne varie pas significativement.
     \item Problème de définition de $T_0$ :
     \begin{itemize}
-        \item Si on suit notre modèle, ce serait la température au-delà de la thermosphère.
-        \item Or on a posé $T_0 = 273\, \mathrm{K}$ dans nos codes Python. 
+        \item température au-delà de la thermosphère (or on a posé $T_0 = 273\, \mathrm{K}$ dans nos codes Python).
     
     \end{itemize}
 \end{itemize}
-\section{Modèle 4:Terre réaliste avec hétérogénéités }
+
+\newpage
+
+\section{Modèle 4: Terre réaliste avec hétérogénéités }
+\label{sec:modèle 4}
+{\Large \textbf{Terre hétérogène avec rayonnement et albédo}}
+
+\vspace{0.5cm} 
 \addcontentsline{toc}{subsubsection}{Hypothèses}
 \textbf{Hypothèses}
 
+
 \begin{itemize}
-    \item Terre modélisée avec les continents, les mers, les océans 
+    \item Terre modélisée avec les \textbf{continents}, les \textbf{mers}, les \textbf{océans}
     \item  On néglige: 
     \begin{itemize}
         \item convection dans l'air
@@ -381,12 +432,12 @@ P_{r}
         \item la conduction entre croûte et air (\(P_{th,cond}\))
     \end{itemize} 
     \item  rayonnement de la croûte (\(P_{th,ray}\))
-    \item On considère la température de l'atmosphère constante dans l'espace et  au cours du temps 
-    \item On prend en compte l'albédo du sol en fonction de la position et du mois de l'année 
-    \item On prend en compte l'albedo des nuages.
-    \item la capacité thermique dépend de la localisation
-    \item On considère $T(t=0) = T_i$ \  indépendant de l'espace  
-    \item On prend en compte la chaleur latente considérée avec des constantes propres à chaque continent\\
+    \item Température de l'atmosphère constante dans l'espace et au cours du temps 
+    \item Prise en compte de l'albédo du sol en fonction de la position et du mois de l'année 
+    \item Albédo des nuages.
+    \item Capacité thermique selon la localisation
+    \item $T(t=0) = T_i$ \  indépendant de l'espace  
+    \item Chaleur latente considérée avec des constantes propres à chaque continent\\
     
     
     
@@ -395,7 +446,10 @@ P_{r}
 
 
 \addcontentsline{toc}{subsubsection}{Schéma}
+
 \textbf{Schéma}
+\\
+
 \noindent\textcolor{gray}{\rule{\linewidth}{0.4pt}}
 
     
@@ -403,15 +457,16 @@ P_{r}
   \input{modele4/figures/Schéma modèle 4.txt }
 \end{center}
 \noindent\textcolor{gray}{\rule{\linewidth}{0.4pt}}
-\vspace{0.2cm}
+\vspace{0.5cm}
 \addcontentsline{toc}{subsubsection}{Équations de transfert thermique}
+\\
 \textbf{Équations de transfert thermique}
 
 
-On applique le premier principe appliqué au système \{ Un pavé de hauteur h, de surface S de la Terre \}
+On applique le premier principe appliqué au système \{ un \textbf{pavé} de la Terre, de \textbf{hauteur h} et de \textbf{surface S} \}
 \ \ 
 \[
-c_s \frac{dT}{dt} =(1-A_1)(1-A_2)\varphi_s-\sigma T^4+\sigma T_{atm}^4-\varphi_{lat}
+\boxed{c_s \frac{dT}{dt} =(1-A_1)(1-A_2)\varphi_s-\sigma T^4+\sigma T_{atm}^4-\varphi_{lat}}
 \]
 Avec
 \begin{itemize}
@@ -429,34 +484,39 @@ Avec
 
 
 \vspace{0.5cm}
-\addcontentsline{toc}{subsubsection}{Tabulation de l'albédo de surface en fonction de la position}
+\addcontentsline{toc}{subsubsection}{Tabulation de l'albédo de surface en fonction de la position :}
+\\
+\\
 \textbf{Tabulation de l'albédo de surface en fonction de la position}
 
-Les données ont été récupérées sur les dossiers CSV du projet (groupe B)  de l'année précédente. Il s'agit de moyennes mensuelles tabulées pour chaque position sur Terre (latitude longitude)
+\begin{itemize}
+    \item Données récupérées sur les dossiers CSV du projet (groupe B) de l'année précédente.
+    \item Moyennes mensuelles tabulées pour chaque position sur Terre (latitude, longitude).
+\end{itemize}
+\\
+\\
 \addcontentsline{toc}{subsubsection}{Tabulation de l'albédo des nuages}
 \textbf{Tabulation de l'albédo des nuages}
 
-Obtenu par différence de l'albédo de la terre lors de ciel clair et ciel nuageux.
-Moyennes mensuelles tabulées sur 1 an (1 janvier 2024 à 1 janvier 2025)
+\begin{itemize}
+  \item Obtenue par différence de l'albédo de la Terre lors de ciel clair et ciel nuageux (moyennes mensuelles tabulées sur 1 an, du 1er janvier 2024 au 1er janvier 2025).
+\\
+{Source} \href{https://ceres-tool.larc.nasa.gov/ord-tool/jsp/EBAFTOA421Selection.jsp}{ici}, code associé \href{https://github.com/pierrelouis-cmrt/CREPES/blob/main/archive/para_spaciaux/albedo/albedo_nuages_jour.py}{là}
+\end{itemize}
 \\
 \\
-Source \url{https://ceres-tool.larc.nasa.gov/ord-tool/jsp/EBAFTOA421Selection.jsp}
 \\
 \\
-Lien du code : \url{https://github.com/pierrelouis-cmrt/CREPES/blob/main/archive/para_spaciaux/albedo/albedo_nuages_jour.py}
-
 \addcontentsline{toc}{subsubsection}{Calculs capacités calorifiques en fonction de la composition des surfaces}
 \textbf{Calculs capacités calorifiques en fonction de la composition des surfaces}
+\\
+\\
+Données récoltées \href{https://data.catds.fr/cpdc/Land_products/GRIDDED/L4SM/OPER/}{ici} et code associé \href{https://github.com/pierrelouis-cmrt/CREPES/blob/main/ressources/Cp_humidity/ZZ_cp.py}{là}.
 
-Données récoltées sur : 
-\url{https://data.catds.fr/cpdc/Land_products/GRIDDED/L4SM/OPER/}
-\\
-\\
-Lien du code: \url{https://github.com/pierrelouis-cmrt/CREPES/blob/main/ressources/Cp_humidity/ZZ_cp.py}
 
 \begin{itemize}
     \item Moyenne faite sur une période de 1 an grâce à 12 données récoltées le matin et 12 données récoltées le soir 
-    \item Les 12 données ont été prise à des périodes différentes sur l'année 
+    \item Les 12 données ont été prises à des périodes différentes de l'année 
     \item La masse volumique de la Terre est approximée constante 
     \item Pour le \text{Groenland} et l’Antarctique  
 \end{itemize}
@@ -482,11 +542,16 @@ $\rho_w$ (eau) & \SI{1000}{\kilogram\per\cubic\metre} \\
 \vspace{1cm}
 \end{table}
 
-Détail du calcul de \( c_s \) :\\
+\begin{itemize}
+    \item Planisphère représentant les capacités calorifiques: 
+\end{itemize}
+\includegraphics[width=1.0\linewidth]{modele4/figures/c_humidite.png}
+
+\textbf{Détail du calcul de \( c_s \) :}\\
 \begin{align*}
 c_s &= \frac{C}{S} \\
 \text{Or } S &= \frac{m}{\rho h} \\
-\text{Donc } c_s &= \frac{C \rho h}{m} = c_p  \rho  h
+
 \end{align*}
 
 \\
@@ -494,35 +559,48 @@ c_s &= \frac{C}{S} \\
 Avec \( C \) la capacité thermique
 \\
 
-\(h\) : profondeur à partir de laquelle la température reste constante (cf. exo 1, TD chap. 11 sur la diffusion thermique), pour des variations de température journalières comprises entre 273\,K (la nuit) et 293\,K (le jour).
-\\
+\(h\) : profondeur à partir de laquelle la température reste constante (cf. \href{https://gitlab.com/capecl/y2/-/blob/main/Cours%20et%20exercices/Chapitre_11%20:%20Diffusion%20thermique/TD/corr_chap11_td_vprof.pdf?ref_type=heads}{exo 1, TD chap. 11 sur la diffusion thermique}), pour des variations de température journalières comprises entre 273\,K (la nuit) et 293\,K (le jour).
 
+\\
+\vspace{0.5cm}
 On obtient \( h \approx 0{,}40\,\mathrm{m} \)
 \\
 
 (On nous donnait le coefficient de diffusion thermique du sol \( D_{\text{sol}} = 6 \times 10^{-7} \,\mathrm{m}^2/\mathrm{s} \))
 
+\\
+\vspace{0,5cm}
+\\
+
 \addcontentsline{toc}{subsubsection}{Chaleur latente}
 \textbf{Chaleur latente}
+\\
 
 
+$\rightarrow$ correspond à la puissance surfacique positive (reçue) ou négative (fournie) afin d'évaporer ou de condenser l'eau de la surface de la Terre.\\
 
-Le flux de chaleur latente correspond à la puissance surfacique positive (reçue) ou négative (fournie) afin d'évaporer ou de condenser l'eau de la surface de la Terre.
-On découpe la Terre de plusieurs manières, par mers et océans, et par continents. 
+$\rightarrow$ On découpe la Terre de plusieurs manières, par mers et océans, et par continents.\\[0.5em]
+
+
+\\
 On parle d'une moyenne faite par continents :
+
 \begin{itemize}
-    \item Les mers et océans : 108.8 $W/m^2$
-    \item L'Asie : 28.8 $W/m^2$
-    \item L'Afrique : 45.1 $W/m^2$
-    \item L'Europe : 38.1 $W/m^2$
-    \item L'Amérique du Nord : 36.5 $W/m^2$
-    \item L'Amérique du Sud : 73.1 $W/m^2$
-    \item L'Océanie : 31.9 $W/m^2$
+    \item Mers et océans : 108.8 $W/m^2$
+    \item Asie : 28.8 $W/m^2$
+    \item Afrique : 45.1 $W/m^2$
+    \item Europe : 38.1 $W/m^2$
+    \item Amérique du Nord : 36.5 $W/m^2$
+    \item Amérique du Sud : 73.1 $W/m^2$
+    \item Océanie : 31.9 $W/m^2$
 \end{itemize}
 
-On suppose que la pression atmosphérique de la Terre est constante à la surface. On applique le premier principe de la thermodynamique :
+On suppose que la pression atmosphérique de la Terre est constante à la surface. 
 
-\vspace{1cm}
+\vspace{0.5cm}
+On applique le premier principe de la thermodynamique :
+
+\vspace{0.5cm}
 \begin{align*}
     dH &= \delta Q \\
     dm \, \Delta h_{\text{vap}} &= P_{th} \times dt \\
@@ -531,12 +609,21 @@ On suppose que la pression atmosphérique de la Terre est constante à la surfac
 
 Donc, 
 \begin{align*}
-    \phi _{lat} &= \frac{Dm}{S}\Delta h_{vap}\\
-    \phi _{lat} &= \frac{m}{S\Delta t}\Delta h_{vap}\\
-    \phi _{lat} &= \frac{\rho V}{S\Delta t}\Delta h_{vap}\\
-    \phi _{lat} &= \frac{\rho S E_{vap} \Delta t}{S\Delta t}\Delta h_{vap}\\
+    \phi_{\text{lat}} &= \frac{Dm}{S} \Delta h_{\text{vap}} \\
+    \phi_{\text{lat}} &= \frac{m}{S \Delta t} \Delta h_{\text{vap}} \\
+    \phi_{\text{lat}} &= \frac{\rho V}{S \Delta t} \Delta h_{\text{vap}} \\
+    \phi_{\text{lat}} &= \boxed{\frac{\rho S E_{\text{vap}} \Delta t}{S \Delta t} \Delta h_{\text{vap}}}
 \end{align*}
-Avec $E_{vap}$ l'évaporation en $m/s$.
+
+
+
+
+
+
+Avec \( E_{\mathrm{vap}} \) l'\href{https://environmentofearth.wordpress.com/2008/03/11/water-balance/?}{évaporation} en m/s.
+
+
+\\
 
 \begin{tabular}{|c|c|}
 \hline
@@ -558,11 +645,12 @@ Océans & 140 \\
 \hline
 \end{tabular}
 \\
-\url{https://environmentofearth.wordpress.com/2008/03/11/water-balance/?utm_source=chatgpt.com}
-\\
+
 \\
 On obtient donc:
 
+\\
+\vspace{0,5cm}
 \\
 \begin{tabular}{|c|c|}
 \hline
@@ -583,22 +671,83 @@ Océanie & 31.9 \\
 Océans & 108.8 \\
 \hline
 \end{tabular}
-
+\\
+\\
 \addcontentsline{toc}{subsubsection}{Modélisation graphique}
-\textbf{Modélisation graphique}
 
+\textbf{Modélisation graphique : }
+\\
+\\
+Commentaire général: 
 \begin{itemize}
-    \item Planisphère représentant les capacités calorifiques: 
+    \item La deuxième année est simulée afin de laisser le temps à la température de se stabiliser, car des artefacts apparaissent au début de la première année (T initiale fixée à 15 °C)
+    \item Un lissage par convolution gaussienne est appliqué aux grandeurs tabulées (albédo de surface et des nuages, chaleur latente) pour atténuer les discontinuités liées aux transitions jour/nuit et aux changements mensuels
+    \item \href{https://github.com/pierrelouis-cmrt/CREPES/blob/main/modele4/code/modele_courbe.py}{code des premiers graphiques}
 \end{itemize}
-\includegraphics[width=1.0\linewidth]{modele4/figures/c_humidite.png}
 
+
+\begin{center}
+  \includegraphics[width=1\linewidth]{modele4/figures/paris.png}
+  \textbf{Figure :} Simulation de l'évolution de la température sur une année à \textbf{Paris}
+\end{center}
+\textbf{Paris :}
+\begin{itemize}
+    \item 	La légère montée du min et du max de la chaleur latente après lissage vient  du fait que la durée du jour varie au fil de l’année 
+    \item Les variations journalières sont un peu trop faibles en hiver
+    \item La température globale est trop basse
+\end{itemize}
+
+  
+\begin{center}
+  \includegraphics[width=1\linewidth]{modele4/figures/amzonie.png}
+  \textbf{Figure :} Simulation de l'évolution de la température sur une année en Amazonie
+  \end{center}
+  \textbf{Amazonie}
+\begin{itemize}
+    \item La température globale évolue de manière cohérente avec le cycle saisonnier : elle diminue pendant la saison des pluies et augmente pendant la saison sèche.
+    \item L’albédo des nuages suit également ces variations, avec une évolution logique selon les saisons.
+\end{itemize}
+
+\\
+
+\\
+  
+\begin{center}
+  \includegraphics[width=1\linewidth]{modele4/figures/antarctique.png}
+  \textbf{Figure :} Simulation de l'évolution de la température sur une année en Antarctique
+  \end{center}
+\textbf{ Antarctique}
+\begin{itemize}
+    \item La température globale simulée est trop élevée par rapport aux valeurs attendues.
+    \item La courbe de température est artificiellement aplatie en milieu de période car la température atmosphérique (\texttt{Tatm}) est fixée à $-50\,^\circ$C, ce qui empêche la température de descendre en dessous.
+    \item Il existe une période où l’albédo du sol est nul, car la valeur tabulée dans le fichier CSV ($\sim 0{,}0001$) est arrondie à zéro dans les calculs.
+\end{itemize}
+
+  \begin{center}
+  \includegraphics[width=1\linewidth]{modele4/figures/plan1.jpg}
+  
+  \end{center}
+
+\href{https://github.com/pierrelouis-cmrt/CREPES/blob/main/modele4/code/modele_sphere_haute_res.py}{Code associé}  
+
+  \begin{center}
+  \includegraphics[width=1\linewidth]{modele4/figures/plan2}
+  
+  \end{center}
+  \\ 
+\href{https://github.com/pierrelouis-cmrt/CREPES/blob/main/modele4/code/modele_planisphere_haute_res.py}{Code associé}
+
+
+\\
+\vspace{0,5cm}
+\\
 
 \addcontentsline{toc}{subsubsection}{Critique du modèle}
 \textbf{Critique du modèle}
 
 \begin{itemize}
     \item On néglige la conducto-convexion
-    \item On considère la température de l'atmosphère homogène et constante au cours du temps
+    \item température de l'atmosphère considérée homogène et constante au cours du temps
     \item Les valeurs de chaleur latente sont prises constantes, ce qui n'est pas le cas en réalité
 \end{itemize}
 \end{document}
