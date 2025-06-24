@@ -5,9 +5,9 @@ Récapitulatif du dossier `modèle 1`
 
 ## Dossier _codes python_
 
-- `modele1_boule.py` : graphique de la température de la Terre en fonction du temps pour une boule d'eau dans le vide
+- `modele1_boule.py` : graphique de la **température** de la Terre en fonction du temps pour une **boule d'eau** dans le vide
 
-- `modele1_coquille.py` : graphique de la température de la Terre en fonction du temps pour une coquille d'eau à intérieur vide dans le vide
+- `modele1_coquille.py` : graphique de la **température** de la Terre en fonction du temps pour une **coquille d'eau à intérieur vide** dans le vide
 
     #### Dossier _modèle 3D Terre_
 
