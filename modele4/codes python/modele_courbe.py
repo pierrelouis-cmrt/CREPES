@@ -179,7 +179,8 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0, sigma_q=3.0):
 
 
 # ────────────────────────────────────────────────
-# Fonctions de tracé et exécution principale
+# Fonctions de tracé et exécution principale. 
+# Pour modifier l'étude, modifier lat_sim et lon_sim en ligne 276
 # ────────────────────────────────────────────────
 def tracer_comparaison(
     times,
@@ -272,7 +273,7 @@ if __name__ == "__main__":
 
     # --- Choisissez vos coordonnées ---
     # Paris (Europe)
-    lat_sim, lon_sim = 48.5, 2.3
+    lat_sim, lon_sim = 48.5, 2.3 #------------> Paramètre à modifier pour changer le lieux d'étude
     # Amazonie (Amérique du Sud, Q élevé)
     # lat_sim, lon_sim = -3.46, -62.21
     # Sahara (Afrique, Q modéré, Cp faible)
