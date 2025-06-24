@@ -1,7 +1,24 @@
-
-# ───────────────────────── 1. Constantes ─────────────────────────
 import numpy as np
 import matplotlib.pyplot as plt
+import subprocess
+
+
+try:
+    import numpy
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", numpy])
+    import numpy
+
+try:
+    import matplotlib
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", matplotlib])
+    import matplotlib
+
+
+# ───────────────────────── 1. Constantes ─────────────────────────
 
 C   = 4.31e20          # J·K⁻¹  (capacité thermique globale)
 h   = 2.7e-7           # W·m⁻²·K⁻¹  (conduction seule)

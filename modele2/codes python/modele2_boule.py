@@ -1,3 +1,22 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import subprocess
+
+
+try:
+    import numpy
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", numpy])
+    import numpy
+
+try:
+    import matplotlib
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", matplotlib])
+    import matplotlib
+
 
 # ────────────────────────────────────
 # 1) PARAMÈTRES « MODULABLES »
@@ -21,7 +40,7 @@ k = (3 * h) / (c_eau * rho_eau * R_T**3)
 # ────────────────────────────────────
 # 3) FONCTION T(t)
 # ────────────────────────────────────
-import numpy as np
+
 
 def T(t_seconds, T_inf=T0, T_init=Ti, k_val=k):
     """Température en fonction du temps t_seconds (en secondes)."""
@@ -42,7 +61,7 @@ T_vals = T(t_seconds)
 # ────────────────────────────────────
 # 5) TRACÉ
 # ────────────────────────────────────
-import matplotlib.pyplot as plt
+
 
 plt.figure(figsize=(6,4))
 plt.plot(t_hours, T_vals, lw=2)

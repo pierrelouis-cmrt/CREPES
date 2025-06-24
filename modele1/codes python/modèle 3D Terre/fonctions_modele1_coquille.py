@@ -3,7 +3,30 @@ import shapefile
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
+import subprocess
 
+
+try:
+    import numpy
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", numpy])
+    import numpy
+
+
+try:
+    import shapefile
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", pyshp])
+    import shapefile
+
+try:
+    import matplotlib
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", matplotlib])
+    import matplotlib
 
 
 

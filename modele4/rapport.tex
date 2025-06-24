@@ -5,6 +5,7 @@
 \usepackage[T1]{fontenc}
 \usepackage{graphicx} 
 \usepackage{caption}
+\usepackage{siunitx}
 \usepackage{setspace} % Espacement des lignes
 \usepackage{tikz}
 \usetikzlibrary{patterns}
@@ -51,19 +52,48 @@
 On applique le premier principe appliqué au système \{ Un pavé de hauteur h, de surface S de la Terre \}
 \ \ 
 \[
-C \frac{dT}{dt} =(1-A_1)(1-A_2)\phi-\sigma T^4+\sigma T_{atm}^4-\fracQ_{lat}
+c_s \frac{dT}{dt} =(1-A_1)(1-A_2)\varphi_s-\sigma T^4+\sigma T_{atm}^4-\varphi_{lat}
 \]
-Avec \(C\) la capacité thermique surfacique en \(J\cdot K^{-1}\cdot m^{-2}\)
+Avec
+\begin{itemize}
+    \item \(c_s\) la capacité thermique surfacique en \(J\cdot K^{-1}\cdot m^{-2}\)
+     \item  \(T\) la température du système en \(K\)
+    \item \(A_1\) l'albédo des nuages (sans unité)
+    \item \(A_2\) l'albédo du sol (sans unité)
+    \item \(\varphi_s\) le flux solaire incident en \(W \cdot m^2\)
+ \item \(\sigma\) la constante de Stefan-Boltzmann \(W \cdot m^{-2} \cdot K^{-4}\)
+    \item \(T_\text{atm}\) la température de l'atmosphère en \(K\)    
+    
+    \item \(\varphi_{lat}\) le flux de chaleur latente émis par notre système en \(W \cdot m^2\)
+\end{itemize}
+
+
 
 \vspace{0.5cm}
-\subsubsection*{Calculs capacités calorifiques en fonction de la composition des surfaces}
+\subsubsection{Tabulation de l'albédo de surface en fonction de la position }
+Les données ont été récupérées sur les dossiers CSV du projet (groupe B)  de l'année précédente. Il s'agit de moyennes mensuelles tabulées pour chaque position sur Terre (latitude longitude)
+\subsubsection{Tabulation de l'albédo des nuages}
+Obtenu par différence de l'albédo de la terre lors de ciel clair et ciel nuageux.
+Moyennes mensuelles tabulées sur 1 an (1 janvier 2024 à 1 janvier 2025)
+\\
+\\
+Source \url{https://ceres-tool.larc.nasa.gov/ord-tool/jsp/EBAFTOA421Selection.jsp}
+\\
+\\
+Lien du code : \url{https://github.com/pierrelouis-cmrt/CREPES/blob/main/archive/para_spaciaux/albedo/albedo_nuages_jour.py}
+
+\subsubsection{Calculs capacités calorifiques en fonction de la composition des surfaces}
 Données récoltées sur : 
 \url{https://data.catds.fr/cpdc/Land_products/GRIDDED/L4SM/OPER/}
+\\
+\\
+Lien du code: \url{https://github.com/pierrelouis-cmrt/CREPES/blob/main/ressources/Cp_humidity/ZZ_cp.py}
 
 \begin{itemize}
-    \item Moyenne faite sur une période de 1 an grâce à 12 données récoltés le matin et 12 données récoltés le soir 
+    \item Moyenne faite sur une période de 1 an grâce à 12 données récoltées le matin et 12 données récoltées le soir 
     \item Les 12 données ont été prise à des périodes différentes sur l'année 
     \item La masse volumique de la Terre est approximée constante 
+    \item Pour le \text{Groenland} et l’Antarctique  
 \end{itemize}
 \[
 w = \frac{\rho_w \theta}{\rho_b (1 - \theta) + \rho_w \theta}
@@ -87,7 +117,23 @@ $\rho_w$ (eau) & \SI{1000}{\kilogram\per\cubic\metre} \\
 \vspace{1cm}
 \end{table}
 
-\subsubsection*{Modélisation graphique (à Paris) :} 
+Détail du calcul de \( c_s \) :\\
+\begin{align*}
+c_s &= \frac{C}{S} \\
+\text{Or } S &= \frac{m}{\rho h} \\
+\text{Donc } c_s &= \frac{C \rho h}{m} = c_p  \rho  h
+\end{align*}
+
+\hspace*{2cm}Avec \( C \) la capacité thermique
+
+
+
+\subsubsection*{Modélisation graphique  :} 
+\begin{itemize}
+    \item Planisphère représentant les capacités calorifiques: 
+\end{itemize}
+\includegraphics[width=0.8\linewidth]{modele4/figures/c_humidite.png}
+
 \begin{itemize}
     \item Modèle adaptatif
 \end{itemize}
@@ -128,5 +174,50 @@ $\rho_w$ (eau) & \SI{1000}{\kilogram\per\cubic\metre} \\
     \item On considère la température de l'atmosphère homogène et constante au cours du temps
     \item Les valeurs de chaleur latente sont prises constantes, ce qui n'est pas le cas en réalité
 \end{itemize}
+
+
+\subsection*{Chaleur latente}
+
+
+Le flux de chaleur latente correspond à la puissance surfacique positive(reçue) ou négative(fournie) afin d'évaporer ou de condenser l'eau de la surface de la Terre.
+On découpe la Terre de plusieurs manières, par mers et océans, et par continents. 
+On parle d'une moyenne faite par continents :
+\begin{itemize}
+    \item Les mers et océans : 108.8 $W/m^2$
+    \item L'Asie : 28.8 $W/m^2$
+    \item L'Afrique : 45.1 $W/m^2$
+    \item L'Europe : 38.1 $W/m^2$
+    \item L'Amérique du Nord : 36.5 $W/m^2$
+    \item L'Amérique du Sud : 73.1 $W/m^2$
+    \item L'Océanie : 31.9 $W/m^2$
+\end{itemize}
+
+On suppose que la pression atmosphérique de la Terre est constante à la surface. On applique le premier principe de la thermodynamique :
+
+\vspace{1cm}
+\begin{align*}
+    dH &= \delta Q \\
+    dm \, \Delta h_{\text{vap}} &= P_{th} \times dt \\
+    Dm \, \Delta h_{\text{vap}} &= P_{th}
+\end{align*}
+
+Donc, $ \phi _{lat} = \frac{Dm}{S}\Delta h_{vap}$
+
+$ \phi _{lat} = \frac{m}{S\Delta t}\Delta h_{vap}$
+
+
+$ \phi _{lat} = \frac{\rho V}{S\Delta t}\Delta h_{vap}$
+
+$ \phi _{lat} = \frac{\rho S E_{vap} \Delta t}{S\Delta t}\Delta h_{vap}$
+
+Avec $E_{vap}$ l'évaporation en $m/s$.
+
+\begin{tabular}{|c|c|c|c|c|c|c|c|}
+\hline
+Colonne 1 & Colonne 2 & Colonne 3 & Colonne 4 & Colonne 5 & Colonne 6 & Colonne 7 & Colonne 8 \\
+\hline
+Ligne 2A & Ligne 2B & Ligne 2C & Ligne 2D & Ligne 2E & Ligne 2F & Ligne 2G & Ligne 2H \\
+\hline
+\end{tabular}
 
 \end{document}

@@ -17,6 +17,64 @@ import pandas as pd
 from scipy.ndimage import gaussian_filter1d
 from tqdm import tqdm
 import os
+import subprocess
+
+
+try:
+    import numpy
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", numpy])
+    import numpy
+
+try:
+    import matplotlib
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", matplotlib])
+    import matplotlib
+
+try:
+    import math
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", math])
+    import math
+
+try:
+    import pathlib
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", pathlib])
+    import pathlib
+
+try:
+    import pandas
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", pandas])
+    import pandas
+
+try:
+    import scipy
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", scipy])
+    import scipy
+
+try:
+    import os
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", os])
+    import os
+
+try:
+    import tqdm
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", tqdm])
+    import tqdm
 
 # Optionnel : utiliser cartopy pour un meilleur rendu des côtes
 try:

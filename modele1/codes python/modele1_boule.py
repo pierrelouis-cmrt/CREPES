@@ -1,5 +1,22 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import subprocess
+
+
+try:
+    import numpy
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", numpy])
+    import numpy
+
+try:
+    import matplotlib
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", matplotlib])
+    import matplotlib
+
 
 # Constantes
 sigma = 5.67e-8  # W·m⁻²·K⁻⁴
