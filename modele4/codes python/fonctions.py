@@ -252,32 +252,41 @@ def load_and_grid_rzsm_data(csv_path: pathlib.Path):
         statistic="mean",
         bins=[lon_bins, lat_bins],
     )
-    print("Données d'humidité du sol (RZSM) chargées et grillées.")
+    print("Données d'humidité du sol (RZSM) chargées et mises sur grille.")
     return statistic.T, lat_bins, lon_bins
 
 
 # ────────────────────────────────────────────────
 # TRAITEMENT DE DONNÉES ANNUELLES
 # ────────────────────────────────────────────────
+# Dans le fichier: fonctions.py
+
 def lisser_donnees_annuelles(valeurs_mensuelles: np.ndarray, sigma: float):
     """
     Lisse une série de 12 valeurs mensuelles en une série de 365 valeurs journalières.
+    Fonctionne pour des données 1D, 2D ou 3D, tant que le premier axe (axis=0)
+    est la dimension temporelle (12 mois).
 
     IN:
-        valeurs_mensuelles (np.ndarray): Tableau de 12 valeurs.
+        valeurs_mensuelles (np.ndarray): Tableau de données avec 12 valeurs sur le premier axe.
         sigma (float): Écart-type pour le filtre gaussien (en jours).
 
     OUT:
-        np.ndarray: Tableau de 365 valeurs journalières lissées.
+        np.ndarray: Tableau de 365 valeurs journalières lissées sur le premier axe.
     """
     jours_par_mois = np.array(
         [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     )
+    
+    # On spécifie à numpy de répéter les valeurs le long de l'axe 0 (l'axe du temps).
+    # Sans cela, il aplatit l'array et provoque une erreur de dimension.
     valeurs_journalieres_discontinues = np.repeat(
-        valeurs_mensuelles, jours_par_mois
+        valeurs_mensuelles, jours_par_mois, axis=0
     )
+    
+    # On applique également le filtre gaussien le long de ce même axe du temps.
     return gaussian_filter1d(
-        valeurs_journalieres_discontinues, sigma=sigma, mode="wrap"
+        valeurs_journalieres_discontinues, sigma=sigma, mode="wrap", axis=0
     )
 
 
@@ -319,18 +328,22 @@ CERES_FILE_PATH = (
 )
 
 
+
 def load_monthly_cloud_albedo_from_ceres(
-    lat_deg: float, lon_deg: float
-) -> np.ndarray:
+    lat_deg: float, lon_deg: float, return_full_map: bool = False
+) -> np.ndarray | xr.DataArray:
     """
     Extrait l'albédo mensuel des nuages depuis un fichier NetCDF CERES.
 
+    Peut retourner soit les 12 valeurs pour un point, soit la carte climatique complète.
+
     IN:
-        lat_deg (float): Latitude du point d'intérêt [degrés].
-        lon_deg (float): Longitude du point d'intérêt [degrés].
+        lat_deg (float | None): Latitude du point d'intérêt [degrés].
+        lon_deg (float | None): Longitude du point d'intérêt [degrés].
+        return_full_map (bool): Si True, retourne le DataArray xarray complet.
 
     OUT:
-        np.ndarray: Tableau de 12 valeurs d'albédo mensuel des nuages.
+        np.ndarray | xr.DataArray: Tableau de 12 valeurs ou carte 3D (mois, lat, lon).
     """
     if not XARRAY_AVAILABLE:
         print("AVERTISSEMENT: xarray non disponible. Retour d'un albédo nul.")
@@ -339,7 +352,7 @@ def load_monthly_cloud_albedo_from_ceres(
         raise FileNotFoundError(f"Fichier CERES introuvable: {CERES_FILE_PATH}")
 
     with xr.open_dataset(CERES_FILE_PATH, decode_times=True) as ds:
-        ds.load()  # Force le chargement des données en mémoire
+        ds.load()
         ds = ds.assign_coords(lon=(((ds.lon + 180) % 360) - 180)).sortby("lon")
         toa_sw_all = ds["toa_sw_all_mon"]
         toa_sw_clr = ds["toa_sw_clr_c_mon"]
@@ -351,6 +364,11 @@ def load_monthly_cloud_albedo_from_ceres(
         cloud_albedo_monthly_clim = cloud_albedo_instant.groupby(
             "time.month"
         ).mean(dim="time", skipna=True)
+
+        if return_full_map:
+            print("Données climatiques d'albédo des nuages (CERES) chargées.")
+            return cloud_albedo_monthly_clim
+
         monthly_values = cloud_albedo_monthly_clim.sel(
             lat=lat_deg, lon=lon_deg, method="nearest"
         ).to_numpy()

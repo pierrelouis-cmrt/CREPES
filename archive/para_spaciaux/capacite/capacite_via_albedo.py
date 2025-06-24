@@ -1,1 +1,0 @@
-# Faire le code de calcul de capacité via l'albedo comme proxy, comme deja fait dans le code planisphere_complet.py

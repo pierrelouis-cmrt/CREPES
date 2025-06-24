@@ -197,7 +197,7 @@ def tracer_comparaison(
     axs[0].set_xlim(0, 365)
 
     # --- Axe 2: Albédos ---
-    axs[1].set_ylabel("Albédo (sans unité)", fontsize=14)
+    axs[1].set_ylabel("Albédo (sans unité)", fontsize=12)
     axs[1].plot(
         days_axis, albedo_sol_hist, color="tab:blue", lw=2.0, label="Sol (A2)"
     )
@@ -225,7 +225,7 @@ def tracer_comparaison(
         alpha=0.8,
         label="Flux Latent lissé (Q)",
     )
-    axs[2].set_ylabel("Flux Chaleur Latente (W m⁻²)", fontsize=14)
+    axs[2].set_ylabel("Flux Chaleur Latente (W m⁻²)", fontsize=12)
     axs[2].legend(loc="upper left", fontsize=12)
     axs[2].grid(ls=":")
 
