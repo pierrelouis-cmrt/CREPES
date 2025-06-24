@@ -15,7 +15,7 @@ import fonctions as f
 # ---------- constantes physiques ----------
 constante_solaire = 1361.0  # W m-2
 sigma = 5.670374419e-8  # Stefan‑Boltzmann (SI)
-Tatm = 223.15  # atmosphère radiative (‑50 °C)
+Tatm = 253.15  # atmosphère radiative (‑20 °C)
 dt = 1800.0  # pas de temps : 30 min
 
 # Masse de la couche de surface active thermiquement (kg m-2)
@@ -52,7 +52,7 @@ def P_abs_atm_solar(lat: float, long: float, t: float, Pinc: float):
 
 
 def P_abs_atm_thermal(T_atm: float):
-    return sigma*T_atm 
+    return sigma*(T_atm**4)
 
 
 def P_em_atm_thermal_up(lat: float, long: float, t: float):
