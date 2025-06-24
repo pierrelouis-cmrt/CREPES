@@ -4,7 +4,7 @@ Organisation des dossiers du projet CREPES
 
 ## Dossiers _modeleX_
 
-- Ces dossiers contiennent tous nos modèles, du premier jusqu'au dernier (modele4). Chacun d'eux contiennent des figures, et du code.
+- Ces dossiers contiennent tous nos modèles, du premier jusqu'au dernier (modele4). Chacun d'eux contient des figures, et du code.
 
 ## Dossier _documentation_
 
