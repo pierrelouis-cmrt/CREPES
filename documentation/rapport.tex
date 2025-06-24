@@ -32,15 +32,14 @@
 \addcontentsline{toc}{section}{Introduction}
 
 {\LARGE \textbf{Introduction}}
-\begin{center}
-  \input{documentation/Evolution du projet CREPES.txt}
-\end{center}
+\input{documentation/Evolution du projet CREPES.txt}
+
 
 
 \newpage
 \section{Modèle 1}
 \subsection{Bille remplie d'eau}
-\addcontentsline{toc}{subsubsection}{Hypothèses}
+\addcontentsline{toc}{subsubsection}{Hypothèses} 
 \textbf{Hypothèses}
 
 \begin{itemize}
@@ -76,7 +75,7 @@ $\rightarrow$ la terre perd de la température par rayonnement
 \[   P = \sigma T^4 \cdot S
 \]
 
-\[    C \, \frac{dT}{dt} = - \sigma T^4 \,  \times S
+\[    C \, \frac{dT}{dt} = - \sigma T^4 \,  \cdot S
 \]
 
 \[\frac{dT}{dt} = - \frac{4 \pi R_T^2 \sigma T^4}{C}\]  
@@ -114,7 +113,7 @@ et \(C=c_{\text{m eau}}\times m=4,60 \cdot 10^{27} J\cdot K^{-1}\)
 \addcontentsline{toc}{subsubsection}{Hypothèses}
 \textbf{Hypothèses}
 \begin{itemize}
-    \item On garde les hypothèses précédente excepté le système: la Terre est assimilée à une coquille d'eau, d'épaisseur dr, avec du vide à l'intérieur de la coquille 
+    \item On garde les hypothèses précédentes, excepté le système: la Terre est assimilée à une coquille d'eau, d'épaisseur dr, qui a un intérieur vide
     
 \end{itemize}
 $\rightarrow$ il faut donc recalculer la capacité thermique 
@@ -173,7 +172,7 @@ k &= \frac{\sigma }{c_{\text{eau}} \cdot \rho_{\text{eau}} \cdot dr}
 \addcontentsline{toc}{subsubsection}{Hypothèses}
 \textbf{Hypothèses}
 \begin{itemize}
-    \item Terre assimilé à boule d'eau, de température \(T_{\text{Terre}}\) 
+    \item Terre assimilée à boule d'eau, de température \(T_{\text{Terre}}\) 
     \item  Atmosphère avec une température uniforme T 
     \item  Sans puissance solaire reçue  
     \item  Ignorance de la convection  
@@ -197,7 +196,7 @@ $T(t \to +\infty) = T_0$
 \addcontentsline{toc}{subsubsection}{Équations de transfert thermique}
 \textbf{Équations de transfert thermique}
 
-On applique le premier principe appliqué au système \{ boule d'eau  \}
+On applique le premier principe au système \{ boule d'eau  \}
 
 \begin{align*}
 \delta Q &= C\, dT = -P_{\text{th,cond}} \cdot dt \\
@@ -225,7 +224,7 @@ $T(t) = T_0 + (T_i - T_0)e^{-kt}$ \quad avec $k = \frac{4\pi h}{C}$
 \subsection{Coquille assimilée à de l'eau avec atmosphère }
 \addcontentsline{toc}{subsubsection}{Hypothèses}
 \begin{itemize}
-    \item On garde les hypothèses précédente excepté le système: la Terre est assimilée à une coquille d'eau, d'épaisseur dr, avec du vide à l'intérieur de la coquille \end{itemize}
+    \item On garde les hypothèses précédentes, en ajoutant l'atmosphère \end{itemize}
 \vspace{1cm}
 \addcontentsline{toc}{subsubsection}{Schéma}
 \textbf{Schéma}
@@ -298,7 +297,7 @@ $T(t \to +\infty) = T_0$
 \addcontentsline{toc}{subsubsection}{Équations de transfert thermique}
 \textbf{Équations de transfert thermique}
 
-On applique le premier principe appliqué au système \{ Coquille non vide  \}
+On applique le premier principe au système \{ coquille non vide  \}
 \[
 (-P_{\mathrm{th,cond}} - P_{\mathrm{th,ray}} + P_r)\,dt = C\,dT.
 \]
@@ -345,7 +344,7 @@ P_{r}
 \textbf{Critiques du modèle :}
 \begin{itemize}
     \item La convection n’est pas prise en compte.
-    \item dr doit être choisi de façons à ce que la température ne varie pas significativement.
+    \item dr doit être choisi de façon à ce que la température ne varie pas significativement.
     \item Problème de définition de $T_0$ :
     \begin{itemize}
         \item Si on suit notre modèle, ce serait la température au-delà de la thermosphère.

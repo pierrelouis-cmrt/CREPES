@@ -235,7 +235,7 @@ def run_full_simulation(days, result_file=None):
     if result_file is None:
         npy_dir = pathlib.Path("ressources/npy")
         npy_dir.mkdir(parents=True, exist_ok=True)
-        result_file = npy_dir / "temp_grid_full.npy"
+        result_file = npy_dir / "grid_full.npy"
     else:
         result_file = pathlib.Path(result_file)
         result_file.parent.mkdir(parents=True, exist_ok=True)

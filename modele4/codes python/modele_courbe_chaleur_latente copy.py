@@ -27,51 +27,8 @@ from math import pi
 import pathlib
 import pandas as pd
 from scipy.ndimage import gaussian_filter1d
-import sys
-import subprocess
-
-
-try:
-    import numpy
-except ImportError:
-    print("OpenCV non trouvé. Installation en cours...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", numpy])
-    import numpy
-
-try:
-    import matplotlib
-except ImportError:
-    print("OpenCV non trouvé. Installation en cours...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", matplotlib])
-    import matplotlib
-
-try:
-    import math
-except ImportError:
-    print("OpenCV non trouvé. Installation en cours...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", math])
-    import math
-
-try:
-    import pathlib
-except ImportError:
-    print("OpenCV non trouvé. Installation en cours...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", pathlib])
-    import pathlib
-
-try:
-    import pandas
-except ImportError:
-    print("OpenCV non trouvé. Installation en cours...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", pandas])
-    import pandas
-
-try:
-    import scipy
-except ImportError:
-    print("OpenCV non trouvé. Installation en cours...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", scipy])
-    import scipy
+import fonctions as f
+import lib as lib
 
 # NOUVEAU : Importations pour la partie géospatiale et NetCDF
 try:
@@ -104,34 +61,17 @@ constante_solaire = 1361.0  # W m-2
 sigma = 5.670374419e-8  # Stefan‑Boltzmann (SI)
 Tatm = 223.15  # atmosphère radiative (‑50 °C)
 dt = 1800.0  # pas de temps : 30 min
-EPAISSEUR_ACTIVE = 0.5  # m (20 cm)
+EPAISSEUR_ACTIVE = 0.2  # m (20 cm)
 
 # ────────────────────────────────────────────────
 # DATA – Chargement de l'albédo de surface (inchangé)
 # ────────────────────────────────────────────────
 
 
-def load_albedo_series(
-    csv_dir: str | pathlib.Path, pattern: str = "albedo{:02d}.csv"
-):
-    """Charge les 12 fichiers CSV d'albédo de surface mensuel."""
-    csv_dir = pathlib.Path(csv_dir)
-    latitudes: np.ndarray | None = None
-    longitudes: np.ndarray | None = None
-    cubes: list[np.ndarray] = []
-    for month in range(1, 13):
-        df = pd.read_csv(csv_dir / pattern.format(month))
-        if latitudes is None:
-            latitudes = df["Latitude/Longitude"].astype(float).to_numpy()
-            longitudes = df.columns[1:].astype(float).to_numpy()
-        cubes.append(df.set_index("Latitude/Longitude").to_numpy(dtype=float))
-    print("Données d'albédo de surface chargées.")
-    return np.stack(cubes, axis=0), latitudes, longitudes
-
 
 try:
     ALBEDO_DIR = pathlib.Path("ressources/albedo")
-    monthly_albedo_sol, LAT, LON = load_albedo_series(ALBEDO_DIR)
+    monthly_albedo_sol, LAT, LON = f.load_albedo_series(ALBEDO_DIR)
     _lat_idx = lambda lat: int(np.abs(LAT - lat).argmin())
     _lon_idx = lambda lon: int(
         np.abs(LON - (((lon + 180) % 360) - 180)).argmin()
@@ -186,15 +126,8 @@ try:
     )
     if RZSM_GRID is None:
         raise RuntimeError("Scipy manquant ou échec du griddage RZSM.")
-    # CORRIGÉ : L'indice ne doit pas dépasser la taille de la grille.
-    # L'erreur se produisait pour lat=90, qui donnait un index de 180
-    # pour une grille de taille 180 (indices 0-179).
-    _rzsm_lat_idx = lambda lat: min(
-        np.abs(RZSM_LAT_BINS - lat).argmin(), RZSM_GRID.shape[0] - 1
-    )
-    _rzsm_lon_idx = lambda lon: min(
-        np.abs(RZSM_LON_BINS - lon).argmin(), RZSM_GRID.shape[1] - 1
-    )
+    _rzsm_lat_idx = lambda lat: np.abs(RZSM_LAT_BINS - lat).argmin()
+    _rzsm_lon_idx = lambda lon: np.abs(RZSM_LON_BINS - lon).argmin()
 except (FileNotFoundError, RuntimeError) as e:
     print(f"ERREUR: Impossible de charger les données d'humidité du sol : {e}")
     exit()
@@ -239,113 +172,22 @@ SHAPEFILE_PATH = (
 )
 
 
-def create_continent_finder(shapefile_path: pathlib.Path):
-    if not GEOPANDAS_AVAILABLE:
-        return lambda lat, lon: "Océan"
-    try:
-        world = gpd.read_file(shapefile_path).to_crs(epsg=4326)
-    except Exception as e:
-        print(f"AVERTISSEMENT: Impossible de charger le shapefile: {e}")
-        return lambda lat, lon: "Océan"
-
-    def find_continent_for_point(lat: float, lon: float) -> str:
-        point = Point(lon, lat)
-        for _, row in world.iterrows():
-            if row["geometry"] is not None and row["geometry"].contains(point):
-                return row["CONTINENT"]
-        return "Océan"
-
-    return find_continent_for_point
 
 
-continent_finder = create_continent_finder(SHAPEFILE_PATH)
+continent_finder = f.create_continent_finder(SHAPEFILE_PATH)
 
 
-def get_q_latent_base(lat: float, lon: float) -> float:
-    """Récupère la valeur de Q (W m-2) de base pour un point géographique."""
-    continent = continent_finder(lat, lon)
-    q_val = Q_LATENT_CONTINENT.get(continent, Q_LATENT_CONTINENT["Océan"])
-    print(
-        f"Coordonnées ({lat:.2f}, {lon:.2f}) détectées sur : "
-        f"{continent} (Q base = {q_val:.2f} W m⁻²)"
-    )
-    return q_val
+
+
 
 
 # ────────────────────────────────────────────────
-# Données d'albédo des nuages depuis CERES (inchangé)
-# ────────────────────────────────────────────────
-
-CERES_FILE_PATH = (
-    pathlib.Path("ressources/albedo")
-    / "CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc"
-)
-
-
-def load_monthly_cloud_albedo_from_ceres(
-    lat_deg: float, lon_deg: float
-) -> np.ndarray:
-    if not XARRAY_AVAILABLE:
-        exit("ERREUR: xarray non installé.")
-    try:
-        ds = xr.open_dataset(CERES_FILE_PATH, decode_times=True)
-    except FileNotFoundError:
-        exit(f"ERREUR: Fichier CERES introuvable : {CERES_FILE_PATH}")
-
-    ds = ds.assign_coords(lon=(((ds.lon + 180) % 360) - 180)).sortby("lon")
-    toa_sw_all = ds["toa_sw_all_mon"]
-    toa_sw_clr = ds["toa_sw_clr_c_mon"]
-    solar_in = ds["solar_mon"]
-    cloud_albedo_instant = xr.where(
-        solar_in > 1e-6, (toa_sw_all - toa_sw_clr) / solar_in, 0.0
-    )
-    cloud_albedo_monthly_clim = cloud_albedo_instant.groupby(
-        "time.month"
-    ).mean(dim="time", skipna=True)
-    monthly_values = cloud_albedo_monthly_clim.sel(
-        lat=lat_deg, lon=lon_deg, method="nearest"
-    ).to_numpy()
-
-    if len(monthly_values) != 12:
-        monthly_values = np.pad(
-            monthly_values, (0, 12 - len(monthly_values)), mode="edge"
-        )
-    print("Données d'albédo des nuages chargées.")
-    return monthly_values
-
-
-# ────────────────────────────────────────────────
-# Lissage et fonctions physiques (inchangés)
+# Données d'albédo des nuages (inchangé) à changer voir fonctions
 # ────────────────────────────────────────────────
 
 
-def lisser_donnees_annuelles(valeurs_mensuelles: np.ndarray, sigma: float):
-    jours_par_mois = np.array(
-        [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    )
-    valeurs_journalieres_discontinues = np.repeat(
-        valeurs_mensuelles, jours_par_mois
-    )
-    return gaussian_filter1d(
-        valeurs_journalieres_discontinues, sigma=sigma, mode="wrap"
-    )
 
 
-def declination(day):
-    day_in_year = (day - 1) % 365 + 1
-    return np.radians(23.44) * np.sin(2 * pi * (284 + day_in_year) / 365)
-
-
-def cos_incidence(lat_rad, day, hour):
-    δ = declination(day)
-    H = np.radians(15 * (hour - 12))
-    ci = np.sin(lat_rad) * np.sin(δ) + np.cos(lat_rad) * np.cos(δ) * np.cos(H)
-    return max(ci, 0.0)
-
-
-def phi_net(lat_rad, day, hour, albedo_sol, albedo_nuages):
-    phi_entrant = constante_solaire * cos_incidence(lat_rad, day, hour)
-    return phi_entrant * (1 - albedo_nuages) * (1 - albedo_sol)
 
 
 def f_rhs(T, phinet, C, q_latent):
@@ -353,7 +195,7 @@ def f_rhs(T, phinet, C, q_latent):
 
 
 # ────────────────────────────────────────────────
-# Intégrateur Backward‑Euler (inchangé)
+# Intégrateur Backward‑Euler (MODIFIÉ pour Q)
 # ────────────────────────────────────────────────
 
 
@@ -370,17 +212,17 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         _lon_idx(lon_deg),
     )
 
-    q_base = get_q_latent_base(lat_deg, lon_deg)
+    q_base = lib.P_em_surf_evap(lat_deg, lon_deg)
 
     print("Lissage des données annuelles (albédo)...")
     albedo_sol_mensuel_loc = monthly_albedo_sol[:, lat_idx, lon_idx]
-    albedo_sol_journalier_lisse = lisser_donnees_annuelles(
+    albedo_sol_journalier_lisse = f.lisser_donnees_annuelles(
         albedo_sol_mensuel_loc, sigma=15.0
     )
-    albedo_nuages_mensuel = load_monthly_cloud_albedo_from_ceres(
+    albedo_nuages_mensuel = f.load_monthly_cloud_albedo_from_ceres(
         lat_deg, lon_deg
     )
-    albedo_nuages_journalier_lisse = lisser_donnees_annuelles(
+    albedo_nuages_journalier_lisse = f.lisser_donnees_annuelles(
         albedo_nuages_mensuel, sigma=15.0
     )
 
@@ -399,11 +241,12 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         f"C={C_const:.2e} J m⁻² K⁻¹"
     )
 
+    # Initialisation des tableaux d'historique
     albedo_sol_hist[0], albedo_nuages_hist[0], C_hist[0], q_latent_hist[0] = (
         albedo_sol_journalier_lisse[0],
         albedo_nuages_journalier_lisse[0],
         C_const,
-        q_base,
+        q_base,  # MODIFIÉ
     )
 
     for k in range(N):
@@ -414,6 +257,7 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
 
         albedo_sol = albedo_sol_journalier_lisse[jour_dans_annee]
         albedo_nuages = albedo_nuages_journalier_lisse[jour_dans_annee]
+        # MODIFIÉ : q_latent_daily est maintenant la valeur de base constante
         q_latent_daily = q_base
 
         albedo_sol_hist[k + 1], albedo_nuages_hist[k + 1], C_hist[
@@ -425,9 +269,10 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
             q_latent_daily,
         )
 
-        phi_n = phi_net(
+        phi_n = lib.P_inc_solar(
             lat_rad, jour, heure_solaire, albedo_sol, albedo_nuages
         )
+        # La logique d'inversion jour/nuit est conservée
         q_latent_step = q_latent_daily if phi_n > 0 else -q_latent_daily
 
         X = T[k]
@@ -507,6 +352,7 @@ def tracer_comparaison(
 
     color_q = "tab:green"
     axs[2].set_ylabel("Flux Chaleur Latente (W m⁻²)", color=color_q)
+    # Le graphique affichera une ligne constante pour Q
     axs[2].plot(
         days_axis,
         q_latent_hist,
@@ -545,13 +391,9 @@ if __name__ == "__main__":
     # Pour Paris (Europe)
     lat_sim, lon_sim = 48.5, 2.3
     # Pour l'Amazonie (Amérique du Sud, Q élevé)
-    #lat_sim, lon_sim = -3.46, -62.21
+    # lat_sim, lon_sim = -3.46, -62.21
     # Pour le Sahara (Afrique, Q modéré, Cp faible)
     # lat_sim, lon_sim = 25.0, 15.0
-    # Pour l'Océan Arctique (Pôle Nord)
-    # lat_sim, lon_sim = 82.0, 135.0
-    # Pour l'Antarctique (Pôle Sud)
-    # lat_sim, lon_sim = -76.0, 100.0
 
     print(
         f"Lancement de la simulation pour Lat={lat_sim}N, Lon={lon_sim}E..."
