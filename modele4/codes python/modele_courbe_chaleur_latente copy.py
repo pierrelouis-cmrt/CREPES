@@ -26,6 +26,8 @@ from math import pi
 import pathlib
 import pandas as pd
 from scipy.ndimage import gaussian_filter1d
+import fonctions as f
+import lib as lib
 
 # NOUVEAU : Importations pour la partie géospatiale
 try:
@@ -52,27 +54,10 @@ EPAISSEUR_ACTIVE = 0.2  # m (20 cm)
 # ────────────────────────────────────────────────
 
 
-def load_albedo_series(
-    csv_dir: str | pathlib.Path, pattern: str = "albedo{:02d}.csv"
-):
-    """Charge les 12 fichiers CSV d'albédo de surface mensuel."""
-    csv_dir = pathlib.Path(csv_dir)
-    latitudes: np.ndarray | None = None
-    longitudes: np.ndarray | None = None
-    cubes: list[np.ndarray] = []
-    for month in range(1, 13):
-        df = pd.read_csv(csv_dir / pattern.format(month))
-        if latitudes is None:
-            latitudes = df["Latitude/Longitude"].astype(float).to_numpy()
-            longitudes = df.columns[1:].astype(float).to_numpy()
-        cubes.append(df.set_index("Latitude/Longitude").to_numpy(dtype=float))
-    print("Données d'albédo de surface chargées.")
-    return np.stack(cubes, axis=0), latitudes, longitudes
-
 
 try:
     ALBEDO_DIR = pathlib.Path("ressources/albedo")
-    monthly_albedo_sol, LAT, LON = load_albedo_series(ALBEDO_DIR)
+    monthly_albedo_sol, LAT, LON = f.load_albedo_series(ALBEDO_DIR)
     _lat_idx = lambda lat: int(np.abs(LAT - lat).argmin())
     _lon_idx = lambda lon: int(
         np.abs(LON - (((lon + 180) % 360) - 180)).argmin()
@@ -91,192 +76,28 @@ SHAPEFILE_PATH = (
     pathlib.Path("ressources/map") / "ne_110m_admin_0_countries.shp"
 )
 
-Q_CONTINENT = {
-    "Africa": 46.8,
-    "Asia": 40.1,
-    "South America": 99.8,
-    "North America": 35.4,
-    "Europe": 36.6,
-    "Oceania": 28.4,
-    "Antarctica": 0.0,
-    "Océan": 95,
-}
 
 
-def create_continent_finder(shapefile_path: pathlib.Path):
-    """
-    Charge un shapefile et retourne une fonction capable de trouver
-    le continent pour un point (lat, lon).
-    """
-    if not GEOPANDAS_AVAILABLE:
-        print(
-            "AVERTISSEMENT: GeoPandas n'est pas installé. "
-            "La détection de continent sera désactivée (Q=0)."
-        )
-        return lambda lat, lon: "Océan"
 
-    try:
-        print(f"Chargement du shapefile depuis : {shapefile_path}")
-        world = gpd.read_file(shapefile_path)
-        world = world.to_crs(epsg=4326)
-        print("Shapefile chargé avec succès.")
-    except Exception as e:
-        print(f"ERREUR: Impossible de charger le shapefile : {e}")
-        print("La détection de continent sera désactivée (Q=0).")
-        return lambda lat, lon: "Océan"
-
-    def find_continent_for_point(lat: float, lon: float) -> str:
-        """Fonction interne qui effectue la recherche."""
-        point = Point(lon, lat)
-        for _, row in world.iterrows():
-            if row["geometry"] is not None and row["geometry"].contains(point):
-                return row["CONTINENT"]
-        return "Océan"
-
-    return find_continent_for_point
+continent_finder = f.create_continent_finder(SHAPEFILE_PATH)
 
 
-continent_finder = create_continent_finder(SHAPEFILE_PATH)
 
 
-def get_q_latent_base(lat: float, lon: float) -> float:
-    """Récupère la valeur de Q (W m-2) de base pour un point géographique."""
-    continent = continent_finder(lat, lon)
-    q_val = 0.0
-    for key, value in Q_CONTINENT.items():
-        if key in continent:
-            q_val = value
-            break
-    else:
-        q_val = Q_CONTINENT["Océan"]
-
-    print(
-        f"Coordonnées ({lat:.2f}, {lon:.2f}) détectées sur le continent : "
-        f"{continent} (Q base = {q_val} W m⁻²)"
-    )
-    return q_val
-
-
-def get_daily_q_latent(
-    q_base: float, lat_deg: float, day_of_year: int
-) -> float:
-    """
-    Calcule le flux de chaleur latente pour un jour donné en utilisant
-    une fonction cosinus continue pour la variation saisonnière.
-    """
-    if q_base == 0 or q_base == Q_CONTINENT["Océan"]:
-        return q_base
-
-    amplitude = 0.4 * q_base
-    day_phase_shift = 196 if lat_deg >= 0 else 15
-
-    variation_saisonniere = amplitude * np.cos(
-        2 * pi * (day_of_year - day_phase_shift) / 365
-    )
-    return q_base + variation_saisonniere
 
 
 # ────────────────────────────────────────────────
-# Données d'albédo des nuages (inchangé)
-# ────────────────────────────────────────────────
-
-# ------------------------------------------------------------------------------ a. changer
-
-def load_monthly_cloud_albedo_mock(lat_deg: float, lon_deg: float):
-    print(
-        "NOTE : Utilisation de données simulées (mock) pour l'albédo des nuages."
-    )
-    amplitude = 0.15 * np.sin(np.radians(abs(lat_deg)))
-    avg_cloud_albedo = 0.3
-    mois = np.arange(12)
-    variation_saisonniere = amplitude * np.cos(2 * pi * (mois - 0.5) / 12)
-    return avg_cloud_albedo - variation_saisonniere
-
-
-# ────────────────────────────────────────────────
-# MODIFIÉ - Capacité thermique et lissage
+# Données d'albédo des nuages (inchangé) à changer voir fonctions
 # ────────────────────────────────────────────────
 
 
-# MODIFIÉ : La fonction retourne maintenant c_p et rho
-def proprietes_thermiques_surface(
-    albedo: float,
-) -> tuple[float, float]:
-    """
-    Détermine la capacité thermique massique (c_p) et la masse volumique (rho)
-    d'une surface en se basant sur son albédo comme proxy.
 
-    Retourne:
-        tuple[float, float]: (capacité massique [kJ kg-1 K-1], densité [kg m-3])
-    """
-    if np.isnan(albedo):
-        return 1.0, 1500.0  # Valeurs par défaut pour la terre
-
-    _REF_ALBEDO = {
-        "ice": 0.60,
-        "water": 0.10,
-        "snow": 0.80,
-        "desert": 0.35,
-        "forest": 0.20,
-        "land": 0.15,
-    }
-    # Capacité thermique massique en kJ kg-1 K-1
-    _CAPACITY_BY_TYPE = {
-        "ice": 2.0,
-        "water": 4.18,
-        "snow": 2.0,
-        "desert": 0.8,
-        "forest": 1.0,
-        "land": 1.0,
-    }
-    # NOUVEAU : Masse volumique (densité) en kg m-3
-    _DENSITY_BY_TYPE = {
-        "ice": 917.0,
-        "water": 1000.0,
-        "snow": 300.0,  # Neige tassée
-        "desert": 1600.0,  # Sable sec
-        "forest": 1300.0,  # Sol forestier
-        "land": 1500.0,  # Sol générique
-    }
-
-    surf = min(_REF_ALBEDO, key=lambda k: abs(albedo - _REF_ALBEDO[k]))
-    c_p = _CAPACITY_BY_TYPE[surf]
-    rho = _DENSITY_BY_TYPE[surf]
-    return c_p, rho
-
-
-def lisser_donnees_annuelles(valeurs_mensuelles: np.ndarray, sigma: float):
-    jours_par_mois = np.array(
-        [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    )
-    valeurs_journalieres_discontinues = np.repeat(
-        valeurs_mensuelles, jours_par_mois
-    )
-    return gaussian_filter1d(
-        valeurs_journalieres_discontinues, sigma=sigma, mode="wrap"
-    )
 
 
 # ────────────────────────────────────────────────
 # Fonctions physiques (inchangé)
 # ────────────────────────────────────────────────
 
-
-def declination(day):
-    day_in_year = (day - 1) % 365 + 1
-    return np.radians(23.44) * np.sin(2 * pi * (284 + day_in_year) / 365)
-
-
-def cos_incidence(lat_rad, day, hour):
-    δ = declination(day)
-    H = np.radians(15 * (hour - 12))
-    ci = np.sin(lat_rad) * np.sin(δ) + np.cos(lat_rad) * np.cos(δ) * np.cos(H)
-    return max(ci, 0.0)
-
-
-def phi_net(lat_rad, day, hour, albedo_sol, albedo_nuages):
-    phi_entrant = constante_solaire * cos_incidence(lat_rad, day, hour)
-    return phi_entrant * (1 - albedo_nuages) * (1 - albedo_sol)
 
 
 def f_rhs(T, phinet, C, q_latent):
@@ -301,20 +122,20 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         _lon_idx(lon_deg),
     )
 
-    q_base = get_q_latent_base(lat_deg, lon_deg)
+    q_base = lib.P_em_surf_evap(lat_deg, lon_deg)
 
     print("Lissage des données annuelles (albédo, capacité)...")
     albedo_sol_mensuel_loc = monthly_albedo_sol[:, lat_idx, lon_idx]
-    albedo_sol_journalier_lisse = lisser_donnees_annuelles(
+    albedo_sol_journalier_lisse = f.lisser_donnees_annuelles(
         albedo_sol_mensuel_loc, sigma=15.0
     )
-    albedo_nuages_mensuel = load_monthly_cloud_albedo_mock(lat_deg, lon_deg)
-    albedo_nuages_journalier_lisse = lisser_donnees_annuelles(
+    albedo_nuages_mensuel = f.load_monthly_cloud_albedo_mock(lat_deg, lon_deg)
+    albedo_nuages_journalier_lisse = f.lisser_donnees_annuelles(
         albedo_nuages_mensuel, sigma=15.0
     )
 
     # MODIFIÉ : Calcul de la capacité thermique surfacique C
-    v_proprietes = np.vectorize(proprietes_thermiques_surface)
+    v_proprietes = np.vectorize(f.proprietes_thermiques_surface)
     # v_proprietes retourne un tuple de deux arrays : (capacités, densités)
     cap_massique_mensuelle, densite_mensuelle = v_proprietes(
         albedo_sol_mensuel_loc
@@ -325,7 +146,7 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         * densite_mensuelle
         * EPAISSEUR_ACTIVE
     )
-    C_journalier_lisse = lisser_donnees_annuelles(
+    C_journalier_lisse = f.lisser_donnees_annuelles(
         cap_surfacique_mensuelle, sigma=15.0
     )
 
@@ -335,7 +156,7 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         albedo_nuages_journalier_lisse[0],
         C_journalier_lisse[0],
     )
-    q_latent_hist[0] = get_daily_q_latent(q_base, lat_deg, 0)
+    q_latent_hist[0] = lib.get_daily_q_latent(q_base, lat_deg, 0)
 
     for k in range(N):
         t_sec = k * dt
@@ -346,7 +167,7 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         albedo_sol = albedo_sol_journalier_lisse[jour_dans_annee]
         albedo_nuages = albedo_nuages_journalier_lisse[jour_dans_annee]
         C = C_journalier_lisse[jour_dans_annee]
-        q_latent_daily = get_daily_q_latent(
+        q_latent_daily = lib.get_daily_q_latent(
             q_base, lat_deg, jour_dans_annee
         )
 
@@ -354,7 +175,7 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
             k + 1
         ], q_latent_hist[k + 1] = (albedo_sol, albedo_nuages, C, q_latent_daily)
 
-        phi_n = phi_net(
+        phi_n = lib.P_inc_solar(
             lat_rad, jour, heure_solaire, albedo_sol, albedo_nuages
         )
         q_latent_step = q_latent_daily if phi_n > 0 else -q_latent_daily
