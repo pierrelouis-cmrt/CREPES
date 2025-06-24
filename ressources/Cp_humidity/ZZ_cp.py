@@ -84,8 +84,10 @@ def plot_fast_from_updated_csv(
         vmin=0.8, vmax=4.2, transform=ccrs.PlateCarree()
     )
 
-    cbar = plt.colorbar(im, ax=ax, orientation="vertical", label="Capacité calorifique (kJ/kg/K)")
-    plt.title("Carte de la capacité calorifique (Affichage rapide)")
+    cbar = plt.colorbar(im, ax=ax, orientation="vertical")
+    cbar.set_label("Capacité calorifique (kJ/kg/K)", fontsize=14)
+
+    plt.title("Carte de la capacité calorifique (Affichage rapide)", fontsize=18, weight="bold")
     plt.show()
     print("  -> Terminé.")
 
