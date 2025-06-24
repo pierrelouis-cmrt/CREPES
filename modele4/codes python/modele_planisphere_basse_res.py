@@ -1,17 +1,15 @@
 # ---------------------------------------------------------------
-# Modèle 0-D de température de surface – Planisphère (Version Mise à Jour)
+# Modèle 0-D de température de surface – Planisphère (Version Modulaire)
 #
 # DESCRIPTION :
-# - Utilise le modèle physique avancé incluant :
+# - Utilise le modèle physique avancé en appelant les fonctions
+#   des modules externes `fonctions.py` et `lib.py`.
+# - Le modèle inclut :
 #   - Albédo de surface (A2) et albédo des nuages (A1).
 #   - Capacité thermique calculée depuis l'humidité du sol (RZSM).
-#   - Flux de chaleur latent (Q) basé sur la géographie (continents).
-# - Appelle les fonctions de calcul depuis les modules externes
-#   `fonctions.py` et `lib.py` pour une meilleure modularité.
-# - Le flux solaire est calculé avec les fonctions astronomiques précises.
-# - L'intégration temporelle utilise un schéma Backward-Euler implicite.
-# - La simulation est effectuée pour une grille de points sur tout le globe.
-# - La visualisation est interactive avec des curseurs pour le jour et l'heure.
+#   - Flux de chaleur latent (Q) basé sur la géographie.
+# - Le script principal orchestre la simulation globale et la
+#   visualisation interactive.
 # ---------------------------------------------------------------
 import numpy as np
 import matplotlib.pyplot as plt
@@ -38,13 +36,13 @@ except ImportError:
     USE_CARTOPY = False
 
 # ---------- constantes physiques et de simulation ----------
-# (Utilise les constantes définies dans lib.py et fonctions.py)
+# Les constantes sont importées depuis les modules pour la cohérence
 sigma = lib.sigma
-Tatm = lib.Tatm
-dt = lib.dt
+Tatm = f.Tatm  # Utilisation de la valeur de fonctions.py (-50°C)
+dt = f.dt
 EPAISSEUR_ACTIVE = f.EPAISSEUR_ACTIVE
 
-# --- Chargement des données au démarrage ---
+# --- Chargement et préparation des données au démarrage ---
 try:
     # 1. Données d'albédo de surface
     ALBEDO_DIR = pathlib.Path("ressources/albedo")
@@ -52,7 +50,7 @@ try:
     NLAT, NLON = len(LAT), len(LON)
 
     # 2. Données d'humidité du sol (RZSM) pour la capacité thermique
-    RZSM_CSV_PATH = pathlib.Path("ressources/Cp_humidity/average_rzsm_tout.csv")
+    RZSM_CSV_PATH = f.RZSM_CSV_PATH
     df_rzsm = pd.read_csv(RZSM_CSV_PATH)
     df_rzsm["lon"] = ((df_rzsm["lon"] + 180) % 360) - 180
     lon_bins = np.arange(-180, 180 + 1.0, 1.0)
@@ -68,8 +66,8 @@ try:
     print("Données d'humidité du sol (RZSM) chargées et grillées.")
 
     # 3. Données d'albédo des nuages (CERES)
-    CERES_FILE_PATH = f.CERES_FILE_PATH
-    ds_ceres = xr.open_dataset(CERES_FILE_PATH, decode_times=True)
+    # NOTE: Correction des noms de variables pour correspondre au fichier .nc
+    ds_ceres = xr.open_dataset(f.CERES_FILE_PATH, decode_times=True)
     ds_ceres = ds_ceres.assign_coords(
         lon=(((ds_ceres.lon + 180) % 360) - 180)
     ).sortby("lon")
@@ -90,30 +88,12 @@ except FileNotFoundError as e:
 
 
 # ────────────────────────────────────────────────
-# Fonctions de calcul spécifiques à la simulation globale
+# Fonctions de résolution et de simulation
 # ────────────────────────────────────────────────
-
-# Constantes pour le calcul de la capacité thermique
-RHO_W = 1000.0
-RHO_BULK = 1300.0
-CP_SEC = 0.8
-CP_WATER = 4.187
-CP_ICE = 2.09
-
-
-def compute_cp_from_rzsm(rzsm: np.ndarray) -> np.ndarray:
-    """Calcule la capacité thermique massique (kJ kg-1 K-1) depuis le RZSM."""
-    is_ice = np.isclose(rzsm, 0.9)
-    rzsm_clipped = np.clip(rzsm, 1e-6, 0.999)
-    w = (RHO_W * rzsm_clipped) / (
-        RHO_BULK * (1 - rzsm_clipped) + RHO_W * rzsm_clipped
-    )
-    cp = CP_SEC + w * (CP_WATER - CP_SEC)
-    return np.where(is_ice, CP_ICE, cp)
 
 
 def f_rhs(T, phinet, C, q_latent):
-    """Côté droit de l'équation différentielle, basé sur le nouveau modèle."""
+    """Côté droit de l'équation différentielle du modèle avancé."""
     return (phinet - q_latent + sigma * Tatm**4 - sigma * T**4) / C
 
 
@@ -155,6 +135,7 @@ def integrate_point_temperature(
         albedo_nuages = alb_nuages_daily[day_of_year]
         q_latent_step = q_latent_smoothed[k]
 
+        # Appel aux fonctions de lib.py pour les flux physiques
         phi_n = lib.P_inc_solar(
             lat_rad, jour, heure_solaire, albedo_sol, albedo_nuages
         )
@@ -193,13 +174,13 @@ def run_full_simulation(days, result_file=None):
         for j in range(NLON):
             lat, lon = LAT[i], LON[j]
 
-            # 1. Albédo de surface
+            # 1. Albédo de surface (lissé)
             albedo_mensuel_loc = monthly_albedo_sol[:, i, j]
             alb_sol_daily = f.lisser_donnees_annuelles(
                 albedo_mensuel_loc, sigma=15.0
             )
 
-            # 2. Albédo des nuages
+            # 2. Albédo des nuages (lissé)
             alb_nuages_m = CERES_CLIM_DATA.sel(
                 lat=lat, lon=lon, method="nearest"
             ).to_numpy()
@@ -216,16 +197,16 @@ def run_full_simulation(days, result_file=None):
             )
             rzsm_val = RZSM_GRID[lat_idx_rzsm, lon_idx_rzsm]
             cp_kj = (
-                compute_cp_from_rzsm(np.array([rzsm_val]))[0]
+                f.compute_cp_from_rzsm(np.array([rzsm_val]))[0]
                 if not np.isnan(rzsm_val)
-                else CP_SEC
+                else f.CP_SEC
             )
-            C_const = (cp_kj * 1000.0) * RHO_BULK * EPAISSEUR_ACTIVE
+            C_const = (cp_kj * 1000.0) * f.RHO_BULK * EPAISSEUR_ACTIVE
 
-            # 4. Flux de chaleur latent (Q)
+            # 4. Flux de chaleur latent (Q) - Appel à lib.py
             q_base = lib.P_em_surf_evap(lat, lon)
 
-            # Simulation pour ce point
+            # Lancement de la simulation pour ce point
             T0 = 288.15 - 30 * np.sin(np.radians(lat)) ** 2
             T_series = integrate_point_temperature(
                 days,
@@ -245,7 +226,7 @@ def run_full_simulation(days, result_file=None):
 
 
 # ────────────────────────────────────────────────
-# Exécution principale et tracé interactif
+# Exécution principale et affichage du planisphère
 # ────────────────────────────────────────────────
 if __name__ == "__main__":
     SIM_DAYS = 365  # Simuler une année complète pour la stabilisation
