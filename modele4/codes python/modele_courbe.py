@@ -17,9 +17,13 @@
 #   données d'humidité du sol (RZSM).
 # - NOUVEAU : Le flux de chaleur latente (Q) est calculé à partir
 #   des taux d'évaporation annuels par continent.
-# - NOUVEAU (votre demande) : La variation saisonnière de Q est
+# - NOUVEAU : La variation saisonnière de Q est
 #   supprimée. Q est une valeur de base constante (positive le
 #   jour, négative la nuit).
+# - NOUVEAU : Correction manuelle pour la détection
+#   de l'Arctique (Q=0).
+# - NOUVEAU (votre demande) : Visualisation du flux de chaleur
+#   latent alterné pour un seul jour, avec une transition lissée.
 # ---------------------------------------------------------------
 import numpy as np
 import matplotlib.pyplot as plt
@@ -185,9 +189,6 @@ try:
     )
     if RZSM_GRID is None:
         raise RuntimeError("Scipy manquant ou échec du griddage RZSM.")
-    # CORRIGÉ : L'indice ne doit pas dépasser la taille de la grille.
-    # L'erreur se produisait pour lat=90, qui donnait un index de 180
-    # pour une grille de taille 180 (indices 0-179).
     _rzsm_lat_idx = lambda lat: min(
         np.abs(RZSM_LAT_BINS - lat).argmin(), RZSM_GRID.shape[0] - 1
     )
@@ -263,6 +264,14 @@ continent_finder = create_continent_finder(SHAPEFILE_PATH)
 def get_q_latent_base(lat: float, lon: float) -> float:
     """Récupère la valeur de Q (W m-2) de base pour un point géographique."""
     continent = continent_finder(lat, lon)
+
+    if continent == "Océan" and lat > 75.0:
+        print(
+            f"Point ({lat:.2f}, {lon:.2f}) dans l'océan Arctique, "
+            "correction manuelle vers Q=0."
+        )
+        continent = "Antarctica"
+
     q_val = Q_LATENT_CONTINENT.get(continent, Q_LATENT_CONTINENT["Océan"])
     print(
         f"Coordonnées ({lat:.2f}, {lon:.2f}) détectées sur : "
@@ -359,9 +368,13 @@ def f_rhs(T, phinet, C, q_latent):
 def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
     N = int(days * 24 * 3600 / dt)
     T = np.empty(N + 1)
-    albedo_sol_hist, albedo_nuages_hist, C_hist, q_latent_hist = (
-        np.empty(N + 1) for _ in range(4)
-    )
+    (
+        albedo_sol_hist,
+        albedo_nuages_hist,
+        C_hist,
+        q_latent_hist,
+        q_latent_step_hist,
+    ) = (np.empty(N + 1) for _ in range(5))
     T[0] = T0
     lat_rad, lat_idx, lon_idx = (
         np.radians(lat_deg),
@@ -398,11 +411,18 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         f"C={C_const:.2e} J m⁻² K⁻¹"
     )
 
-    albedo_sol_hist[0], albedo_nuages_hist[0], C_hist[0], q_latent_hist[0] = (
+    (
+        albedo_sol_hist[0],
+        albedo_nuages_hist[0],
+        C_hist[0],
+        q_latent_hist[0],
+        q_latent_step_hist[0],
+    ) = (
         albedo_sol_journalier_lisse[0],
         albedo_nuages_journalier_lisse[0],
         C_const,
         q_base,
+        0.0,
     )
 
     for k in range(N):
@@ -415,19 +435,20 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         albedo_nuages = albedo_nuages_journalier_lisse[jour_dans_annee]
         q_latent_daily = q_base
 
-        albedo_sol_hist[k + 1], albedo_nuages_hist[k + 1], C_hist[
-            k + 1
-        ], q_latent_hist[k + 1] = (
-            albedo_sol,
-            albedo_nuages,
-            C_const,
-            q_latent_daily,
-        )
-
         phi_n = phi_net(
             lat_rad, jour, heure_solaire, albedo_sol, albedo_nuages
         )
         q_latent_step = q_latent_daily if phi_n > 0 else -q_latent_daily
+
+        albedo_sol_hist[k + 1], albedo_nuages_hist[k + 1], C_hist[
+            k + 1
+        ], q_latent_hist[k + 1], q_latent_step_hist[k + 1] = (
+            albedo_sol,
+            albedo_nuages,
+            C_const,
+            q_latent_daily,
+            q_latent_step,
+        )
 
         X = T[k]
         for _ in range(8):
@@ -438,11 +459,18 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
                 break
         T[k + 1] = X
 
-    return T, albedo_sol_hist, albedo_nuages_hist, C_hist, q_latent_hist
+    return (
+        T,
+        albedo_sol_hist,
+        albedo_nuages_hist,
+        C_hist,
+        q_latent_hist,
+        q_latent_step_hist,
+    )
 
 
 # ────────────────────────────────────────────────
-# Fonctions de tracé et exécution principale (inchangées)
+# Fonctions de tracé et exécution principale (MODIFIÉ)
 # ────────────────────────────────────────────────
 
 
@@ -453,6 +481,7 @@ def tracer_comparaison(
     albedo_nuages_hist,
     C_hist,
     q_latent_hist,
+    q_latent_step_hist,
     titre,
     jour_a_afficher,
 ):
@@ -460,6 +489,12 @@ def tracer_comparaison(
         3, 1, figsize=(14, 12), sharex=True, height_ratios=[3, 2, 2]
     )
     days_axis = times / 86400
+    steps_per_day = int(24 * 3600 / dt)
+
+    # --- Axe 0 : Température ---
+    start_idx = (jour_a_afficher - 1) * steps_per_day
+    end_idx = min(jour_a_afficher * steps_per_day, len(days_axis) - 1)
+    start_idx = min(start_idx, end_idx)
 
     axs[0].plot(
         days_axis,
@@ -469,10 +504,6 @@ def tracer_comparaison(
         alpha=0.8,
         label="Simulation Année 2",
     )
-    steps_per_day = int(24 * 3600 / dt)
-    start_idx = (jour_a_afficher - 1) * steps_per_day
-    end_idx = min(jour_a_afficher * steps_per_day, len(days_axis) - 1)
-    start_idx = min(start_idx, end_idx)
     axs[0].plot(
         days_axis[start_idx : end_idx + 1],
         T[start_idx : end_idx + 1] - 273.15,
@@ -486,6 +517,7 @@ def tracer_comparaison(
     axs[0].legend()
     axs[0].set_xlim(0, 365)
 
+    # --- Axe 1 : Albédo ---
     color1 = "tab:blue"
     axs[1].set_ylabel("Albédo (sans unité)", color=color1)
     axs[1].plot(
@@ -504,6 +536,7 @@ def tracer_comparaison(
     axs[1].legend(loc="upper left")
     axs[1].grid(ls=":")
 
+    # --- Axe 2 : Flux Latent et Capacité Thermique ---
     color_q = "tab:green"
     axs[2].set_ylabel("Flux Chaleur Latente (W m⁻²)", color=color_q)
     axs[2].plot(
@@ -511,9 +544,23 @@ def tracer_comparaison(
         q_latent_hist,
         color=color_q,
         lw=2.0,
+        ls="--",
         label="Flux Latent de base (Q)",
     )
     axs[2].tick_params(axis="y", labelcolor=color_q)
+
+    # NOUVEAU : Isoler les données du jour pour Q et les lisser localement
+    q_day_raw = q_latent_step_hist[start_idx : end_idx + 1]
+    if len(q_day_raw) > 3:  # S'assurer qu'il y a assez de points pour lisser
+        q_day_lisse = gaussian_filter1d(q_day_raw, sigma=1.5)
+        axs[2].plot(
+            days_axis[start_idx : end_idx + 1],
+            q_day_lisse,
+            color="firebrick",
+            lw=2.5,
+            label=f"Flux Latent (Jour n°{jour_a_afficher})",
+        )
+
     axs[2].legend(loc="upper left")
 
     ax3 = axs[2].twinx()
@@ -539,12 +586,12 @@ def tracer_comparaison(
 
 if __name__ == "__main__":
     jours_de_simulation = 365 * 2
-    jour_a_afficher = 182
+    jour_a_afficher = 182  # Solstice d'été, bonne journée pour voir l'effet
 
     # Pour Paris (Europe)
     lat_sim, lon_sim = 48.5, 2.3
     # Pour l'Amazonie (Amérique du Sud, Q élevé)
-    #lat_sim, lon_sim = -3.46, -62.21
+    # lat_sim, lon_sim = -3.46, -62.21
     # Pour le Sahara (Afrique, Q modéré, Cp faible)
     # lat_sim, lon_sim = 25.0, 15.0
     # Pour l'Océan Arctique (Pôle Nord)
@@ -561,11 +608,19 @@ if __name__ == "__main__":
         alb_nuages_full,
         C_full,
         q_latent_full,
+        q_latent_step_full,
     ) = backward_euler(jours_de_simulation, lat_sim, lon_sim)
 
     steps_per_year = int(365 * 24 * 3600 / dt)
     t_yr2_plot = np.arange(len(T_full) - steps_per_year) * dt
-    T_yr2, alb_sol_yr2, alb_nuages_yr2, C_yr2, q_latent_yr2 = (
+    (
+        T_yr2,
+        alb_sol_yr2,
+        alb_nuages_yr2,
+        C_yr2,
+        q_latent_yr2,
+        q_latent_step_yr2,
+    ) = (
         arr[steps_per_year:]
         for arr in [
             T_full,
@@ -573,6 +628,7 @@ if __name__ == "__main__":
             alb_nuages_full,
             C_full,
             q_latent_full,
+            q_latent_step_full,
         ]
     )
 
@@ -583,6 +639,7 @@ if __name__ == "__main__":
         alb_nuages_yr2,
         C_yr2,
         q_latent_yr2,
+        q_latent_step_yr2,
         f"Simulation (Q constant) pour Lat={lat_sim}, Lon={lon_sim}",
         jour_a_afficher,
     )
