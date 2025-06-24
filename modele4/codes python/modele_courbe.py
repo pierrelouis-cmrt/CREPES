@@ -367,21 +367,13 @@ if __name__ == "__main__":
     # Pour Paris (Europe)
     lat_sim, lon_sim = 48.5, 2.3
     # Pour l'Amazonie (Amérique du Sud, Q élevé)
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
     #lat_sim, lon_sim = -3.46, -62.21
-=======
-    # lat_sim, lon_sim = -3.46, -62.21
->>>>>>> Stashed changes
-=======
-    # lat_sim, lon_sim = -3.46, -62.21
->>>>>>> Stashed changes
     # Pour le Sahara (Afrique, Q modéré, Cp faible)
     # lat_sim, lon_sim = 25.0, 15.0
     # Pour l'Océan Arctique (Pôle Nord)
     # lat_sim, lon_sim = 82.0, 135.0
     # Pour l'Antarctique (Pôle Sud)
-    lat_sim, lon_sim = -76.0, 100.0
+    # lat_sim, lon_sim = -76.0, 100.0
 
     print(
         f"Lancement de la simulation pour Lat={lat_sim}N, Lon={lon_sim}E..."
