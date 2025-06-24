@@ -17,21 +17,15 @@ from math import pi
 import pathlib
 import pandas as pd
 from scipy.ndimage import gaussian_filter1d
+import fonctions as f 
+import lib as lib
 
-# NOUVEAU : Importations pour la partie géospatiale
-try:
-    import geopandas as gpd
-    from shapely.geometry import Point
-
-    GEOPANDAS_AVAILABLE = True
-except ImportError:
-    GEOPANDAS_AVAILABLE = False
 
 
 # ---------- constantes physiques ----------
 constante_solaire = 1361.0  # W m-2
 sigma = 5.670374419e-8  # Stefan‑Boltzmann (SI)
-Tatm = 223.15  # atmosphère radiative (‑50 °C)
+Tatm = 223.15  # atmosphère radiative (‑20 °C)
 dt = 1800.0  # pas de temps : 30 min
 MASSE_SURFACIQUE_ACTIVE = 4.0e2  # kg m-2
 
@@ -40,27 +34,12 @@ MASSE_SURFACIQUE_ACTIVE = 4.0e2  # kg m-2
 # ────────────────────────────────────────────────
 
 
-def load_albedo_series(
-    csv_dir: str | pathlib.Path, pattern: str = "albedo{:02d}.csv"
-):
-    """Charge les 12 fichiers CSV d'albédo de surface mensuel."""
-    csv_dir = pathlib.Path(csv_dir)
-    latitudes: np.ndarray | None = None
-    longitudes: np.ndarray | None = None
-    cubes: list[np.ndarray] = []
-    for month in range(1, 13):
-        df = pd.read_csv(csv_dir / pattern.format(month))
-        if latitudes is None:
-            latitudes = df["Latitude/Longitude"].astype(float).to_numpy()
-            longitudes = df.columns[1:].astype(float).to_numpy()
-        cubes.append(df.set_index("Latitude/Longitude").to_numpy(dtype=float))
-    print("Données d'albédo de surface chargées.")
-    return np.stack(cubes, axis=0), latitudes, longitudes
-
-
+SHAPEFILE_PATH = (
+    pathlib.Path("ressources/map") / "ne_110m_admin_0_countries.shp"
+)
 try:
     ALBEDO_DIR = pathlib.Path("ressources/albedo")
-    monthly_albedo_sol, LAT, LON = load_albedo_series(ALBEDO_DIR)
+    monthly_albedo_sol, LAT, LON = f.load_albedo_series(ALBEDO_DIR)
     _lat_idx = lambda lat: int(np.abs(LAT - lat).argmin())
     _lon_idx = lambda lon: int(
         np.abs(LON - (((lon + 180) % 360) - 180)).argmin()
@@ -70,144 +49,15 @@ except FileNotFoundError:
     print("La simulation ne peut pas continuer sans les données d'albédo.")
     exit()
 
-# ────────────────────────────────────────────────
-# NOUVEAU / MODIFIÉ - Données de chaleur latente avec GeoPandas
-# ────────────────────────────────────────────────
 
-# Chemin vers le fichier shapefile de Natural Earth
-SHAPEFILE_PATH = (
-    pathlib.Path("ressources/map") / "ne_110m_admin_0_countries.shp"
-)
-
-Q_CONTINENT = {
-    "Africa": 46.8,  # Note: Le shapefile utilise les noms anglais
-    "Asia": 40.1,
-    "South America": 99.8,
-    "North America": 35.4,
-    "Europe": 36.6,
-    "Oceania": 28.4,  # 'Oceania' contient l'Australie
-    "Antarctica": 0.0,
-    "Océan": 0.0,
-}
-
-
-def create_continent_finder(shapefile_path: pathlib.Path):
-    """
-    Charge un shapefile et retourne une fonction capable de trouver
-    le continent pour un point (lat, lon).
-    """
-    if not GEOPANDAS_AVAILABLE:
-        print(
-            "AVERTISSEMENT: GeoPandas n'est pas installé. "
-            "La détection de continent sera désactivée (Q=0)."
-        )
-        return lambda lat, lon: "Océan"
-
-    try:
-        print(f"Chargement du shapefile depuis : {shapefile_path}")
-        world = gpd.read_file(shapefile_path)
-        # S'assurer que le système de coordonnées est standard (WGS84)
-        world = world.to_crs(epsg=4326)
-        print("Shapefile chargé avec succès.")
-    except Exception as e:
-        print(f"ERREUR: Impossible de charger le shapefile : {e}")
-        print("La détection de continent sera désactivée (Q=0).")
-        return lambda lat, lon: "Océan"
-
-    def find_continent_for_point(lat: float, lon: float) -> str:
-        """Fonction interne qui effectue la recherche."""
-        point = Point(lon, lat)  # L'ordre est (longitude, latitude)
-        for _, row in world.iterrows():
-            if row["geometry"].contains(point):
-                return row["CONTINENT"]
-        return "Océan"
-
-    return find_continent_for_point
 
 
 # --- Création de la fonction de recherche au démarrage ---
-continent_finder = create_continent_finder(SHAPEFILE_PATH)
+continent_finder = f.create_continent_finder(SHAPEFILE_PATH)
 
-
-def get_q_latent_base(lat: float, lon: float) -> float:
-    """Récupère la valeur de Q (W m-2) pour un point géographique."""
-    continent = continent_finder(lat, lon)
-    # Le nom du continent peut varier, on cherche une correspondance partielle
-    q_val = 0.0
-    for key, value in Q_CONTINENT.items():
-        if key in continent:
-            q_val = value
-            break
-    else: # Si la boucle se termine sans break
-        q_val = Q_CONTINENT["Océan"]
-
-    print(
-        f"Coordonnées ({lat:.2f}, {lon:.2f}) détectées sur le continent : "
-        f"{continent} (Q = {q_val} W m⁻²)"
-    )
-    return q_val
-
-
-# ────────────────────────────────────────────────
-# Données d'albédo des nuages (inchangé)
-# ────────────────────────────────────────────────
-
-
-def load_monthly_cloud_albedo_mock(lat_deg: float, lon_deg: float):
-    print(
-        "NOTE : Utilisation de données simulées (mock) pour l'albédo des nuages."
-    )
-    amplitude = 0.15 * np.sin(np.radians(abs(lat_deg)))
-    avg_cloud_albedo = 0.3
-    mois = np.arange(12)
-    variation_saisonniere = amplitude * np.cos(2 * pi * (mois - 0.5) / 12)
-    return avg_cloud_albedo - variation_saisonniere
-
-
-# ────────────────────────────────────────────────
-# Capacité thermique et lissage (inchangé)
-# ────────────────────────────────────────────────
-
-
-def capacite_thermique_massique(albedo: float) -> float:
-    if np.isnan(albedo):
-        return 1.0
-    _REF_ALBEDO = {"ice": 0.60, "water": 0.10, "snow": 0.80, "desert": 0.35, "forest": 0.20, "land": 0.15}
-    _CAPACITY_BY_TYPE = {"ice": 2.0, "water": 4.18, "snow": 2.0, "desert": 0.8, "forest": 1.0, "land": 1.0}
-    surf = min(_REF_ALBEDO, key=lambda k: abs(albedo - _REF_ALBEDO[k]))
-    return _CAPACITY_BY_TYPE[surf]
-
-
-def lisser_donnees_annuelles(valeurs_mensuelles: np.ndarray, sigma: float):
-    jours_par_mois = np.array([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31])
-    valeurs_journalieres_discontinues = np.repeat(valeurs_mensuelles, jours_par_mois)
-    return gaussian_filter1d(valeurs_journalieres_discontinues, sigma=sigma, mode="wrap")
-
-
-# ────────────────────────────────────────────────
-# Fonctions physiques (inchangé, sauf f_rhs)
-# ────────────────────────────────────────────────
-
-
-def declination(day):
-    day_in_year = (day - 1) % 365 + 1
-    return np.radians(23.44) * np.sin(2 * pi * (284 + day_in_year) / 365)
-
-
-def cos_incidence(lat_rad, day, hour):
-    δ = declination(day)
-    H = np.radians(15 * (hour - 12))
-    ci = np.sin(lat_rad) * np.sin(δ) + np.cos(lat_rad) * np.cos(δ) * np.cos(H)
-    return max(ci, 0.0)
-
-
-def phi_net(lat_rad, day, hour, albedo_sol, albedo_nuages):
-    phi_entrant = constante_solaire * cos_incidence(lat_rad, day, hour)
-    return phi_entrant * (1 - albedo_nuages) * (1 - albedo_sol)
-
-
+# --- Bilan thermodynamique ---
 def f_rhs(T, phinet, C, q_latent):
-    return (phinet - q_latent + sigma * Tatm**4 - sigma * T**4) / C
+    return (phinet - q_latent + lib.P_em_atm_thermal(Tatm) -lib.P_em_surf_thermal(T)) / C
 
 
 # ────────────────────────────────────────────────
@@ -223,17 +73,17 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
     lat_rad, lat_idx, lon_idx = np.radians(lat_deg), _lat_idx(lat_deg), _lon_idx(lon_deg)
 
     # MODIFIÉ : Appel de la nouvelle fonction pour obtenir Q
-    q_latent_base = get_q_latent_base(lat_deg, lon_deg)
+    q_latent_base = lib.P_em_surf_evap(lat_deg, lon_deg)
 
     print("Lissage des données annuelles par convolution gaussienne...")
     albedo_sol_mensuel_loc = monthly_albedo_sol[:, lat_idx, lon_idx]
-    albedo_sol_journalier_lisse = lisser_donnees_annuelles(albedo_sol_mensuel_loc, sigma=15.0)
-    albedo_nuages_mensuel = load_monthly_cloud_albedo_mock(lat_deg, lon_deg)
-    albedo_nuages_journalier_lisse = lisser_donnees_annuelles(albedo_nuages_mensuel, sigma=15.0)
-    v_capacite = np.vectorize(capacite_thermique_massique)
+    albedo_sol_journalier_lisse = f.lisser_donnees_annuelles(albedo_sol_mensuel_loc, sigma=15.0)
+    albedo_nuages_mensuel = f.load_monthly_cloud_albedo_mock(lat_deg, lon_deg)
+    albedo_nuages_journalier_lisse = f.lisser_donnees_annuelles(albedo_nuages_mensuel, sigma=15.0)
+    v_capacite = np.vectorize(f.capacite_thermique_massique)
     cap_massique_mensuelle = v_capacite(albedo_sol_mensuel_loc) * 1000.0
     cap_surfacique_mensuelle = cap_massique_mensuelle * MASSE_SURFACIQUE_ACTIVE
-    C_journalier_lisse = lisser_donnees_annuelles(cap_surfacique_mensuelle, sigma=15.0)
+    C_journalier_lisse = f.lisser_donnees_annuelles(cap_surfacique_mensuelle, sigma=15.0)
 
     albedo_sol_hist[0], albedo_nuages_hist[0], C_hist[0] = (
         albedo_sol_journalier_lisse[0], albedo_nuages_journalier_lisse[0], C_journalier_lisse[0]
@@ -251,7 +101,7 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
 
         albedo_sol_hist[k + 1], albedo_nuages_hist[k + 1], C_hist[k + 1] = albedo_sol, albedo_nuages, C
 
-        phi_n = phi_net(lat_rad, jour, heure_solaire, albedo_sol, albedo_nuages)
+        phi_n = lib.P_inc_solar(lat_rad, jour, heure_solaire, albedo_sol, albedo_nuages)
         q_latent_step = q_latent_base if phi_n > 0 else -q_latent_base
 
         X = T[k]
@@ -293,10 +143,9 @@ if __name__ == "__main__":
     jours_de_simulation = 365 * 2
     jour_a_afficher = 182
 
-    # Pour Paris (Europe)
-    # lat_sim, lon_sim = 48.85, 2.35
-    # Pour l'Amazonie (Amérique du Sud, Q élevé)
-    lat_sim, lon_sim = -3.46, -62.21
+    #Pour Paris (Europe)
+    lat_sim, lon_sim = 48.85, 2.35
+
 
     print(f"Lancement de la simulation pour Lat={lat_sim}N, Lon={lon_sim}E...")
     T_full, alb_sol_full, alb_nuages_full, C_full = backward_euler(jours_de_simulation, lat_sim, lon_sim)

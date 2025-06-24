@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 from math import pi
 import pathlib
 import pandas as pd
-import lib as l 
+import lib as lib 
 import fonctions as f
 
 # ---------- constantes physiques ----------
@@ -40,28 +40,12 @@ MASSE_SURFACIQUE_ACTIVE = 4.0e2  # kg m-2
 # DATA – Chargement de l'albédo mensuel (depuis Script 2)
 # ────────────────────────────────────────────────
 
-def load_albedo_series(
-    csv_dir: str | pathlib.Path, pattern: str = "albedo{:02d}.csv"
-):
-    """Charge les 12 fichiers CSV d'albédo mensuel."""
-    csv_dir = pathlib.Path(csv_dir)
-    latitudes: np.ndarray | None = None
-    longitudes: np.ndarray | None = None
-    cubes: list[np.ndarray] = []
-    for month in range(1, 13):
-        df = pd.read_csv(csv_dir / pattern.format(month))
-        if latitudes is None:
-            latitudes = df["Latitude/Longitude"].astype(float).to_numpy()
-            longitudes = df.columns[1:].astype(float).to_numpy()
-        cubes.append(df.set_index("Latitude/Longitude").to_numpy(dtype=float))
-    print("Données d'albédo chargées.")
-    return np.stack(cubes, axis=0), latitudes, longitudes
 
 
 # --- Chargement des données au démarrage ---
 try:
     ALBEDO_DIR = pathlib.Path("ressources/albedo")
-    monthly_albedo, LAT, LON = load_albedo_series(ALBEDO_DIR)
+    monthly_albedo, LAT, LON = f.load_albedo_series(ALBEDO_DIR)
     _lat_idx = lambda lat: int(np.abs(LAT - lat).argmin())
     _lon_idx = lambda lon: int(
         np.abs(LON - (((lon + 180) % 360) - 180)).argmin()
@@ -77,7 +61,7 @@ except FileNotFoundError:
 # ---------- RHS de l’EDO ----------
 
 def f_rhs(T, phinet, C):
-    return (phinet + l.P_abs_atm_thermal(Tatm) - l.P_em_surf_thermal(T)) / C
+    return (phinet + lib.P_abs_atm_thermal(Tatm) - lib.P_em_surf_thermal(T)) / C
 
 
 # ---------- intégrateur Backward‑Euler ----------
@@ -128,7 +112,7 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         albedo_hist[k + 1] = albedo
         C_hist[k + 1] = C
 
-        phi_n = l.P_inc_solar(lat_rad, jour, heure_solaire, albedo)
+        phi_n = lib.P_inc_solar(lat_rad, jour, heure_solaire, albedo)
 
         # Itération de Newton-Raphson pour résoudre l'équation implicite
         X = T[k]
@@ -216,10 +200,10 @@ if __name__ == "__main__":
     jour_a_afficher = 182  # 1er juillet (approx.)
 
     # --- Simulation pour Pole Nord ---
-    lat_poleN, lon_poleN = 90, 0
+    lat_Paris, lon_Paris = 48.866667 , 2.333333
     print("Lancement de la simulation pour Pole Nord...")
     t_full, T_full, alb_full, C_full = backward_euler(
-        jours_de_simulation, lat_poleN, lon_poleN
+        jours_de_simulation, lat_Paris, lon_Paris
     )
 
     # Extraction de la deuxième année
@@ -235,7 +219,7 @@ if __name__ == "__main__":
         T_yr2,
         alb_yr2,
         C_yr2,
-        f"Simulation stabilisée pour Paris (Lat={lat_poleN}, Lon={lat_poleN})",
+        f"Simulation stabilisée pour Paris (Lat={lat_Paris}, Lon={lon_Paris})",
         jour_a_afficher,
     )
 
