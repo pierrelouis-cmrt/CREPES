@@ -9,7 +9,45 @@ import matplotlib.pyplot as plt
 from math import pi
 import pathlib
 import pandas as pd
-import fonctions as f 
+import fonctions as f
+import subprocess
+
+
+try:
+    import numpy
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", numpy])
+    import numpy
+
+try:
+    import matplotlib
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", matplotlib])
+    import matplotlib
+
+try:
+    import math
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", math])
+    import math
+
+try:
+    import pathlib
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", pathlib])
+    import pathlib
+
+try:
+    import pandas
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", pandas])
+    import pandas
+
 
 # ---------- constantes physiques ----------
 constante_solaire = 1361.0  # W m-2
