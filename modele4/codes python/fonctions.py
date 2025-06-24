@@ -124,14 +124,32 @@ except ImportError:
 
 # Calcul de la déclinaison solaire en fonction du jour de l'année
 def declination(day):
-    """Retourne la déclinaison solaire (rad) pour le jour de l’année (1‑365)."""
+    """
+    Calcule la déclinaison solaire (en radians) pour un jour donné de l'année.
+
+    Input:
+        - day (int) : jour de l'année (1 à 365)
+
+    Output:
+        - float : déclinaison solaire en radians
+    """
     # Le jour est cyclique sur 365 jours
     day_in_year = (day - 1) % 365 + 1
     return np.radians(23.44) * np.sin(2 * pi * (284 + day_in_year) / 365)
 
 # Calcul du cosinus de l’angle d’incidence du rayonnement solaire
 def cos_incidence(lat_rad, day, hour):
-    """Cosinus de l’angle d’incidence du rayonnement sur le plan local."""
+    """
+    Calcule le cosinus de l’angle d’incidence du rayonnement solaire sur une surface donnée.
+
+    Inputs:
+        - lat_rad (float) : latitude en radians
+        - day (int) : jour de l’année (1 à 365)
+        - hour (float) : heure locale (en heures solaires, 0 à 24)
+
+    Output:
+        - float : cosinus de l’angle d’incidence (compris entre 0 et 1)
+    """
     δ = declination(day)
     H = np.radians(15 * (hour - 12))  # Angle horaire en radians
     ci = np.sin(lat_rad) * np.sin(δ) + np.cos(lat_rad) * np.cos(δ) * np.cos(H)
@@ -171,6 +189,15 @@ RZSM_CSV_PATH = pathlib.Path("ressources/Cp_humidity/average_rzsm_tout.csv")
 
 
 def compute_cp_from_rzsm(rzsm: np.ndarray) -> np.ndarray:
+    """
+    Calcule la capacité thermique massique (c_p) en fonction de l’humidité du sol (RZSM).
+
+    Input:
+        - rzsm (np.ndarray) : tableau d’humidité du sol relative (0 à 1)
+
+    Output:
+        - np.ndarray : tableau des capacités thermiques massiques correspondantes (kJ/kg/K)
+    """
     is_ice = np.isclose(rzsm, 0.9)
     rzsm_clipped = np.clip(rzsm, 1e-6, 0.999)
     w = (RHO_W * rzsm_clipped) / (
@@ -181,6 +208,18 @@ def compute_cp_from_rzsm(rzsm: np.ndarray) -> np.ndarray:
 
 
 def load_and_grid_rzsm_data(csv_path: pathlib.Path):
+    """
+    Charge un fichier CSV contenant l'humidité du sol (RZSM) et le transforme en grille 2D.
+
+    Input:
+        - csv_path (pathlib.Path) : chemin du fichier CSV contenant les colonnes 'lat', 'lon' et 'RZSM'
+
+    Output:
+        - statistic.T (np.ndarray) : tableau 2D griddé de l’humidité du sol
+        - lat_bins (np.ndarray) : bords des intervalles de latitude
+        - lon_bins (np.ndarray) : bords des intervalles de longitude
+        (Retourne None, None, None si `scipy` n'est pas disponible)
+    """
     if not SCIPY_AVAILABLE:
         return None, None, None
     df = pd.read_csv(csv_path)
@@ -201,7 +240,15 @@ def load_and_grid_rzsm_data(csv_path: pathlib.Path):
 
 # Associe un albédo à une capacité thermique massique
 def capacite_thermique_massique(albedo: float) -> float:
-    """Retourne la capacité thermique massique (kJ kg-1 K-1) pour un albedo."""
+    """
+    Associe un albédo à une capacité thermique massique approximative.
+
+    Input:
+        - albedo (float) : albédo de surface (0 à 1)
+
+    Output:
+        - float : capacité thermique massique (kJ/kg/K)
+    """
     if np.isnan(albedo):
         return _CAPACITY_BY_TYPE["land"]
     surf = min(_REF_ALBEDO, key=lambda k: abs(albedo - _REF_ALBEDO[k]))
@@ -209,6 +256,16 @@ def capacite_thermique_massique(albedo: float) -> float:
 
 # Applique un lissage gaussien à des données mensuelles étendues en journalières
 def lisser_donnees_annuelles(valeurs_mensuelles: np.ndarray, sigma: float):
+    """
+    Applique un lissage gaussien à une série mensuelle extrapolée en journalière.
+
+    Inputs:
+        - valeurs_mensuelles (np.ndarray) : tableau de 12 valeurs mensuelles
+        - sigma (float) : écart-type pour le filtre gaussien
+
+    Output:
+        - np.ndarray : série journalière lissée
+    """
     jours_par_mois = np.array(
         [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     )
@@ -223,7 +280,18 @@ def lisser_donnees_annuelles(valeurs_mensuelles: np.ndarray, sigma: float):
 def load_albedo_series(
     csv_dir: str | pathlib.Path, pattern: str = "albedo{:02d}.csv"
 ):
-    """Charge les 12 fichiers CSV d'albédo de surface mensuel."""
+    """
+    Charge une série de 12 fichiers CSV contenant l’albédo de surface mensuel.
+
+    Inputs:
+        - csv_dir (str | pathlib.Path) : chemin vers le dossier contenant les fichiers CSV
+        - pattern (str) : motif de nom de fichier, par défaut "albedo{:02d}.csv"
+
+    Outputs:
+        - np.ndarray : tableau (12, lat, lon) des albédo mensuels
+        - latitudes (np.ndarray) : vecteur des latitudes
+        - longitudes (np.ndarray) : vecteur des longitudes
+    """
     csv_dir = pathlib.Path(csv_dir)
     latitudes: np.ndarray | None = None
     longitudes: np.ndarray | None = None
@@ -243,26 +311,18 @@ SHAPEFILE_PATH = (
     pathlib.Path("ressources/map") / "ne_110m_admin_0_countries.shp"
 )
 
-def load_albedo_series(
-    csv_dir: str | pathlib.Path, pattern: str = "albedo{:02d}.csv"
-):
-    """Charge les 12 fichiers CSV d'albédo de surface mensuel."""
-    csv_dir = pathlib.Path(csv_dir)
-    latitudes: np.ndarray | None = None
-    longitudes: np.ndarray | None = None
-    cubes: list[np.ndarray] = []
-    for month in range(1, 13):
-        df = pd.read_csv(csv_dir / pattern.format(month))
-        if latitudes is None:
-            latitudes = df["Latitude/Longitude"].astype(float).to_numpy()
-            longitudes = df.columns[1:].astype(float).to_numpy()
-        cubes.append(df.set_index("Latitude/Longitude").to_numpy(dtype=float))
-    print("Données d'albédo de surface chargées.")
-    return np.stack(cubes, axis=0), latitudes, longitudes
-
 
 # Crée une fonction qui associe un point géographique à un continent
 def create_continent_finder(shapefile_path: pathlib.Path):
+    """
+    Crée une fonction permettant d’associer un point géographique à un continent, à partir d’un shapefile.
+
+    Input:
+        - shapefile_path (pathlib.Path) : chemin vers un shapefile de pays (Natural Earth par ex.)
+
+    Output:
+        - function(lat: float, lon: float) -> str : fonction retournant le continent ("Océan" par défaut si non trouvé)
+    """
     if not GEOPANDAS_AVAILABLE:
         return lambda lat, lon: "Océan"
     try:
@@ -297,6 +357,16 @@ CERES_FILE_PATH = (
 def load_monthly_cloud_albedo_from_ceres(
     lat_deg: float, lon_deg: float
 ) -> np.ndarray:
+    """
+    Extrait les données mensuelles moyennes d’albédo des nuages pour une localisation donnée à partir d’un fichier NetCDF (CERES).
+
+    Inputs:
+        - lat_deg (float) : latitude en degrés
+        - lon_deg (float) : longitude en degrés
+
+    Output:
+        - np.ndarray : vecteur de 12 valeurs d’albédo mensuel des nuages
+    """
     if not XARRAY_AVAILABLE:
         exit("ERREUR: xarray non installé.")
     try:
@@ -337,11 +407,13 @@ def proprietes_thermiques_surface(
     albedo: float,
 ) -> tuple[float, float]:
     """
-    Détermine la capacité thermique massique (c_p) et la masse volumique (rho)
-    d'une surface en se basant sur son albédo comme proxy.
+    Estime la capacité thermique massique et la masse volumique d’une surface à partir de son albédo.
 
-    Retourne:
-        tuple[float, float]: (capacité massique [kJ kg-1 K-1], densité [kg m-3])
+    Input:
+        - albedo (float) : albédo de la surface
+
+    Output:
+        - tuple[float, float] : (capacité thermique massique [kJ/kg/K], masse volumique [kg/m³])
     """
     if np.isnan(albedo):
         return 1.0, 1500.0  # Valeurs par défaut pour la terre
