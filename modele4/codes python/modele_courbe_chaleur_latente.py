@@ -20,9 +20,6 @@ from scipy.ndimage import gaussian_filter1d
 import fonctions as f 
 import lib as lib
 
-import fonctions as f 
-import lib as lib
-
 
 
 # ---------- constantes physiques ----------
@@ -40,12 +37,8 @@ MASSE_SURFACIQUE_ACTIVE = 4.0e2  # kg m-2
 SHAPEFILE_PATH = (
     pathlib.Path("ressources/map") / "ne_110m_admin_0_countries.shp"
 )
-SHAPEFILE_PATH = (
-    pathlib.Path("ressources/map") / "ne_110m_admin_0_countries.shp"
-)
 try:
     ALBEDO_DIR = pathlib.Path("ressources/albedo")
-    monthly_albedo_sol, LAT, LON = f.load_albedo_series(ALBEDO_DIR)
     monthly_albedo_sol, LAT, LON = f.load_albedo_series(ALBEDO_DIR)
     _lat_idx = lambda lat: int(np.abs(LAT - lat).argmin())
     _lon_idx = lambda lon: int(
@@ -75,31 +68,7 @@ def f_rhs(T, phinet, C, q_latent):
 def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
     N = int(days * 24 * 3600 / dt)
     T = np.empty(N + 1)
-<<<<<<< HEAD:modele4/modele_courbe_chaleur_latente.py
     albedo_sol_hist, albedo_nuages_hist, C_hist = (np.empty(N + 1) for _ in range(3))
-    T[0] = T0
-    lat_rad, lat_idx, lon_idx = np.radians(lat_deg), _lat_idx(lat_deg), _lon_idx(lon_deg)
-
-    # MODIFIÉ : Appel de la nouvelle fonction pour obtenir Q
-    q_latent_base = lib.P_em_surf_evap(lat_deg, lon_deg)
-
-    print("Lissage des données annuelles par convolution gaussienne...")
-    albedo_sol_mensuel_loc = monthly_albedo_sol[:, lat_idx, lon_idx]
-    albedo_sol_journalier_lisse = f.lisser_donnees_annuelles(albedo_sol_mensuel_loc, sigma=15.0)
-    albedo_nuages_mensuel = f.load_monthly_cloud_albedo_mock(lat_deg, lon_deg)
-    albedo_nuages_journalier_lisse = f.lisser_donnees_annuelles(albedo_nuages_mensuel, sigma=15.0)
-    v_capacite = np.vectorize(f.capacite_thermique_massique)
-    cap_massique_mensuelle = v_capacite(albedo_sol_mensuel_loc) * 1000.0
-    cap_surfacique_mensuelle = cap_massique_mensuelle * MASSE_SURFACIQUE_ACTIVE
-    C_journalier_lisse = f.lisser_donnees_annuelles(cap_surfacique_mensuelle, sigma=15.0)
-
-    albedo_sol_hist[0], albedo_nuages_hist[0], C_hist[0] = (
-        albedo_sol_journalier_lisse[0], albedo_nuages_journalier_lisse[0], C_journalier_lisse[0]
-=======
-    albedo_sol_hist, albedo_nuages_hist, C_hist, q_latent_hist = (
-        np.empty(N + 1) for _ in range(4)
->>>>>>> 4f09c01891f27ae1424a6e4761ccda5af06095c0:modele4/codes python/modele_courbe_chaleur_latente.py
-    )
     T[0] = T0
     lat_rad, lat_idx, lon_idx = np.radians(lat_deg), _lat_idx(lat_deg), _lon_idx(lon_deg)
 
@@ -132,15 +101,8 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
 
         albedo_sol_hist[k + 1], albedo_nuages_hist[k + 1], C_hist[k + 1] = albedo_sol, albedo_nuages, C
 
-<<<<<<< HEAD:modele4/modele_courbe_chaleur_latente.py
         phi_n = lib.P_inc_solar(lat_rad, jour, heure_solaire, albedo_sol, albedo_nuages)
         q_latent_step = q_latent_base if phi_n > 0 else -q_latent_base
-=======
-        phi_n = phi_net(
-            lat_rad, jour, heure_solaire, albedo_sol, albedo_nuages
-        )
-        q_latent_step = q_latent_daily if phi_n > 0 else -q_latent_daily
->>>>>>> 4f09c01891f27ae1424a6e4761ccda5af06095c0:modele4/codes python/modele_courbe_chaleur_latente.py
 
         X = T[k]
         for _ in range(8):
@@ -181,27 +143,12 @@ if __name__ == "__main__":
     jours_de_simulation = 365 * 2
     jour_a_afficher = 182
 
-<<<<<<< HEAD:modele4/modele_courbe_chaleur_latente.py
     #Pour Paris (Europe)
     lat_sim, lon_sim = 48.85, 2.35
 
-=======
-    # Pour Paris (Europe)
-    lat_sim, lon_sim = 48.5, 2.3
-    # Pour l'Amazonie (Amérique du Sud, Q élevé)
-    # lat_sim, lon_sim = -3.46, -62.21
->>>>>>> 4f09c01891f27ae1424a6e4761ccda5af06095c0:modele4/codes python/modele_courbe_chaleur_latente.py
 
-    print(
-        f"Lancement de la simulation pour Lat={lat_sim}N, Lon={lon_sim}E..."
-    )
-    (
-        T_full,
-        alb_sol_full,
-        alb_nuages_full,
-        C_full,
-        q_latent_full,
-    ) = backward_euler(jours_de_simulation, lat_sim, lon_sim)
+    print(f"Lancement de la simulation pour Lat={lat_sim}N, Lon={lon_sim}E...")
+    T_full, alb_sol_full, alb_nuages_full, C_full = backward_euler(jours_de_simulation, lat_sim, lon_sim)
 
     steps_per_year = int(365 * 24 * 3600 / dt)
     t_yr2_plot = np.arange(len(T_full) - steps_per_year) * dt
