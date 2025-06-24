@@ -1,3 +1,5 @@
+# lib.py
+
 # conventions:
 # lat: float (radian), 0 is at equator, -pi/2 is at south pole, and +pi/2 is at north pole
 # long: float (radian), 0 is at greenwich meridiant

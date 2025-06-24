@@ -1,4 +1,5 @@
 """
+fonctions.py
 Ce script regroupe plusieurs fonctions liées à la modélisation climatique simplifiée :
 
 - Calcul de l’angle d’incidence du rayonnement solaire en fonction de la latitude, du jour et de l’heure.
