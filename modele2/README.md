@@ -20,4 +20,4 @@ Le dossier _figures_ contient :
 ## Fichiers
 ### Rapport
 
-- `rapport.tex` :  fichier LaTeX qui résume notre réflexion liée au modèle 1 ainsi que les équations établies
+- `rapport.tex` :  fichier LaTeX qui résume notre réflexion liée au modèle 2 ainsi que les équations établies
