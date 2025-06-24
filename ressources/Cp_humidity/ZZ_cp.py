@@ -91,14 +91,11 @@ def plot_fast_from_updated_csv(
 
 if __name__ == "__main__":
     # Assurez-vous que ce script utilise bien le fichier CSV mis à jour
-    updated_csv_file = Path("temp/average_rzsm_tout.csv")
+    updated_csv_file = Path("ressources/Cp_humidity/average_rzsm_tout.csv")
     countries_shp = Path("ressources/map/ne_110m_admin_0_countries.shp")
 
     if not updated_csv_file.exists():
         print(f"Erreur : Le fichier de données '{updated_csv_file}' est introuvable.")
-        print("Veuillez d'abord exécuter le script de mise à jour du CSV (ex: update_csv_with_ice_optimized.py).")
-    elif not countries_shp.exists():
-        print(f"Erreur : Le fichier de frontières '{countries_shp}' est introuvable.")
     else:
         # Installer scipy si nécessaire : pip install scipy
         plot_fast_from_updated_csv(updated_csv_file, countries_shp)

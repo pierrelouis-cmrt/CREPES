@@ -4,21 +4,22 @@
 # VERSION MISE À JOUR :
 # - Ajout de l'albédo des nuages (A1) en plus de l'albédo de
 #   surface (A2).
-# - Lissage des données mensuelles (albédo sol, albédo nuages,
-#   capacité thermique) par convolution gaussienne pour obtenir
-#   des variations journalières continues et cycliques.
-# - Ajout du flux de chaleur latente (Q) dépendant du continent.
+# - Lissage des données mensuelles (albédo sol, albédo nuages)
+#   par convolution gaussienne.
 # - Utilisation de GeoPandas pour une détection précise
 #   des continents.
 # - Calcul direct du flux de chaleur latente journalier
-#   via une fonction continue (cosinus) au lieu d'un lissage.
+#   via une fonction continue (cosinus).
 # - Visualisation du flux de chaleur latente (Q) dans
 #   le graphique de sortie.
 # - CORRIGÉ : Gestion des géométries nulles dans le shapefile.
-# - NOUVEAU (votre demande) : La capacité thermique surfacique
-#   dépend maintenant de la densité du matériau (proxy albédo)
-#   et d'une épaisseur fixe, au lieu d'une masse surfacique
-#   constante.
+# - NOUVEAU : Remplacement des données mock de l'albédo des nuages
+#   par un calcul basé sur les données CERES (fichier .nc).
+# - NOUVEAU : La capacité thermique est calculée à partir des
+#   données d'humidité du sol (RZSM).
+# - NOUVEAU (votre demande) : Le flux de chaleur latente (Q) est
+#   maintenant calculé à partir des taux d'évaporation annuels
+#   par continent.
 # ---------------------------------------------------------------
 import numpy as np
 import matplotlib.pyplot as plt
@@ -27,7 +28,7 @@ import pathlib
 import pandas as pd
 from scipy.ndimage import gaussian_filter1d
 
-# NOUVEAU : Importations pour la partie géospatiale
+# NOUVEAU : Importations pour la partie géospatiale et NetCDF
 try:
     import geopandas as gpd
     from shapely.geometry import Point
@@ -36,15 +37,28 @@ try:
 except ImportError:
     GEOPANDAS_AVAILABLE = False
 
+# NOUVEAU : Importation pour le traitement des données NetCDF
+try:
+    import xarray as xr
+
+    XARRAY_AVAILABLE = True
+except ImportError:
+    XARRAY_AVAILABLE = False
+
+# NOUVEAU : Importation pour le griddage des données d'humidité
+try:
+    from scipy.stats import binned_statistic_2d
+
+    SCIPY_AVAILABLE = True
+except ImportError:
+    SCIPY_AVAILABLE = False
+
 
 # ---------- constantes physiques ----------
 constante_solaire = 1361.0  # W m-2
 sigma = 5.670374419e-8  # Stefan‑Boltzmann (SI)
 Tatm = 223.15  # atmosphère radiative (‑50 °C)
 dt = 1800.0  # pas de temps : 30 min
-# SUPPRIMÉ : La masse surfacique est maintenant calculée dynamiquement.
-# MASSE_SURFACIQUE_ACTIVE = 4.0e2  # kg m-2
-# NOUVEAU : Épaisseur de la couche de sol active pour le calcul de C.
 EPAISSEUR_ACTIVE = 0.2  # m (20 cm)
 
 # ────────────────────────────────────────────────
@@ -83,50 +97,111 @@ except FileNotFoundError:
     exit()
 
 # ────────────────────────────────────────────────
-# NOUVEAU / MODIFIÉ - Données de chaleur latente avec GeoPandas (inchangé)
+# Capacité thermique depuis l'humidité du sol (RZSM) (inchangé)
 # ────────────────────────────────────────────────
 
-# Chemin vers le fichier shapefile de Natural Earth
+RHO_W = 1000.0
+RHO_BULK = 1300.0
+CP_SEC = 0.8
+CP_WATER = 4.187
+CP_ICE = 2.09
+RZSM_CSV_PATH = pathlib.Path("ressources/Cp_humidity/average_rzsm_tout.csv")
+
+
+def compute_cp_from_rzsm(rzsm: np.ndarray) -> np.ndarray:
+    is_ice = np.isclose(rzsm, 0.9)
+    rzsm_clipped = np.clip(rzsm, 1e-6, 0.999)
+    w = (RHO_W * rzsm_clipped) / (
+        RHO_BULK * (1 - rzsm_clipped) + RHO_W * rzsm_clipped
+    )
+    cp = CP_SEC + w * (CP_WATER - CP_SEC)
+    return np.where(is_ice, CP_ICE, cp)
+
+
+def load_and_grid_rzsm_data(csv_path: pathlib.Path):
+    if not SCIPY_AVAILABLE:
+        return None, None, None
+    df = pd.read_csv(csv_path)
+    df["lon"] = ((df["lon"] + 180) % 360) - 180
+    grid_res = 1.0
+    lon_bins = np.arange(-180, 180 + grid_res, grid_res)
+    lat_bins = np.arange(-90, 90 + grid_res, grid_res)
+    statistic, _, _, _ = binned_statistic_2d(
+        x=df["lon"],
+        y=df["lat"],
+        values=df["RZSM"],
+        statistic="mean",
+        bins=[lon_bins, lat_bins],
+    )
+    return statistic.T, lat_bins, lon_bins
+
+
+try:
+    RZSM_GRID, RZSM_LAT_BINS, RZSM_LON_BINS = load_and_grid_rzsm_data(
+        RZSM_CSV_PATH
+    )
+    if RZSM_GRID is None:
+        raise RuntimeError("Scipy manquant ou échec du griddage RZSM.")
+    _rzsm_lat_idx = lambda lat: np.abs(RZSM_LAT_BINS - lat).argmin()
+    _rzsm_lon_idx = lambda lon: np.abs(RZSM_LON_BINS - lon).argmin()
+except (FileNotFoundError, RuntimeError) as e:
+    print(f"ERREUR: Impossible de charger les données d'humidité du sol : {e}")
+    exit()
+
+# ────────────────────────────────────────────────
+# MODIFIÉ - Données de chaleur latente (Q) via évaporation
+# ────────────────────────────────────────────────
+
+# --- NOUVEAU : Calcul de Q basé sur l'évaporation annuelle ---
+Delta_hvap = 2453000  # J/kg
+rho_eau = 1000  # kg/m^3
+Delta_t = 31557600  # 1 an en s
+
+evap_Eur = 0.49 / Delta_t  # m/s
+evap_Am_Nord = 0.47 / Delta_t
+evap_Am_sud = 0.94 / Delta_t
+evap_oceanie = 0.41 / Delta_t
+evap_Afr = 0.58 / Delta_t
+evap_Asi = 0.37 / Delta_t
+evap_ocean = 1.40 / Delta_t
+
+phi_Eur = Delta_hvap * rho_eau * evap_Eur
+phi_Am_Nord = Delta_hvap * rho_eau * evap_Am_Nord
+phi_Am_sud = Delta_hvap * rho_eau * evap_Am_sud
+phi_oceanie = Delta_hvap * rho_eau * evap_oceanie
+phi_Afr = Delta_hvap * rho_eau * evap_Afr
+phi_Asi = Delta_hvap * rho_eau * evap_Asi
+phi_ocean = Delta_hvap * rho_eau * evap_ocean
+
+# Dictionnaire des valeurs de Q par continent, utilisé par le détecteur de continent
+Q_LATENT_CONTINENT = {
+    "Europe": phi_Eur,
+    "North America": phi_Am_Nord,
+    "South America": phi_Am_sud,
+    "Oceania": phi_oceanie,
+    "Africa": phi_Afr,
+    "Asia": phi_Asi,
+    "Océan": phi_ocean,
+    "Antarctica": 0.0,  # Pas de données d'évaporation, on garde 0.0
+}
+# --- FIN DU NOUVEAU CALCUL ---
+
 SHAPEFILE_PATH = (
     pathlib.Path("ressources/map") / "ne_110m_admin_0_countries.shp"
 )
 
-Q_CONTINENT = {
-    "Africa": 46.8,
-    "Asia": 40.1,
-    "South America": 99.8,
-    "North America": 35.4,
-    "Europe": 36.6,
-    "Oceania": 28.4,
-    "Antarctica": 0.0,
-    "Océan": 95,
-}
-
 
 def create_continent_finder(shapefile_path: pathlib.Path):
-    """
-    Charge un shapefile et retourne une fonction capable de trouver
-    le continent pour un point (lat, lon).
-    """
     if not GEOPANDAS_AVAILABLE:
-        print(
-            "AVERTISSEMENT: GeoPandas n'est pas installé. "
-            "La détection de continent sera désactivée (Q=0)."
-        )
+        print("AVERTISSEMENT: GeoPandas non installé. Q sera celui de l'océan.")
         return lambda lat, lon: "Océan"
-
     try:
-        print(f"Chargement du shapefile depuis : {shapefile_path}")
-        world = gpd.read_file(shapefile_path)
-        world = world.to_crs(epsg=4326)
-        print("Shapefile chargé avec succès.")
+        world = gpd.read_file(shapefile_path).to_crs(epsg=4326)
     except Exception as e:
         print(f"ERREUR: Impossible de charger le shapefile : {e}")
-        print("La détection de continent sera désactivée (Q=0).")
         return lambda lat, lon: "Océan"
 
     def find_continent_for_point(lat: float, lon: float) -> str:
-        """Fonction interne qui effectue la recherche."""
         point = Point(lon, lat)
         for _, row in world.iterrows():
             if row["geometry"] is not None and row["geometry"].contains(point):
@@ -142,17 +217,11 @@ continent_finder = create_continent_finder(SHAPEFILE_PATH)
 def get_q_latent_base(lat: float, lon: float) -> float:
     """Récupère la valeur de Q (W m-2) de base pour un point géographique."""
     continent = continent_finder(lat, lon)
-    q_val = 0.0
-    for key, value in Q_CONTINENT.items():
-        if key in continent:
-            q_val = value
-            break
-    else:
-        q_val = Q_CONTINENT["Océan"]
-
+    # MODIFIÉ : Utilise le nouveau dictionnaire Q_LATENT_CONTINENT
+    q_val = Q_LATENT_CONTINENT.get(continent, Q_LATENT_CONTINENT["Océan"])
     print(
-        f"Coordonnées ({lat:.2f}, {lon:.2f}) détectées sur le continent : "
-        f"{continent} (Q base = {q_val} W m⁻²)"
+        f"Coordonnées ({lat:.2f}, {lon:.2f}) détectées sur : "
+        f"{continent} (Q base = {q_val:.2f} W m⁻²)"
     )
     return q_val
 
@@ -160,16 +229,11 @@ def get_q_latent_base(lat: float, lon: float) -> float:
 def get_daily_q_latent(
     q_base: float, lat_deg: float, day_of_year: int
 ) -> float:
-    """
-    Calcule le flux de chaleur latente pour un jour donné en utilisant
-    une fonction cosinus continue pour la variation saisonnière.
-    """
-    if q_base == 0 or q_base == Q_CONTINENT["Océan"]:
+    """Calcule la variation saisonnière du flux de chaleur latente."""
+    if q_base == 0 or q_base == Q_LATENT_CONTINENT["Océan"]:
         return q_base
-
     amplitude = 0.4 * q_base
     day_phase_shift = 196 if lat_deg >= 0 else 15
-
     variation_saisonniere = amplitude * np.cos(
         2 * pi * (day_of_year - day_phase_shift) / 365
     )
@@ -177,72 +241,50 @@ def get_daily_q_latent(
 
 
 # ────────────────────────────────────────────────
-# Données d'albédo des nuages (inchangé)
+# Données d'albédo des nuages depuis CERES (inchangé)
 # ────────────────────────────────────────────────
 
-# ------------------------------------------------------------------------------ a. changer
+CERES_FILE_PATH = (
+    pathlib.Path("ressources/albedo")
+    / "CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc"
+)
 
-def load_monthly_cloud_albedo_mock(lat_deg: float, lon_deg: float):
-    print(
-        "NOTE : Utilisation de données simulées (mock) pour l'albédo des nuages."
+
+def load_monthly_cloud_albedo_from_ceres(
+    lat_deg: float, lon_deg: float
+) -> np.ndarray:
+    if not XARRAY_AVAILABLE:
+        exit("ERREUR: xarray non installé.")
+    try:
+        ds = xr.open_dataset(CERES_FILE_PATH, decode_times=True)
+    except FileNotFoundError:
+        exit(f"ERREUR: Fichier CERES introuvable : {CERES_FILE_PATH}")
+
+    ds = ds.assign_coords(lon=(((ds.lon + 180) % 360) - 180)).sortby("lon")
+    toa_sw_all = ds["toa_sw_all_mon"]
+    toa_sw_clr = ds["toa_sw_clr_c_mon"]
+    solar_in = ds["solar_mon"]
+    cloud_albedo_instant = xr.where(
+        solar_in > 1e-6, (toa_sw_all - toa_sw_clr) / solar_in, 0.0
     )
-    amplitude = 0.15 * np.sin(np.radians(abs(lat_deg)))
-    avg_cloud_albedo = 0.3
-    mois = np.arange(12)
-    variation_saisonniere = amplitude * np.cos(2 * pi * (mois - 0.5) / 12)
-    return avg_cloud_albedo - variation_saisonniere
+    cloud_albedo_monthly_clim = cloud_albedo_instant.groupby(
+        "time.month"
+    ).mean(dim="time", skipna=True)
+    monthly_values = cloud_albedo_monthly_clim.sel(
+        lat=lat_deg, lon=lon_deg, method="nearest"
+    ).to_numpy()
+
+    if len(monthly_values) != 12:
+        monthly_values = np.pad(
+            monthly_values, (0, 12 - len(monthly_values)), mode="edge"
+        )
+    print("Données d'albédo des nuages chargées.")
+    return monthly_values
 
 
 # ────────────────────────────────────────────────
-# MODIFIÉ - Capacité thermique et lissage
+# Lissage et fonctions physiques (inchangés)
 # ────────────────────────────────────────────────
-
-
-# MODIFIÉ : La fonction retourne maintenant c_p et rho
-def proprietes_thermiques_surface(
-    albedo: float,
-) -> tuple[float, float]:
-    """
-    Détermine la capacité thermique massique (c_p) et la masse volumique (rho)
-    d'une surface en se basant sur son albédo comme proxy.
-
-    Retourne:
-        tuple[float, float]: (capacité massique [kJ kg-1 K-1], densité [kg m-3])
-    """
-    if np.isnan(albedo):
-        return 1.0, 1500.0  # Valeurs par défaut pour la terre
-
-    _REF_ALBEDO = {
-        "ice": 0.60,
-        "water": 0.10,
-        "snow": 0.80,
-        "desert": 0.35,
-        "forest": 0.20,
-        "land": 0.15,
-    }
-    # Capacité thermique massique en kJ kg-1 K-1
-    _CAPACITY_BY_TYPE = {
-        "ice": 2.0,
-        "water": 4.18,
-        "snow": 2.0,
-        "desert": 0.8,
-        "forest": 1.0,
-        "land": 1.0,
-    }
-    # NOUVEAU : Masse volumique (densité) en kg m-3
-    _DENSITY_BY_TYPE = {
-        "ice": 917.0,
-        "water": 1000.0,
-        "snow": 300.0,  # Neige tassée
-        "desert": 1600.0,  # Sable sec
-        "forest": 1300.0,  # Sol forestier
-        "land": 1500.0,  # Sol générique
-    }
-
-    surf = min(_REF_ALBEDO, key=lambda k: abs(albedo - _REF_ALBEDO[k]))
-    c_p = _CAPACITY_BY_TYPE[surf]
-    rho = _DENSITY_BY_TYPE[surf]
-    return c_p, rho
 
 
 def lisser_donnees_annuelles(valeurs_mensuelles: np.ndarray, sigma: float):
@@ -255,11 +297,6 @@ def lisser_donnees_annuelles(valeurs_mensuelles: np.ndarray, sigma: float):
     return gaussian_filter1d(
         valeurs_journalieres_discontinues, sigma=sigma, mode="wrap"
     )
-
-
-# ────────────────────────────────────────────────
-# Fonctions physiques (inchangé)
-# ────────────────────────────────────────────────
 
 
 def declination(day):
@@ -284,7 +321,7 @@ def f_rhs(T, phinet, C, q_latent):
 
 
 # ────────────────────────────────────────────────
-# Intégrateur Backward‑Euler (modifié pour le calcul de C)
+# Intégrateur Backward‑Euler (inchangé)
 # ────────────────────────────────────────────────
 
 
@@ -303,37 +340,37 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
 
     q_base = get_q_latent_base(lat_deg, lon_deg)
 
-    print("Lissage des données annuelles (albédo, capacité)...")
+    print("Lissage des données annuelles (albédo)...")
     albedo_sol_mensuel_loc = monthly_albedo_sol[:, lat_idx, lon_idx]
     albedo_sol_journalier_lisse = lisser_donnees_annuelles(
         albedo_sol_mensuel_loc, sigma=15.0
     )
-    albedo_nuages_mensuel = load_monthly_cloud_albedo_mock(lat_deg, lon_deg)
+    albedo_nuages_mensuel = load_monthly_cloud_albedo_from_ceres(
+        lat_deg, lon_deg
+    )
     albedo_nuages_journalier_lisse = lisser_donnees_annuelles(
         albedo_nuages_mensuel, sigma=15.0
     )
 
-    # MODIFIÉ : Calcul de la capacité thermique surfacique C
-    v_proprietes = np.vectorize(proprietes_thermiques_surface)
-    # v_proprietes retourne un tuple de deux arrays : (capacités, densités)
-    cap_massique_mensuelle, densite_mensuelle = v_proprietes(
-        albedo_sol_mensuel_loc
+    print("Calcul de la capacité thermique à partir des données RZSM...")
+    rzsm_lat_idx = _rzsm_lat_idx(lat_deg)
+    rzsm_lon_idx = _rzsm_lon_idx(lon_deg)
+    rzsm_value = RZSM_GRID[rzsm_lat_idx, rzsm_lon_idx]
+    cp_kj = (
+        compute_cp_from_rzsm(np.array([rzsm_value]))[0]
+        if not np.isnan(rzsm_value)
+        else CP_SEC
     )
-    # Calcul de C = c_p * rho * delta
-    cap_surfacique_mensuelle = (
-        (cap_massique_mensuelle * 1000.0)  # Conversion kJ -> J
-        * densite_mensuelle
-        * EPAISSEUR_ACTIVE
-    )
-    C_journalier_lisse = lisser_donnees_annuelles(
-        cap_surfacique_mensuelle, sigma=15.0
+    C_const = (cp_kj * 1000.0) * RHO_BULK * EPAISSEUR_ACTIVE
+    print(
+        f"RZSM={rzsm_value:.3f} -> c_p={cp_kj:.3f} kJ/kg/K -> "
+        f"C={C_const:.2e} J m⁻² K⁻¹"
     )
 
-    # Initialisation des tableaux d'historique
     albedo_sol_hist[0], albedo_nuages_hist[0], C_hist[0] = (
         albedo_sol_journalier_lisse[0],
         albedo_nuages_journalier_lisse[0],
-        C_journalier_lisse[0],
+        C_const,
     )
     q_latent_hist[0] = get_daily_q_latent(q_base, lat_deg, 0)
 
@@ -345,14 +382,18 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
 
         albedo_sol = albedo_sol_journalier_lisse[jour_dans_annee]
         albedo_nuages = albedo_nuages_journalier_lisse[jour_dans_annee]
-        C = C_journalier_lisse[jour_dans_annee]
         q_latent_daily = get_daily_q_latent(
             q_base, lat_deg, jour_dans_annee
         )
 
         albedo_sol_hist[k + 1], albedo_nuages_hist[k + 1], C_hist[
             k + 1
-        ], q_latent_hist[k + 1] = (albedo_sol, albedo_nuages, C, q_latent_daily)
+        ], q_latent_hist[k + 1] = (
+            albedo_sol,
+            albedo_nuages,
+            C_const,
+            q_latent_daily,
+        )
 
         phi_n = phi_net(
             lat_rad, jour, heure_solaire, albedo_sol, albedo_nuages
@@ -361,8 +402,8 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
 
         X = T[k]
         for _ in range(8):
-            F = X - T[k] - dt * f_rhs(X, phi_n, C, q_latent_step)
-            dF = 1.0 - dt * (-4.0 * sigma * X**3 / C)
+            F = X - T[k] - dt * f_rhs(X, phi_n, C_const, q_latent_step)
+            dF = 1.0 - dt * (-4.0 * sigma * X**3 / C_const)
             X -= F / dF
             if abs(F) < 1e-6:
                 break
@@ -475,6 +516,8 @@ if __name__ == "__main__":
     lat_sim, lon_sim = 48.5, 2.3
     # Pour l'Amazonie (Amérique du Sud, Q élevé)
     # lat_sim, lon_sim = -3.46, -62.21
+    # Pour le Sahara (Afrique, Q modéré, Cp faible)
+    # lat_sim, lon_sim = 25.0, 15.0
 
     print(
         f"Lancement de la simulation pour Lat={lat_sim}N, Lon={lon_sim}E..."
@@ -507,6 +550,6 @@ if __name__ == "__main__":
         alb_nuages_yr2,
         C_yr2,
         q_latent_yr2,
-        f"Simulation stabilisée (C dynamique) pour Lat={lat_sim}, Lon={lon_sim}",
+        f"Simulation (C via RZSM, Q via évaporation) pour Lat={lat_sim}, Lon={lon_sim}",
         jour_a_afficher,
     )
