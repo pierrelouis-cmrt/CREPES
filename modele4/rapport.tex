@@ -126,54 +126,14 @@ c_s &= \frac{C}{S} \\
 
 \hspace*{2cm}Avec \( C \) la capacité thermique
 
+\vspace{1cm} % <- ajoute un espace vertical de 0.5 cm
 
+h : profondeur à partir de laquelle la température reste constante (cf. exo 1, TD chap. 11 sur la diffusion thermique), pour des variations de température journalières comprises entre 273\,K (la nuit) et 293\,K (le jour).\\
 
-\subsubsection*{Modélisation graphique  :} 
-\begin{itemize}
-    \item Planisphère représentant les capacités calorifiques: 
-\end{itemize}
-\includegraphics[width=0.8\linewidth]{modele4/figures/c_humidite.png}
+On obtient \( h \approx 0{,}40\,\mathrm{m} \).\\
 
-\begin{itemize}
-    \item Modèle adaptatif
-\end{itemize}
+(On nous donnait le coefficient de diffusion thermique du sol \( D_{\text{sol}} = 6 \times 10^{-7} \,\mathrm{m}^2/\mathrm{s} \).)
 
-\begin{center}
-  \includegraphics[width=0.8\linewidth]{modele4/figures/adaptatif_année.jpeg}
-  \end{center}
-\begin{center}
-  \includegraphics[width=0.8\linewidth]{modele4/figures/adaptatif_jour.jpeg}
-  \end{center}
-\begin{itemize}
-    \item Modèle explicite
-\end{itemize}
-
-
-\begin{center}
-  \includegraphics[width=0.8\linewidth]{modele4/figures/explicite_année.jpeg}
-  \end{center}
-\begin{center}
-  \includegraphics[width=0.8\linewidth]{modele4/figures/explicité_jour.jpeg}
-  \end{center}
-\begin{itemize}
-    \item Modèle réccurent
-\end{itemize}
-
-\begin{center}
-  \includegraphics[width=0.8\linewidth]{modele4/figures/récurrent_année.jpeg}
-  \end{center}
-\begin{center}
-  \includegraphics[width=0.8\linewidth]{modele4/figures/récurent_jour.jpeg}
-  \end{center}
-\vspace{1cm}
-
-
-\textbf{Critique du modèle}
-\begin{itemize}
-    \item On néglige la conducto-convexion
-    \item On considère la température de l'atmosphère homogène et constante au cours du temps
-    \item Les valeurs de chaleur latente sont prises constantes, ce qui n'est pas le cas en réalité
-\end{itemize}
 
 
 \subsection*{Chaleur latente}
@@ -201,23 +161,75 @@ On suppose que la pression atmosphérique de la Terre est constante à la surfac
     Dm \, \Delta h_{\text{vap}} &= P_{th}
 \end{align*}
 
-Donc, $ \phi _{lat} = \frac{Dm}{S}\Delta h_{vap}$
-
-$ \phi _{lat} = \frac{m}{S\Delta t}\Delta h_{vap}$
-
-
-$ \phi _{lat} = \frac{\rho V}{S\Delta t}\Delta h_{vap}$
-
-$ \phi _{lat} = \frac{\rho S E_{vap} \Delta t}{S\Delta t}\Delta h_{vap}$
-
+Donc, 
+\begin{align*}
+    \phi _{lat} &= \frac{Dm}{S}\Delta h_{vap}\\
+    \phi _{lat} &= \frac{m}{S\Delta t}\Delta h_{vap}\\
+    \phi _{lat} &= \frac{\rho V}{S\Delta t}\Delta h_{vap}\\
+    \phi _{lat} &= \frac{\rho S E_{vap} \Delta t}{S\Delta t}\Delta h_{vap}\\
+\end{align*}
 Avec $E_{vap}$ l'évaporation en $m/s$.
 
-\begin{tabular}{|c|c|c|c|c|c|c|c|}
+\begin{tabular}{|c|c|}
 \hline
-Colonne 1 & Colonne 2 & Colonne 3 & Colonne 4 & Colonne 5 & Colonne 6 & Colonne 7 & Colonne 8 \\
+Continents & évaporation ($\mathrm{cm/year}$) \\
 \hline
-Ligne 2A & Ligne 2B & Ligne 2C & Ligne 2D & Ligne 2E & Ligne 2F & Ligne 2G & Ligne 2H \\
+Europe & 49 \\
+\hline
+Amérique du Nord & 47 \\
+\hline
+Amérique du Sud & 94 \\
+\hline
+Afrique & 58 \\
+\hline
+Asie & 37 \\
+\hline
+Océanie & 41 \\
+\hline
+Océans & 140 \\
 \hline
 \end{tabular}
+\\
+\url{https://environmentofearth.wordpress.com/2008/03/11/water-balance/?utm_source=chatgpt.com}
+\\
+\\
+On obtient donc:
+
+\\
+\begin{tabular}{|c|c|}
+\hline
+Continents & Flux de chaleur latente ($\mathrm{W/m^2}$) \\
+\hline
+Europe & 38.1 \\
+\hline
+Amérique du Nord & 36.5 \\
+\hline
+Amérique du Sud & 73.1 \\
+\hline
+Afrique & 45.1 \\
+\hline
+Asie & 28.8 \\
+\hline
+Océanie & 31.9 \\
+\hline
+Océans & 108.8 \\
+\hline
+\end{tabular}
+
+\subsubsection*{Modélisation graphique  :} 
+\begin{itemize}
+    \item Planisphère représentant les capacités calorifiques: 
+\end{itemize}
+\includegraphics[width=0.8\linewidth]{modele4/figures/c_humidite.png}
+
+
+
+\textbf{Critique du modèle}
+\begin{itemize}
+    \item On néglige la conducto-convexion
+    \item On considère la température de l'atmosphère homogène et constante au cours du temps
+    \item Les valeurs de chaleur latente sont prises constantes, ce qui n'est pas le cas en réalité
+\end{itemize}
+
 
 \end{document}
