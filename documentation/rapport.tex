@@ -8,11 +8,13 @@
 \usepackage{setspace} % Espacement des lignes
 \usepackage{tikz}
 \usepackage{soul}
+\usepackage[inkscapelatex=false]{svg}
+
 
 \usepackage{titlesec}
 \usepackage{hyperref}
 \renewcommand{\contentsname}{Table des matières}
-\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue]{hyperref}
+\usepackage[color'links=true, linkcolor=blue, urlcolor=blue, citecolor=blue]{hyperref}
 \titleformat*{\section}{\LARGE\bfseries}
 \titleformat*{\subsection}{\Large\bfseries}
 \titleformat*{\subsubsection}{\normalsize\bfseries}
@@ -24,29 +26,39 @@
     \vspace*{3cm}
     {\Huge \textbf{Document de Synthèse}\par}
     \vspace{2cm}
-    {\Large Les Carcajous Callypiges\par}
+    {\Large Les Carcajous Callipyges\par}
     \vfill
     {\large 2025\par}
 \end{titlepage}
 \tableofcontents
 \newpage
 \addcontentsline{toc}{section}{Introduction}
-
 {\LARGE \textbf{Introduction}}
 
+
 \begin{center}
- \input{documentation/evolution_projet_1.txt}
+    
+\end{center}
+   \includegraphics[width=1\textwidth, angle=0]{evolution_projet_1.pdf}
 \end{center}
 
+\\
+\\
+
+\begin{center}
+   \includegraphics[width=1\textwidth, angle=0]{evolution_projet_2.pdf}
+\end{center}
+
+\newpage
   
-  
-\section{Modèle 1}
-\subsection{Bille remplie d'eau}
+\section{Modèle 1: }
+\subsection{Boule d’eau rayonnante dans le vide}
 \addcontentsline{toc}{subsubsection}{Hypothèses} 
 \textbf{Hypothèses}
 
 \begin{itemize}
-    \item Terre assimilée à une boule d'eau, de température \(T_{\text{Terre}}\) telle que \(T_{\text{Terre}}\)> \(T_{\text{ext}}\)
+    \item Terre assimilée à une \textbf{boule d'eau}, de température
+    \(T_{\text{Terre}}\) telle que \(T_{\text{Terre}}\)> \(T_{\text{ext}}\)
     \item  Sans atmosphère (dans le vide)
     \item  Sans puissance solaire reçue  
     \item \(c_{m}= c_{\text{m,eau}} \sim c_{\text{m,Terre}}\) 
@@ -54,7 +66,7 @@
 $T(t \to +\infty) = T_0$
    
 \end{itemize}
-$\rightarrow$ la terre perd de la température par rayonnement
+$\rightarrow$ la terre perd de la température par \textbf{rayonnement}
 \\ 
 
 \addcontentsline{toc}{subsubsection}{Schéma}
@@ -71,7 +83,7 @@ $\rightarrow$ la terre perd de la température par rayonnement
 
 \noindent\textcolor{gray}{\rule{\linewidth}{0.4pt}} 
 
-\vspace{1em}
+\vspace{1cm}
 
 \addcontentsline{toc}{subsubsection}{Equation}
 \textbf{Equation}
@@ -86,43 +98,43 @@ $\rightarrow$ la terre perd de la température par rayonnement
 Avec 
 \(S= 4\pi r^2\)
 \ \ \ \
-\(\sigma=5,67 \cdot 10^{-8} W\cdot m^{-2} \cdot K^{-4}\)
+\(\sigma=5{,}67 \cdot 10^{-8} \, \mathrm{W \cdot m^{-2} \cdot K^{-4}}\)
 
+\vspace{0.5cm} 
 \addcontentsline{toc}{subsubsection}{Solution}
 \textbf{Solution} 
+
 \[
 T(t) = \left( \frac{C}{C/T_i^3 + 12\pi R^2 \sigma t} \right)^{1/3} 
 = \frac{T_i}{\left(1 + 3k T_i^3 t \right)^{1/3}}
 \]
-avec \(k=\frac{4\pi R_T^2 \sigma}{C}\)
-et \(C=c_{\text{m eau}}\times m=4,60 \cdot 10^{27} J\cdot K^{-1}\)
+avec \(k=\frac{4\pi R_T^2 \sigma}{C}\)  
+et \(C=c_{\text{m eau}}\times m=4{,}60 \cdot 10^{27} \, \mathrm{J \cdot K^{-1}}\)
 
-\bigskip
-
-
-
-\bigskip
-
+\vspace{1cm} 
 \addcontentsline{toc}{subsubsection}{Modélisation graphique}
 \textbf{Modélisation graphique} 
 
 \begin{center}
   \includegraphics[width=0.8\linewidth]{../modele1/figures/modele1.png}
 \end{center}
+
     
     
 
-\subsection{Coquille vide }
+\subsection{Coquille d’eau rayonnante (intérieur vide) }
 \addcontentsline{toc}{subsubsection}{Hypothèses}
 \textbf{Hypothèses}
 \begin{itemize}
-    \item On garde les hypothèses précédentes, excepté le système: la Terre est assimilée à une coquille d'eau, d'épaisseur dr, qui a un intérieur vide
+    \item On garde les hypothèses précédentes, excepté le système: la Terre est assimilée à une \textbf{coquille d'eau}, d'épaisseur dr, qui a un \textbf{intérieur vide}
     
 \end{itemize}
 $\rightarrow$ il faut donc recalculer la capacité thermique 
 
+\vspace{0.5cm} 
 \addcontentsline{toc}{subsubsection}{Schéma}
 \textbf{Schéma}
+
 
 \noindent\textcolor{gray}{\rule{\linewidth}{0.4pt}}
 
@@ -135,7 +147,7 @@ $\rightarrow$ il faut donc recalculer la capacité thermique
 
 \noindent\textcolor{gray}{\rule{\linewidth}{0.4pt}} 
 
-
+\vspace{1cm}
 
 
 \addcontentsline{toc}{subsubsection}{Calcul capacité thermique}
@@ -170,8 +182,8 @@ k &= \frac{\sigma }{c_{\text{eau}} \cdot \rho_{\text{eau}} \cdot dr}
 \end{itemize}  
 
 \newpage
-\section{Modèle 2 : avec atmosphère}
-\subsection{Boule d'eau avec atmosphère }
+\section{Modèle 2 : Terre avec atmosphère conductrice}
+\subsection{Boule d’eau avec atmosphère conductrice }
 \addcontentsline{toc}{subsubsection}{Hypothèses}
 \textbf{Hypothèses}
 \begin{itemize}
@@ -224,7 +236,7 @@ $T(t) = T_0 + (T_i - T_0)e^{-kt}$ \quad avec $k = \frac{4\pi h}{C}$
 \end{center}
     
 \vspace{1cm}
-\subsection{Coquille assimilée à de l'eau avec atmosphère }
+\subsection{Coquille d’eau avec atmosphère conductrice }
 \addcontentsline{toc}{subsubsection}{Hypothèses}
 \begin{itemize}
     \item On garde les hypothèses précédentes, en ajoutant l'atmosphère \end{itemize}
@@ -271,7 +283,8 @@ $T(t) = T_0 + (T_i - T_0)e^{-kt}$ \quad avec $k = \frac{4\pi h}{C}$
 \end{itemize}
 
 \newpage
-\section{Modèle 3 : intérieur de la coquille non vide }
+\section{Modèle 3 : Coquille d’eau avec intérieur conducteur }
+{\LARGE \textbf{Conduction interne + rayonnement externe}}
 \addcontentsline{toc}{subsubsection}{Hypothèses}
 \textbf{Hypothèses}
 \begin{itemize}
@@ -355,7 +368,7 @@ P_{r}
     
     \end{itemize}
 \end{itemize}
-\section{Modèle 4: }
+\section{Modèle 4:Terre réaliste avec hétérogénéités }
 \addcontentsline{toc}{subsubsection}{Hypothèses}
 \textbf{Hypothèses}
 
@@ -432,7 +445,9 @@ Source \url{https://ceres-tool.larc.nasa.gov/ord-tool/jsp/EBAFTOA421Selection.js
 \\
 Lien du code : \url{https://github.com/pierrelouis-cmrt/CREPES/blob/main/archive/para_spaciaux/albedo/albedo_nuages_jour.py}
 
-\subsubsection{Calculs capacités calorifiques en fonction de la composition des surfaces}
+\addcontentsline{toc}{subsubsection}{Calculs capacités calorifiques en fonction de la composition des surfaces}
+\textbf{Calculs capacités calorifiques en fonction de la composition des surfaces}
+
 Données récoltées sur : 
 \url{https://data.catds.fr/cpdc/Land_products/GRIDDED/L4SM/OPER/}
 \\
@@ -474,22 +489,25 @@ c_s &= \frac{C}{S} \\
 \text{Donc } c_s &= \frac{C \rho h}{m} = c_p  \rho  h
 \end{align*}
 
-\hspace*{2cm}Avec \( C \) la capacité thermique
+\\
+\\
+Avec \( C \) la capacité thermique
+\\
 
-\vspace{1cm} % <- ajoute un espace vertical de 0.5 cm
+\(h\) : profondeur à partir de laquelle la température reste constante (cf. exo 1, TD chap. 11 sur la diffusion thermique), pour des variations de température journalières comprises entre 273\,K (la nuit) et 293\,K (le jour).
+\\
 
-h : profondeur à partir de laquelle la température reste constante (cf. exo 1, TD chap. 11 sur la diffusion thermique), pour des variations de température journalières comprises entre 273\,K (la nuit) et 293\,K (le jour).\\
+On obtient \( h \approx 0{,}40\,\mathrm{m} \)
+\\
 
-On obtient \( h \approx 0{,}40\,\mathrm{m} \).\\
+(On nous donnait le coefficient de diffusion thermique du sol \( D_{\text{sol}} = 6 \times 10^{-7} \,\mathrm{m}^2/\mathrm{s} \))
 
-(On nous donnait le coefficient de diffusion thermique du sol \( D_{\text{sol}} = 6 \times 10^{-7} \,\mathrm{m}^2/\mathrm{s} \).)
-
-
-
-\subsection*{Chaleur latente}
+\addcontentsline{toc}{subsubsection}{Chaleur latente}
+\textbf{Chaleur latente}
 
 
-Le flux de chaleur latente correspond à la puissance surfacique positive(reçue) ou négative(fournie) afin d'évaporer ou de condenser l'eau de la surface de la Terre.
+
+Le flux de chaleur latente correspond à la puissance surfacique positive (reçue) ou négative (fournie) afin d'évaporer ou de condenser l'eau de la surface de la Terre.
 On découpe la Terre de plusieurs manières, par mers et océans, et par continents. 
 On parle d'une moyenne faite par continents :
 \begin{itemize}
@@ -566,15 +584,18 @@ Océans & 108.8 \\
 \hline
 \end{tabular}
 
-\subsubsection*{Modélisation graphique  :} 
+\addcontentsline{toc}{subsubsection}{Modélisation graphique}
+\textbf{Modélisation graphique}
+
 \begin{itemize}
     \item Planisphère représentant les capacités calorifiques: 
 \end{itemize}
-\includegraphics[width=0.8\linewidth]{modele4/figures/c_humidite.png}
+\includegraphics[width=1.0\linewidth]{modele4/figures/c_humidite.png}
 
 
-
+\addcontentsline{toc}{subsubsection}{Critique du modèle}
 \textbf{Critique du modèle}
+
 \begin{itemize}
     \item On néglige la conducto-convexion
     \item On considère la température de l'atmosphère homogène et constante au cours du temps

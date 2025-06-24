@@ -323,33 +323,33 @@ def tracer_comparaison(
 
     axs[0].plot(days_axis, T - 273.15, lw=1.0, color="gray", alpha=0.8, label="Simulation Année 2")
     axs[0].plot(days_axis[start_idx:end_idx + 1], T[start_idx:end_idx + 1] - 273.15, lw=2.5, color="firebrick", label=f"Jour n°{jour_a_afficher}")
-    axs[0].set_ylabel("Température surface (°C)")
+    axs[0].set_ylabel("Température surface (°C)",fontsize=14)
     axs[0].set_title(titre)
     axs[0].grid(ls=":")
-    axs[0].legend()
+    axs[0].legend(fontsize=12)
     axs[0].set_xlim(0, 365)
 
     # ── Albédos ───────────────────────────────────────────────────────────
-    axs[1].set_ylabel("Albédo (sans unité)")
+    axs[1].set_ylabel("Albédo (sans unité)",fontsize=14)
     axs[1].plot(days_axis, albedo_sol_hist, color="tab:blue", lw=2.0, label="Albédo Sol (A2)")
     axs[1].plot(days_axis, albedo_nuages_hist, color="cyan", lw=2.0, ls=":", label="Albédo Nuages (A1)")
     axs[1].set_ylim(0, max(np.max(albedo_sol_hist) * 1.2, 0.5))
-    axs[1].legend(loc="upper left")
+    axs[1].legend(loc="upper left",fontsize=12)
     axs[1].grid(ls=":")
 
     # ── Flux latent & capacité thermique ──────────────────────────────────
     q_plot = gaussian_filter1d(q_latent_step_hist, sigma=sigma_plot, mode="wrap")
     axs[2].plot(days_axis, q_plot, color="tab:green", lw=1.5, alpha=0.6, label="Flux Latent lissé (Q)")
-    axs[2].set_ylabel("Flux Chaleur Latente (W m⁻²)")
-    axs[2].legend(loc="upper left")
+    axs[2].set_ylabel("Flux Chaleur Latente (W m⁻²)",fontsize=14)
+    axs[2].legend(loc="upper left",fontsize=12)
 
     ax3 = axs[2].twinx()
-    ax3.set_ylabel("Capacité Surfacique (J m⁻² K⁻¹)", color="tab:red")
+    ax3.set_ylabel("Capacité Surfacique (J m⁻² K⁻¹)", color="tab:red",fontsize=14)
     ax3.plot(days_axis, C_hist, color="tab:red", lw=2.0, ls="--", label="Capacité thermique")
     ax3.tick_params(axis="y", labelcolor="tab:red")
-    ax3.legend(loc="upper right")
+    ax3.legend(loc="upper right",fontsize=12)
 
-    axs[2].set_xlabel("Jour de l'année (simulation stabilisée)")
+    axs[2].set_xlabel("Jour de l'année (simulation stabilisée)",fontsize=14)
     axs[2].grid(ls=":")
 
     fig.tight_layout()
@@ -363,15 +363,15 @@ if __name__ == "__main__":
     jour_a_afficher = 182  # Solstice d'été, bonne journée pour voir l'effet
 
     # Pour Paris (Europe)
-    lat_sim, lon_sim = 48.5, 2.3
+    #lat_sim, lon_sim = 48.5, 2.3
     # Pour l'Amazonie (Amérique du Sud, Q élevé)
-    # lat_sim, lon_sim = -3.46, -62.21
+    lat_sim, lon_sim = -3.46, -62.21
     # Pour le Sahara (Afrique, Q modéré, Cp faible)
     # lat_sim, lon_sim = 25.0, 15.0
     # Pour l'Océan Arctique (Pôle Nord)
     # lat_sim, lon_sim = 82.0, 135.0
     # Pour l'Antarctique (Pôle Sud)
-    # lat_sim, lon_sim = -76.0, 100.0
+    #lat_sim, lon_sim = -76.0, 100.0
 
     print(
         f"Lancement de la simulation pour Lat={lat_sim}N, Lon={lon_sim}E..."
@@ -414,6 +414,8 @@ if __name__ == "__main__":
         C_yr2,
         q_latent_yr2,
         q_latent_step_yr2,
-        f"Simulation (Q constant) pour Lat={lat_sim}, Lon={lon_sim}",
+        f"",
         jour_a_afficher,
     )
+
+    
