@@ -365,9 +365,13 @@ if __name__ == "__main__":
     jour_a_afficher = 182  # Solstice d'été, bonne journée pour voir l'effet
 
     # Pour Paris (Europe)
-    #lat_sim, lon_sim = 48.5, 2.3
+    lat_sim, lon_sim = 48.5, 2.3
     # Pour l'Amazonie (Amérique du Sud, Q élevé)
+<<<<<<< Updated upstream
     #lat_sim, lon_sim = -3.46, -62.21
+=======
+    # lat_sim, lon_sim = -3.46, -62.21
+>>>>>>> Stashed changes
     # Pour le Sahara (Afrique, Q modéré, Cp faible)
     # lat_sim, lon_sim = 25.0, 15.0
     # Pour l'Océan Arctique (Pôle Nord)
