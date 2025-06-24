@@ -28,8 +28,7 @@ import pathlib
 import pandas as pd
 from scipy.ndimage import gaussian_filter1d
 import fonctions as f
-import lib as lib
-
+import lib as lib 
 # NOUVEAU : Importations pour la partie géospatiale et NetCDF
 try:
     import geopandas as gpd
@@ -68,7 +67,6 @@ EPAISSEUR_ACTIVE = 0.2  # m (20 cm)
 # ────────────────────────────────────────────────
 
 
-
 try:
     ALBEDO_DIR = pathlib.Path("ressources/albedo")
     monthly_albedo_sol, LAT, LON = f.load_albedo_series(ALBEDO_DIR)
@@ -80,9 +78,6 @@ except FileNotFoundError:
     print("ERREUR: Le dossier 'ressources/albedo' est introuvable.")
     exit()
 
-# ────────────────────────────────────────────────
-# Capacité thermique depuis l'humidité du sol (RZSM) (inchangé)
-# ────────────────────────────────────────────────
 
 RHO_W = 1000.0
 RHO_BULK = 1300.0
@@ -91,37 +86,12 @@ CP_WATER = 4.187
 CP_ICE = 2.09
 RZSM_CSV_PATH = pathlib.Path("ressources/Cp_humidity/average_rzsm_tout.csv")
 
-
-def compute_cp_from_rzsm(rzsm: np.ndarray) -> np.ndarray:
-    is_ice = np.isclose(rzsm, 0.9)
-    rzsm_clipped = np.clip(rzsm, 1e-6, 0.999)
-    w = (RHO_W * rzsm_clipped) / (
-        RHO_BULK * (1 - rzsm_clipped) + RHO_W * rzsm_clipped
-    )
-    cp = CP_SEC + w * (CP_WATER - CP_SEC)
-    return np.where(is_ice, CP_ICE, cp)
-
-
-def load_and_grid_rzsm_data(csv_path: pathlib.Path):
-    if not SCIPY_AVAILABLE:
-        return None, None, None
-    df = pd.read_csv(csv_path)
-    df["lon"] = ((df["lon"] + 180) % 360) - 180
-    grid_res = 1.0
-    lon_bins = np.arange(-180, 180 + grid_res, grid_res)
-    lat_bins = np.arange(-90, 90 + grid_res, grid_res)
-    statistic, _, _, _ = binned_statistic_2d(
-        x=df["lon"],
-        y=df["lat"],
-        values=df["RZSM"],
-        statistic="mean",
-        bins=[lon_bins, lat_bins],
-    )
-    return statistic.T, lat_bins, lon_bins
-
+# ────────────────────────────────────────────────
+# Capacité thermique depuis l'humidité du sol (RZSM) (inchangé)
+# ────────────────────────────────────────────────
 
 try:
-    RZSM_GRID, RZSM_LAT_BINS, RZSM_LON_BINS = load_and_grid_rzsm_data(
+    RZSM_GRID, RZSM_LAT_BINS, RZSM_LON_BINS = f.load_and_grid_rzsm_data(
         RZSM_CSV_PATH
     )
     if RZSM_GRID is None:
@@ -131,6 +101,20 @@ try:
 except (FileNotFoundError, RuntimeError) as e:
     print(f"ERREUR: Impossible de charger les données d'humidité du sol : {e}")
     exit()
+
+
+try:
+    RZSM_GRID, RZSM_LAT_BINS, RZSM_LON_BINS = lib.load_and_grid_rzsm_data(
+        RZSM_CSV_PATH
+    )
+    if RZSM_GRID is None:
+        raise RuntimeError("Scipy manquant ou échec du griddage RZSM.")
+    _rzsm_lat_idx = lambda lat: np.abs(RZSM_LAT_BINS - lat).argmin()
+    _rzsm_lon_idx = lambda lon: np.abs(RZSM_LON_BINS - lon).argmin()
+except (FileNotFoundError, RuntimeError) as e:
+    print(f"ERREUR: Impossible de charger les données d'humidité du sol : {e}")
+    exit()
+
 
 # ────────────────────────────────────────────────
 # Données de chaleur latente (Q) via évaporation (inchangé)
@@ -172,23 +156,21 @@ SHAPEFILE_PATH = (
 )
 
 
-
-
 continent_finder = f.create_continent_finder(SHAPEFILE_PATH)
 
 
-
-
-
-
 # ────────────────────────────────────────────────
-# Données d'albédo des nuages (inchangé) à changer voir fonctions
+# Données d'albédo des nuages depuis CERES (inchangé)
 # ────────────────────────────────────────────────
 
+CERES_FILE_PATH = (
+    pathlib.Path("ressources/albedo")
+    / "CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc"
+)
 
 
 
-
+#Bilan
 
 def f_rhs(T, phinet, C, q_latent):
     return (phinet - q_latent + sigma * Tatm**4 - sigma * T**4) / C
@@ -212,6 +194,7 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         _lon_idx(lon_deg),
     )
 
+    # MODIFIÉ : q_base est maintenant la valeur constante pour toute la simulation
     q_base = lib.P_em_surf_evap(lat_deg, lon_deg)
 
     print("Lissage des données annuelles (albédo)...")
@@ -231,7 +214,7 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
     rzsm_lon_idx = _rzsm_lon_idx(lon_deg)
     rzsm_value = RZSM_GRID[rzsm_lat_idx, rzsm_lon_idx]
     cp_kj = (
-        compute_cp_from_rzsm(np.array([rzsm_value]))[0]
+        f.compute_cp_from_rzsm(np.array([rzsm_value]))[0]
         if not np.isnan(rzsm_value)
         else CP_SEC
     )
@@ -269,7 +252,7 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
             q_latent_daily,
         )
 
-        phi_n = lib.P_inc_solar(
+        phi_n = lib.P_em_surf_thermal(
             lat_rad, jour, heure_solaire, albedo_sol, albedo_nuages
         )
         # La logique d'inversion jour/nuit est conservée

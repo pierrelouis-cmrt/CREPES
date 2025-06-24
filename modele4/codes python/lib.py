@@ -11,6 +11,7 @@ import pathlib
 import pandas as pd
 import fonctions as f
 import subprocess
+import sys
 
 
 try:

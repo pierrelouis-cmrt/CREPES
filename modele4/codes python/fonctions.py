@@ -21,6 +21,7 @@ import pathlib
 import pandas as pd
 from scipy.ndimage import gaussian_filter1d
 import subprocess
+import sys
 
 
 try:
@@ -94,11 +95,13 @@ except ImportError:
 # ---------- constantes physiques ----------
 constante_solaire = 1361.0  # W m-2
 sigma = 5.670374419e-8  # Stefan‑Boltzmann (SI)
+Tatm = 253.15  # atmosphère radiative (‑20 °C)
+dt = 1800.0  # pas de temps : 30 min
+
+# Masse de la couche de surface active thermiquement (kg m-2)
+MASSE_SURFACIQUE_ACTIVE = 4.0e2  # kg m-2
 Tatm = 223.15  # atmosphère radiative (‑50 °C)
 dt = 1800.0  # pas de temps : 30 min
-# SUPPRIMÉ : La masse surfacique est maintenant calculée dynamiquement.
-# MASSE_SURFACIQUE_ACTIVE = 4.0e2  # kg m-2
-# NOUVEAU : Épaisseur de la couche de sol active pour le calcul de C.
 EPAISSEUR_ACTIVE = 0.2  # m (20 cm)
 
 
@@ -145,6 +148,46 @@ _CAPACITY_BY_TYPE = {
     "land": 1.0,
 }
 
+
+# ────────────────────────────────────────────────
+# Capacité thermique depuis l'humidité du sol (RZSM) (inchangé)
+# ────────────────────────────────────────────────
+
+RHO_W = 1000.0
+RHO_BULK = 1300.0
+CP_SEC = 0.8
+CP_WATER = 4.187
+CP_ICE = 2.09
+RZSM_CSV_PATH = pathlib.Path("ressources/Cp_humidity/average_rzsm_tout.csv")
+
+
+def compute_cp_from_rzsm(rzsm: np.ndarray) -> np.ndarray:
+    is_ice = np.isclose(rzsm, 0.9)
+    rzsm_clipped = np.clip(rzsm, 1e-6, 0.999)
+    w = (RHO_W * rzsm_clipped) / (
+        RHO_BULK * (1 - rzsm_clipped) + RHO_W * rzsm_clipped
+    )
+    cp = CP_SEC + w * (CP_WATER - CP_SEC)
+    return np.where(is_ice, CP_ICE, cp)
+
+
+def load_and_grid_rzsm_data(csv_path: pathlib.Path):
+    if not SCIPY_AVAILABLE:
+        return None, None, None
+    df = pd.read_csv(csv_path)
+    df["lon"] = ((df["lon"] + 180) % 360) - 180
+    grid_res = 1.0
+    lon_bins = np.arange(-180, 180 + grid_res, grid_res)
+    lat_bins = np.arange(-90, 90 + grid_res, grid_res)
+    statistic, _, _, _ = binned_statistic_2d(
+        x=df["lon"],
+        y=df["lat"],
+        values=df["RZSM"],
+        statistic="mean",
+        bins=[lon_bins, lat_bins],
+    )
+
+
 # Associe un albédo à une capacité thermique massique
 def capacite_thermique_massique(albedo: float) -> float:
     """Retourne la capacité thermique massique (kJ kg-1 K-1) pour un albedo."""
@@ -188,6 +231,23 @@ def load_albedo_series(
 SHAPEFILE_PATH = (
     pathlib.Path("ressources/map") / "ne_110m_admin_0_countries.shp"
 )
+
+def load_albedo_series(
+    csv_dir: str | pathlib.Path, pattern: str = "albedo{:02d}.csv"
+):
+    """Charge les 12 fichiers CSV d'albédo de surface mensuel."""
+    csv_dir = pathlib.Path(csv_dir)
+    latitudes: np.ndarray | None = None
+    longitudes: np.ndarray | None = None
+    cubes: list[np.ndarray] = []
+    for month in range(1, 13):
+        df = pd.read_csv(csv_dir / pattern.format(month))
+        if latitudes is None:
+            latitudes = df["Latitude/Longitude"].astype(float).to_numpy()
+            longitudes = df.columns[1:].astype(float).to_numpy()
+        cubes.append(df.set_index("Latitude/Longitude").to_numpy(dtype=float))
+    print("Données d'albédo de surface chargées.")
+    return np.stack(cubes, axis=0), latitudes, longitudes
 
 
 # Crée une fonction qui associe un point géographique à un continent
