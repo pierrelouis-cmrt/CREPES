@@ -30,7 +30,7 @@ import fonctions as f
 # ---------- constantes physiques ----------
 constante_solaire = 1361.0  # W m-2
 sigma = 5.670374419e-8  # Stefan‑Boltzmann (SI)
-Tatm = 223.15  # atmosphère radiative (‑20 °C)
+Tatm = 253.15  # atmosphère radiative (‑20 °C)
 dt = 1800.0  # pas de temps : 30 min
 
 # Masse de la couche de surface active thermiquement (kg m-2)
@@ -215,11 +215,11 @@ if __name__ == "__main__":
     jours_de_simulation = 365 * 2  # 2 ans pour spin-up
     jour_a_afficher = 182  # 1er juillet (approx.)
 
-    # --- Simulation pour Paris, France ---
-    lat_paris, lon_paris = 90, 0
-    print("Lancement de la simulation pour Paris...")
+    # --- Simulation pour Pole Nord ---
+    lat_poleN, lon_poleN = 90, 0
+    print("Lancement de la simulation pour Pole Nord...")
     t_full, T_full, alb_full, C_full = backward_euler(
-        jours_de_simulation, lat_paris, lon_paris
+        jours_de_simulation, lat_poleN, lon_poleN
     )
 
     # Extraction de la deuxième année
@@ -235,7 +235,7 @@ if __name__ == "__main__":
         T_yr2,
         alb_yr2,
         C_yr2,
-        f"Simulation stabilisée pour Paris (Lat={lat_paris}, Lon={lon_paris})",
+        f"Simulation stabilisée pour Paris (Lat={lat_poleN}, Lon={lat_poleN})",
         jour_a_afficher,
     )
 
