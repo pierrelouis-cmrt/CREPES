@@ -3,13 +3,14 @@
 
 Récapitulatif du dossier `modèle 3`
 
+
 ## Dossier _figures_
 
 Le dossier _figures_ contient : 
 - l'image du graphique du modèle 3
 - le schéma réalisé avec Mathcha du modèle 3, ainsi que la version en LaTeX
 
-## Codes _python_
+## Dossier _codes python_
 
 Le fichier `modele3_coquille.py` modélise la température de la Terre en fonction du temps pour une coquille entouré d'une atmosphère
 
