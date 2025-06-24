@@ -10,13 +10,13 @@ Le dossier _figures_ contient :
 
 ## Dossier _codes python_
 
-- le fichier `fonctions_modele1_coquille.py` modélise la température de la Terre comme coquille.
+- `fonctions_modele1_coquille.py` : modèle de la température de la Terre comme coquille
 
-- le fichier `modele1_boule.py` modélise la température de la Terre en fonction du temps pour une boule d'eau dans le vide.
+- `modele1_boule.py` : modélise la température de la Terre en fonction du temps pour une boule d'eau dans le vide
 
-- le fichier `modele1_coquille.py` modélise la température de la Terre en fonction du temps pour une coquille à intérieur vide dans le vide.
+- `modele1_coquille.py` : modèle de la température de la Terre en fonction du temps pour une coquille à intérieur vide dans le vide
 
-- le fichier `modelisation_modele1_coquille.py` modélise la température de la Terre comme coquille.
+- `modelisation_modele1_coquille.py` : représentation de la température de la Terre en tany que coquille
 
 ## Fichiers
 ### Rapport
