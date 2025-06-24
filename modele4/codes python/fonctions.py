@@ -195,6 +195,8 @@ def load_and_grid_rzsm_data(csv_path: pathlib.Path):
         statistic="mean",
         bins=[lon_bins, lat_bins],
     )
+    return statistic.T, lat_bins, lon_bins
+
 
 
 # Associe un albédo à une capacité thermique massique
@@ -217,12 +219,11 @@ def lisser_donnees_annuelles(valeurs_mensuelles: np.ndarray, sigma: float):
         valeurs_journalieres_discontinues, sigma=sigma, mode="wrap"
     )
 
-
 # Charge les données d’albédo mensuel depuis une série de fichiers CSV
 def load_albedo_series(
     csv_dir: str | pathlib.Path, pattern: str = "albedo{:02d}.csv"
 ):
-    """Charge les 12 fichiers CSV d'albédo mensuel."""
+    """Charge les 12 fichiers CSV d'albédo de surface mensuel."""
     csv_dir = pathlib.Path(csv_dir)
     latitudes: np.ndarray | None = None
     longitudes: np.ndarray | None = None
@@ -233,8 +234,9 @@ def load_albedo_series(
             latitudes = df["Latitude/Longitude"].astype(float).to_numpy()
             longitudes = df.columns[1:].astype(float).to_numpy()
         cubes.append(df.set_index("Latitude/Longitude").to_numpy(dtype=float))
-    print("Données d'albédo chargées.")
+    print("Données d'albédo de surface chargées.")
     return np.stack(cubes, axis=0), latitudes, longitudes
+
 
 # Chemin vers le fichier shapefile de Natural Earth
 SHAPEFILE_PATH = (
@@ -266,6 +268,7 @@ def create_continent_finder(shapefile_path: pathlib.Path):
     try:
         world = gpd.read_file(shapefile_path).to_crs(epsg=4326)
     except Exception as e:
+        print(f"AVERTISSEMENT: Impossible de charger le shapefile: {e}")
         return lambda lat, lon: "Océan"
 
     def find_continent_for_point(lat: float, lon: float) -> str:
@@ -281,6 +284,7 @@ def create_continent_finder(shapefile_path: pathlib.Path):
 continent_finder = create_continent_finder(SHAPEFILE_PATH)
 
 
+# ────────────────────────────────────────────────
 # Données d'albédo des nuages depuis CERES (inchangé)
 # ────────────────────────────────────────────────
 
@@ -290,7 +294,9 @@ CERES_FILE_PATH = (
 )
 
 
-def load_monthly_cloud_albedo_from_ceres(lat_deg: float, lon_deg: float) -> np.ndarray:
+def load_monthly_cloud_albedo_from_ceres(
+    lat_deg: float, lon_deg: float
+) -> np.ndarray:
     if not XARRAY_AVAILABLE:
         exit("ERREUR: xarray non installé.")
     try:
@@ -299,20 +305,18 @@ def load_monthly_cloud_albedo_from_ceres(lat_deg: float, lon_deg: float) -> np.n
         exit(f"ERREUR: Fichier CERES introuvable : {CERES_FILE_PATH}")
 
     ds = ds.assign_coords(lon=(((ds.lon + 180) % 360) - 180)).sortby("lon")
-
-    # Suppression des idx_lat / idx_lon, on accède directement aux champs interpolés
-    solar_in = ds["solar_in"].sel(lat=lat_deg, lon=lon_deg, method="nearest")
-    toa_sw_all = ds["toa_sw_all"].sel(lat=lat_deg, lon=lon_deg, method="nearest")
-    toa_sw_clr = ds["toa_sw_clr"].sel(lat=lat_deg, lon=lon_deg, method="nearest")
-
+    toa_sw_all = ds["toa_sw_all_mon"]
+    toa_sw_clr = ds["toa_sw_clr_c_mon"]
+    solar_in = ds["solar_mon"]
     cloud_albedo_instant = xr.where(
         solar_in > 1e-6, (toa_sw_all - toa_sw_clr) / solar_in, 0.0
     )
     cloud_albedo_monthly_clim = cloud_albedo_instant.groupby(
         "time.month"
     ).mean(dim="time", skipna=True)
-
-    monthly_values = cloud_albedo_monthly_clim.to_numpy()
+    monthly_values = cloud_albedo_monthly_clim.sel(
+        lat=lat_deg, lon=lon_deg, method="nearest"
+    ).to_numpy()
 
     if len(monthly_values) != 12:
         monthly_values = np.pad(
