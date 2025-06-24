@@ -207,6 +207,7 @@ def load_monthly_cloud_albedo_from_ceres(
     print("Données d'albédo des nuages chargées.")
     return monthly_values
 
+load_monthly_cloud_albedo_from_ceres(lat_deg=49.0, lon_deg=2.3)
 
 
 # ────────────────────────────────────────────────
