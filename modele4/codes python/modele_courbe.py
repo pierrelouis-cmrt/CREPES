@@ -59,7 +59,7 @@ constante_solaire = 1361.0  # W m-2
 sigma = 5.670374419e-8  # Stefan‑Boltzmann (SI)
 Tatm = 223.15  # atmosphère radiative (‑50 °C)
 dt = 1800.0  # pas de temps : 30 min
-EPAISSEUR_ACTIVE = 0.2  # m (20 cm)
+EPAISSEUR_ACTIVE = 0.5  # m (20 cm)
 
 # ────────────────────────────────────────────────
 # DATA – Chargement de l'albédo de surface (inchangé)
@@ -141,8 +141,15 @@ try:
     )
     if RZSM_GRID is None:
         raise RuntimeError("Scipy manquant ou échec du griddage RZSM.")
-    _rzsm_lat_idx = lambda lat: np.abs(RZSM_LAT_BINS - lat).argmin()
-    _rzsm_lon_idx = lambda lon: np.abs(RZSM_LON_BINS - lon).argmin()
+    # CORRIGÉ : L'indice ne doit pas dépasser la taille de la grille.
+    # L'erreur se produisait pour lat=90, qui donnait un index de 180
+    # pour une grille de taille 180 (indices 0-179).
+    _rzsm_lat_idx = lambda lat: min(
+        np.abs(RZSM_LAT_BINS - lat).argmin(), RZSM_GRID.shape[0] - 1
+    )
+    _rzsm_lon_idx = lambda lon: min(
+        np.abs(RZSM_LON_BINS - lon).argmin(), RZSM_GRID.shape[1] - 1
+    )
 except (FileNotFoundError, RuntimeError) as e:
     print(f"ERREUR: Impossible de charger les données d'humidité du sol : {e}")
     exit()
@@ -193,6 +200,7 @@ def create_continent_finder(shapefile_path: pathlib.Path):
     try:
         world = gpd.read_file(shapefile_path).to_crs(epsg=4326)
     except Exception as e:
+        print(f"AVERTISSEMENT: Impossible de charger le shapefile: {e}")
         return lambda lat, lon: "Océan"
 
     def find_continent_for_point(lat: float, lon: float) -> str:
@@ -300,7 +308,7 @@ def f_rhs(T, phinet, C, q_latent):
 
 
 # ────────────────────────────────────────────────
-# Intégrateur Backward‑Euler (MODIFIÉ pour Q)
+# Intégrateur Backward‑Euler (inchangé)
 # ────────────────────────────────────────────────
 
 
@@ -317,7 +325,6 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         _lon_idx(lon_deg),
     )
 
-    # MODIFIÉ : q_base est maintenant la valeur constante pour toute la simulation
     q_base = get_q_latent_base(lat_deg, lon_deg)
 
     print("Lissage des données annuelles (albédo)...")
@@ -347,12 +354,11 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         f"C={C_const:.2e} J m⁻² K⁻¹"
     )
 
-    # Initialisation des tableaux d'historique
     albedo_sol_hist[0], albedo_nuages_hist[0], C_hist[0], q_latent_hist[0] = (
         albedo_sol_journalier_lisse[0],
         albedo_nuages_journalier_lisse[0],
         C_const,
-        q_base,  # MODIFIÉ
+        q_base,
     )
 
     for k in range(N):
@@ -363,7 +369,6 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
 
         albedo_sol = albedo_sol_journalier_lisse[jour_dans_annee]
         albedo_nuages = albedo_nuages_journalier_lisse[jour_dans_annee]
-        # MODIFIÉ : q_latent_daily est maintenant la valeur de base constante
         q_latent_daily = q_base
 
         albedo_sol_hist[k + 1], albedo_nuages_hist[k + 1], C_hist[
@@ -378,7 +383,6 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
         phi_n = phi_net(
             lat_rad, jour, heure_solaire, albedo_sol, albedo_nuages
         )
-        # La logique d'inversion jour/nuit est conservée
         q_latent_step = q_latent_daily if phi_n > 0 else -q_latent_daily
 
         X = T[k]
@@ -458,7 +462,6 @@ def tracer_comparaison(
 
     color_q = "tab:green"
     axs[2].set_ylabel("Flux Chaleur Latente (W m⁻²)", color=color_q)
-    # Le graphique affichera une ligne constante pour Q
     axs[2].plot(
         days_axis,
         q_latent_hist,
@@ -497,9 +500,13 @@ if __name__ == "__main__":
     # Pour Paris (Europe)
     lat_sim, lon_sim = 48.5, 2.3
     # Pour l'Amazonie (Amérique du Sud, Q élevé)
-    # lat_sim, lon_sim = -3.46, -62.21
+    #lat_sim, lon_sim = -3.46, -62.21
     # Pour le Sahara (Afrique, Q modéré, Cp faible)
     # lat_sim, lon_sim = 25.0, 15.0
+    # Pour l'Océan Arctique (Pôle Nord)
+    # lat_sim, lon_sim = 82.0, 135.0
+    # Pour l'Antarctique (Pôle Sud)
+    # lat_sim, lon_sim = -76.0, 100.0
 
     print(
         f"Lancement de la simulation pour Lat={lat_sim}N, Lon={lon_sim}E..."
