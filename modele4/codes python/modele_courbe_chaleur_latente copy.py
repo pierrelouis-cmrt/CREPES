@@ -222,7 +222,7 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0):
     albedo_nuages_mensuel = f.load_monthly_cloud_albedo_from_ceres(
         lat_deg, lon_deg
     )
-    albedo_nuages_journalier_lisse = lisser_donnees_annuelles(
+    albedo_nuages_journalier_lisse = f.lisser_donnees_annuelles(
         albedo_nuages_mensuel, sigma=15.0
     )
 

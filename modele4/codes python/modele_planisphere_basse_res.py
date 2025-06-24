@@ -171,8 +171,17 @@ def integrate_point_temperature(
     return T
 
 
-def run_full_simulation(days, result_file="temp_grid_full.npy"):
+def run_full_simulation(days, result_file=None):
     """Exécute la simulation pour toute la grille et sauvegarde le résultat."""
+    # Définir le chemin par défaut dans 'ressources/npy'
+    if result_file is None:
+        npy_dir = pathlib.Path("ressources/npy")
+        npy_dir.mkdir(parents=True, exist_ok=True)
+        result_file = npy_dir / "temp_grid_full.npy"
+    else:
+        result_file = pathlib.Path(result_file)
+        result_file.parent.mkdir(parents=True, exist_ok=True)
+
     if os.path.exists(result_file):
         print(f"Chargement des résultats depuis '{result_file}'...")
         return np.load(result_file)
