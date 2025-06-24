@@ -11,8 +11,8 @@ pattern thickness = 0.3pt,
 pattern radius/.store in=\mcRadius, 
 pattern radius = 1pt}
 \makeatletter
-\pgfutil@ifundefined{pgf@pattern@name@_bh7sfsv6t}{
-\pgfdeclarepatternformonly[\mcThickness,\mcSize]{_bh7sfsv6t}
+\pgfutil@ifundefined{pgf@pattern@name@_2eif9t7y7}{
+\pgfdeclarepatternformonly[\mcThickness,\mcSize]{_2eif9t7y7}
 {\pgfqpoint{0pt}{-\mcThickness}}
 {\pgfpoint{\mcSize}{\mcSize}}
 {\pgfpoint{\mcSize}{\mcSize}}
@@ -27,7 +27,7 @@ pattern radius = 1pt}
 \tikzset{every picture/.style={line width=0.75pt}} %set default line width to 0.75pt        
 
 \begin{tikzpicture}[x=0.75pt,y=0.75pt,yscale=-1,xscale=1]
-%uncomment if require: \path (0,649); %set diagram left start at 0, and has height of 649
+%uncomment if require: \path (0,478); %set diagram left start at 0, and has height of 478
 
 %Shape: Cube [id:dp18964859541101564] 
 \draw   (200.55,231.08) -- (272.57,159.05) -- (447.27,159.05) -- (447.27,327.12) -- (375.25,399.14) -- (200.55,399.14) -- cycle ; \draw   (447.27,159.05) -- (375.25,231.08) -- (200.55,231.08) ; \draw   (375.25,231.08) -- (375.25,399.14) ;
@@ -50,13 +50,15 @@ pattern radius = 1pt}
 \draw    (181,400) -- (180.12,234.89) ;
 \draw [shift={(180.11,232.89)}, rotate = 89.7] [color={rgb, 255:red, 0; green, 0; blue, 0 }  ][line width=0.75]    (10.93,-3.29) .. controls (6.95,-1.4) and (3.31,-0.3) .. (0,0) .. controls (3.31,0.3) and (6.95,1.4) .. (10.93,3.29)   ;
 %Shape: Parallelogram [id:dp09646812396527993] 
-\draw  [draw opacity=0][pattern=_bh7sfsv6t,pattern size=16.950000000000003pt,pattern thickness=0.75pt,pattern radius=0pt, pattern color={rgb, 255:red, 192; green, 234; blue, 250}] (271.97,327.27) -- (446,327.27) -- (374.9,398.33) -- (200.87,398.33) -- cycle ;
+\draw  [draw opacity=0][pattern=_2eif9t7y7,pattern size=16.950000000000003pt,pattern thickness=0.75pt,pattern radius=0pt, pattern color={rgb, 255:red, 192; green, 234; blue, 250}] (271.97,327.27) -- (446,327.27) -- (374.9,398.33) -- (200.87,398.33) -- cycle ;
 %Straight Lines [id:da9354751179129625] 
 \draw [color={rgb, 255:red, 189; green, 16; blue, 224 }  ,draw opacity=1 ][line width=2.25]    (408,83.18) -- (407.89,177) ;
 \draw [shift={(407.89,181)}, rotate = 270.07] [color={rgb, 255:red, 189; green, 16; blue, 224 }  ,draw opacity=1 ][line width=2.25]    (17.49,-5.26) .. controls (11.12,-2.23) and (5.29,-0.48) .. (0,0) .. controls (5.29,0.48) and (11.12,2.23) .. (17.49,5.26)   ;
 %Straight Lines [id:da6393320190851794] 
 \draw [color={rgb, 255:red, 139; green, 87; blue, 42 }  ,draw opacity=1 ][line width=1.5]    (325.89,213) -- (326,124.18) ;
 \draw [shift={(326,121.18)}, rotate = 90.07] [color={rgb, 255:red, 139; green, 87; blue, 42 }  ,draw opacity=1 ][line width=1.5]    (14.21,-4.28) .. controls (9.04,-1.82) and (4.3,-0.39) .. (0,0) .. controls (4.3,0.39) and (9.04,1.82) .. (14.21,4.28)   ;
+%Image [id:dp43625183433979053] 
+\draw (202,111.9) node  {\includegraphics[width=76.5pt,height=37.35pt]{7c35c332-1025-43a6-b95f-1ef51e97d216.jpg}};
 %Straight Lines [id:da864754981576419] 
 \draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=4.5]    (210,129.8) -- (258,216) ;
 %Straight Lines [id:da7791113494130547] 
@@ -64,8 +66,9 @@ pattern radius = 1pt}
 %Straight Lines [id:da9050197484692761] 
 \draw [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=2.25]    (190,95) -- (201.7,58.03) -- (213.79,19.81) ;
 \draw [shift={(215,16)}, rotate = 107.56] [color={rgb, 255:red, 208; green, 2; blue, 27 }  ,draw opacity=1 ][line width=2.25]    (17.49,-5.26) .. controls (11.12,-2.23) and (5.29,-0.48) .. (0,0) .. controls (5.29,0.48) and (11.12,2.23) .. (17.49,5.26)   ;
-%Shape: Polygon Curved [id:ds6246189608711026] 
-\draw  [fill={rgb, 255:red, 255; green, 255; blue, 255 }  ,fill opacity=1 ] (165.82,106.89) .. controls (172,99.98) and (181.27,103.62) .. (183.45,105.98) .. controls (185.64,108.35) and (183.64,92.16) .. (199.82,92.35) .. controls (216,92.53) and (215.27,109.07) .. (215.45,109.98) .. controls (215.64,110.89) and (219.64,108.16) .. (224.18,111.25) .. controls (228.73,114.35) and (228.36,120.16) .. (227.82,121.25) .. controls (227.27,122.35) and (239.09,116.16) .. (240.36,126.53) .. controls (241.64,136.89) and (229.82,132.71) .. (228.55,132.89) .. controls (227.27,133.07) and (220,134.71) .. (218,133.8) .. controls (216,132.89) and (215.27,135.25) .. (211.82,135.25) .. controls (208.36,135.25) and (207.55,132.89) .. (204,133.8) .. controls (200.45,134.71) and (195.68,136.6) .. (192.55,136.35) .. controls (189.41,136.1) and (187.64,134.53) .. (185.09,133.8) .. controls (182.55,133.07) and (181.27,134.53) .. (178.36,136.16) .. controls (175.45,137.8) and (167.91,135.25) .. (167.82,135.25) .. controls (167.73,135.25) and (152.73,139.8) .. (152.55,130.35) .. controls (152.36,120.89) and (161.82,124.16) .. (161.64,122.89) .. controls (161.45,121.62) and (159.64,113.8) .. (165.82,106.89) -- cycle ;
+%Straight Lines [id:da44181835953265336] 
+\draw [color={rgb, 255:red, 219; green, 142; blue, 11 }  ,draw opacity=1 ][line width=1.5]    (367.89,182) -- (368.98,26.17) ;
+\draw [shift={(369,23.18)}, rotate = 90.4] [color={rgb, 255:red, 219; green, 142; blue, 11 }  ,draw opacity=1 ][line width=1.5]    (14.21,-4.28) .. controls (9.04,-1.82) and (4.3,-0.39) .. (0,0) .. controls (4.3,0.39) and (9.04,1.82) .. (14.21,4.28)   ;
 
 % Text Node
 \draw (155,305.89) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle h$};
@@ -83,7 +86,7 @@ T_{atm} =-50\degree C
 % Text Node
 \draw (132,30) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle \textcolor[rgb]{0.82,0.01,0.11}{\varphi }\textcolor[rgb]{0.82,0.01,0.11}{_{s}}$};
 % Text Node
-\draw (216,430) node [anchor=north west][inner sep=0.75pt]   [align=left] {\textbf{\underline{Schéma du modèle 5}}};
+\draw (216,430) node [anchor=north west][inner sep=0.75pt]   [align=left] {\textbf{\underline{Schéma du modèle 4}}};
 % Text Node
 \draw (210.35,40.01) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle \textcolor[rgb]{0.82,0.01,0.11}{A}\textcolor[rgb]{0.82,0.01,0.11}{_{1}}\textcolor[rgb]{0.82,0.01,0.11}{\varphi }\textcolor[rgb]{0.82,0.01,0.11}{_{s}}$};
 % Text Node
@@ -92,6 +95,8 @@ T_{atm} =-50\degree C
 \draw (293.4,252.11) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle \textcolor[rgb]{0.82,0.01,0.11}{(}\textcolor[rgb]{0.82,0.01,0.11}{1-A}\textcolor[rgb]{0.82,0.01,0.11}{_{1}}\textcolor[rgb]{0.82,0.01,0.11}{)}\textcolor[rgb]{0.82,0.01,0.11}{(}\textcolor[rgb]{0.82,0.01,0.11}{1-A}\textcolor[rgb]{0.82,0.01,0.11}{_{2}}\textcolor[rgb]{0.82,0.01,0.11}{)}\textcolor[rgb]{0.82,0.01,0.11}{\varphi }\textcolor[rgb]{0.82,0.01,0.11}{_{s}}$};
 % Text Node
 \draw (237,83) node [anchor=north west][inner sep=0.75pt]   [align=left] {$\displaystyle \textcolor[rgb]{0.82,0.01,0.11}{(}\textcolor[rgb]{0.82,0.01,0.11}{1-A}\textcolor[rgb]{0.82,0.01,0.11}{_{1}}\textcolor[rgb]{0.82,0.01,0.11}{)}\textcolor[rgb]{0.82,0.01,0.11}{A}\textcolor[rgb]{0.82,0.01,0.11}{_{2}}\textcolor[rgb]{0.82,0.01,0.11}{\varphi }\textcolor[rgb]{0.82,0.01,0.11}{_{s}}$};
+% Text Node
+\draw (373,39.4) node [anchor=north west][inner sep=0.75pt]    {$\textcolor[rgb]{0.86,0.56,0.04}{Q}\textcolor[rgb]{0.86,0.56,0.04}{_{lat}}\textcolor[rgb]{0.86,0.56,0.04}{=constante\ en\ W/m}\textcolor[rgb]{0.86,0.56,0.04}{^{2}}$};
 
 
 \end{tikzpicture}
