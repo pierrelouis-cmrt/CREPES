@@ -180,6 +180,7 @@ def get_daily_q_latent(
 # Données d'albédo des nuages (inchangé)
 # ────────────────────────────────────────────────
 
+# ------------------------------------------------------------------------------ a changer
 
 def load_monthly_cloud_albedo_mock(lat_deg: float, lon_deg: float):
     print(
