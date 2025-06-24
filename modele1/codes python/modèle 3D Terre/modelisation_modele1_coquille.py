@@ -6,9 +6,17 @@ from matplotlib.widgets import Slider, Button
 import shapefile
 import pandas as pd
 from fonctions_modele1_coquille import project_to_sphere, get_shape, calc_power_temp, update_plot, slider_update, set_mois
+import sys
 import subprocess
 
 
+try:
+    import sys
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", sys])
+    import sys
+    
 try:
     import numpy
 except ImportError:

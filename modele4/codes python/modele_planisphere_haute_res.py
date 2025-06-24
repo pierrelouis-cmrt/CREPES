@@ -15,9 +15,17 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.interpolate import RegularGridInterpolator # NOUVEAU
 from tqdm import tqdm
 import os
+import sys
 import subprocess
 
 
+try:
+    import sys
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", sys])
+    import sys
+    
 try:
     import numpy
 except ImportError:
@@ -242,8 +250,18 @@ def integrate_point_temperature(
     return T
 
 
-def run_full_simulation(days, result_file="temp_grid_full_hires.npy"): # MODIFIÉ
+
+def run_full_simulation(days, result_file=None):
     """Exécute la simulation pour toute la grille et sauvegarde le résultat."""
+    # Définir le chemin par défaut dans 'ressources/npy'
+    if result_file is None:
+        npy_dir = pathlib.Path("ressources/npy")
+        npy_dir.mkdir(parents=True, exist_ok=True)
+        result_file = npy_dir / "grid_full_hires.npy"
+    else:
+        result_file = pathlib.Path(result_file)
+        result_file.parent.mkdir(parents=True, exist_ok=True)
+
     if os.path.exists(result_file):
         print(f"Chargement des résultats depuis '{result_file}'...")
         return np.load(result_file)

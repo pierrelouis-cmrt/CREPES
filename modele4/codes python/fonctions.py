@@ -1,4 +1,5 @@
 """
+fonctions.py
 Ce script regroupe plusieurs fonctions liées à la modélisation climatique simplifiée :
 
 - Calcul de l’angle d’incidence du rayonnement solaire en fonction de la latitude, du jour et de l’heure.
@@ -20,9 +21,17 @@ from math import pi
 import pathlib
 import pandas as pd
 from scipy.ndimage import gaussian_filter1d
+import sys
 import subprocess
 import sys
 
+
+try:
+    import sys
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", sys])
+    import sys
 
 try:
     import numpy

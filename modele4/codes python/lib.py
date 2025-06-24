@@ -1,3 +1,5 @@
+# lib.py
+
 # conventions:
 # lat: float (radian), 0 is at equator, -pi/2 is at south pole, and +pi/2 is at north pole
 # long: float (radian), 0 is at greenwich meridiant
@@ -10,10 +12,18 @@ from math import pi
 import pathlib
 import pandas as pd
 import fonctions as f
+import sys
 import subprocess
 import sys
 
 
+try:
+    import sys
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", sys])
+    import sys
+    
 try:
     import numpy
 except ImportError:

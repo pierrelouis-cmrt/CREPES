@@ -17,9 +17,17 @@ import pandas as pd
 from scipy.ndimage import gaussian_filter1d
 from tqdm import tqdm
 import os
+import sys
 import subprocess
 
 
+try:
+    import sys
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", sys])
+    import sys
+    
 try:
     import numpy
 except ImportError:
@@ -235,7 +243,7 @@ def run_full_simulation(days, result_file=None):
     if result_file is None:
         npy_dir = pathlib.Path("ressources/npy")
         npy_dir.mkdir(parents=True, exist_ok=True)
-        result_file = npy_dir / "temp_grid_full.npy"
+        result_file = npy_dir / "grid_full.npy"
     else:
         result_file = pathlib.Path(result_file)
         result_file.parent.mkdir(parents=True, exist_ok=True)

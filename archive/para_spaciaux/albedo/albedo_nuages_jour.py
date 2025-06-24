@@ -4,6 +4,45 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 import calendar
+import sys
+import subprocess
+
+
+try:
+    import sys
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", sys])
+    import sys
+
+try:
+    import numpy
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", numpy])
+    import numpy
+
+try:
+    import xarray
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", xarray])
+    import xarray
+
+try:
+    import calendar
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", calendar])
+    import calendar
+
+try:
+    import pathlib
+except ImportError:
+    print("OpenCV non trouvé. Installation en cours...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", pathlib])
+    import pathlib
+
 
 # ─────────────── Paramètres à modifier ───────────────
 year = 2025       # année souhaitée
