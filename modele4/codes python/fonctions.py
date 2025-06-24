@@ -290,9 +290,7 @@ CERES_FILE_PATH = (
 )
 
 
-def load_monthly_cloud_albedo_from_ceres(
-    lat_deg: float, lon_deg: float
-) -> np.ndarray:
+def load_monthly_cloud_albedo_from_ceres(lat_deg: float, lon_deg: float) -> np.ndarray:
     if not XARRAY_AVAILABLE:
         exit("ERREUR: xarray non installé.")
     try:
@@ -301,18 +299,20 @@ def load_monthly_cloud_albedo_from_ceres(
         exit(f"ERREUR: Fichier CERES introuvable : {CERES_FILE_PATH}")
 
     ds = ds.assign_coords(lon=(((ds.lon + 180) % 360) - 180)).sortby("lon")
-    toa_sw_all = ds["toa_sw_all_mon"]
-    toa_sw_clr = ds["toa_sw_clr_c_mon"]
-    solar_in = ds["solar_mon"]
+
+    # Suppression des idx_lat / idx_lon, on accède directement aux champs interpolés
+    solar_in = ds["solar_in"].sel(lat=lat_deg, lon=lon_deg, method="nearest")
+    toa_sw_all = ds["toa_sw_all"].sel(lat=lat_deg, lon=lon_deg, method="nearest")
+    toa_sw_clr = ds["toa_sw_clr"].sel(lat=lat_deg, lon=lon_deg, method="nearest")
+
     cloud_albedo_instant = xr.where(
         solar_in > 1e-6, (toa_sw_all - toa_sw_clr) / solar_in, 0.0
     )
     cloud_albedo_monthly_clim = cloud_albedo_instant.groupby(
         "time.month"
     ).mean(dim="time", skipna=True)
-    monthly_values = cloud_albedo_monthly_clim.sel(
-        lat=lat_deg, lon=lon_deg, method="nearest"
-    ).to_numpy()
+
+    monthly_values = cloud_albedo_monthly_clim.to_numpy()
 
     if len(monthly_values) != 12:
         monthly_values = np.pad(
@@ -321,7 +321,6 @@ def load_monthly_cloud_albedo_from_ceres(
     print("Données d'albédo des nuages chargées.")
     return monthly_values
 
-load_monthly_cloud_albedo_from_ceres(lat_deg=49.0, lon_deg=2.3)
 
 
 # ────────────────────────────────────────────────
