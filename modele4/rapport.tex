@@ -75,8 +75,10 @@ Les données ont été récupérées sur les dossiers CSV du projet (groupe B)  
 \subsubsection{Tabulation de l'albédo des nuages}
 Obtenu par différence de l'albédo de la terre lors de ciel clair et ciel nuageux.
 Moyennes mensuelles tabulées sur 1 an (1 janvier 2024 à 1 janvier 2025)
-Source : CERES_EBAF-TOA_Ed4.2.1
-lien du code : 
+\\
+Source \(CERES_EBAF-TOA_Ed4.2.1\)
+\\
+lien du code : \url{https://github.com/pierrelouis-cmrt/CREPES/blob/main/archive/para_spaciaux/albedo/albedo_nuages_jour.py}
 
 \subsubsection{Calculs capacités calorifiques en fonction de la composition des surfaces}
 Données récoltées sur : 
@@ -111,8 +113,12 @@ $\rho_w$ (eau) & \SI{1000}{\kilogram\per\cubic\metre} \\
 
 Détail du calcul de \( c_s \) :\\
 \begin{align*}
-c_p = \frac{C}{m} = \frac{C}{\rho V} = \frac{C}{\rho S h} = \frac{c_s}{\rho h}
+c_s &= \frac{C}{S} \\
+\text{Or } S &= \frac{m}{\rho h} \\
+Donc c_s &= \frac{C \cdot \rho \cdot h}{m} \\
+        = c_p \cdot \rho \cdot h
 \end{align*}
+
 \hspace*{2cm}Avec \( C \) la capacité thermique
 
 
@@ -180,12 +186,11 @@ On parle d'une moyenne faite par continents :
 On suppose que la pression atmosphérique de la Terre est constante à la surface. On applique le premier principe thermodynamique:
 
 \vspace{1cm}
-\begin{equation}
-    dH = \delta Q
-    dm \Delta h_{vap} = P \times dt
-    Dm \Delta h{vap} = P
-
-\end{equation}
+\begin{align}
+    dH &= \delta Q \\
+    dm \, \Delta h_{\text{vap}} &= P \times dt \\
+    Dm \, \Delta h_{\text{vap}} &= P
+\end{align}
 
 
 
