@@ -23,4 +23,4 @@ Le dossier _figures_ contient :
 ## Fichiers
 ### Rapport
 
-Le fichier `rapport`est un fichier LaTeX qui compile notre réflexion ainsi pour concevoir le modèle 1 ainsi que les équations.
+`rapport.tex` :  fichier LaTeX qui résume notre réflexion liée au modèle 1 ainsi que les équations établies
