@@ -34,7 +34,8 @@ from scipy.ndimage import gaussian_filter1d
 import sys
 import cftime
 import subprocess
-
+import fonctions as f 
+import lib as lib
 
 try:
     import sys
@@ -136,28 +137,9 @@ EPAISSEUR_ACTIVE = 0.5  # m (20 cm)
 # DATA – Chargement de l'albédo de surface (inchangé)
 # ────────────────────────────────────────────────
 
-
-def load_albedo_series(
-    csv_dir: str | pathlib.Path, pattern: str = "albedo{:02d}.csv"
-):
-    """Charge les 12 fichiers CSV d'albédo de surface mensuel."""
-    csv_dir = pathlib.Path(csv_dir)
-    latitudes: np.ndarray | None = None
-    longitudes: np.ndarray | None = None
-    cubes: list[np.ndarray] = []
-    for month in range(1, 13):
-        df = pd.read_csv(csv_dir / pattern.format(month))
-        if latitudes is None:
-            latitudes = df["Latitude/Longitude"].astype(float).to_numpy()
-            longitudes = df.columns[1:].astype(float).to_numpy()
-        cubes.append(df.set_index("Latitude/Longitude").to_numpy(dtype=float))
-    print("Données d'albédo de surface chargées.")
-    return np.stack(cubes, axis=0), latitudes, longitudes
-
-
 try:
     ALBEDO_DIR = pathlib.Path("ressources/albedo")
-    monthly_albedo_sol, LAT, LON = load_albedo_series(ALBEDO_DIR)
+    monthly_albedo_sol, LAT, LON = f.load_albedo_series(ALBEDO_DIR)
     _lat_idx = lambda lat: int(np.abs(LAT - lat).argmin())
     _lon_idx = lambda lon: int(
         np.abs(LON - (((lon + 180) % 360) - 180)).argmin()
@@ -177,37 +159,8 @@ CP_WATER = 4.187
 CP_ICE = 2.09
 RZSM_CSV_PATH = pathlib.Path("ressources/Cp_humidity/average_rzsm_tout.csv")
 
-
-def compute_cp_from_rzsm(rzsm: np.ndarray) -> np.ndarray:
-    is_ice = np.isclose(rzsm, 0.9)
-    rzsm_clipped = np.clip(rzsm, 1e-6, 0.999)
-    w = (RHO_W * rzsm_clipped) / (
-        RHO_BULK * (1 - rzsm_clipped) + RHO_W * rzsm_clipped
-    )
-    cp = CP_SEC + w * (CP_WATER - CP_SEC)
-    return np.where(is_ice, CP_ICE, cp)
-
-
-def load_and_grid_rzsm_data(csv_path: pathlib.Path):
-    if not SCIPY_AVAILABLE:
-        return None, None, None
-    df = pd.read_csv(csv_path)
-    df["lon"] = ((df["lon"] + 180) % 360) - 180
-    grid_res = 1.0
-    lon_bins = np.arange(-180, 180 + grid_res, grid_res)
-    lat_bins = np.arange(-90, 90 + grid_res, grid_res)
-    statistic, _, _, _ = binned_statistic_2d(
-        x=df["lon"],
-        y=df["lat"],
-        values=df["RZSM"],
-        statistic="mean",
-        bins=[lon_bins, lat_bins],
-    )
-    return statistic.T, lat_bins, lon_bins
-
-
 try:
-    RZSM_GRID, RZSM_LAT_BINS, RZSM_LON_BINS = load_and_grid_rzsm_data(
+    RZSM_GRID, RZSM_LAT_BINS, RZSM_LON_BINS = f.load_and_grid_rzsm_data(
         RZSM_CSV_PATH
     )
     if RZSM_GRID is None:
@@ -223,164 +176,10 @@ except (FileNotFoundError, RuntimeError) as e:
     exit()
 
 # ────────────────────────────────────────────────
-# Données de chaleur latente (Q) via évaporation (inchangé)
+# Bilan de flux thermique 
 # ────────────────────────────────────────────────
-
-Delta_hvap = 2453000
-rho_eau = 1000
-Delta_t = 31557600
-
-evap_Eur = 0.49 / Delta_t
-evap_Am_Nord = 0.47 / Delta_t
-evap_Am_sud = 0.94 / Delta_t
-evap_oceanie = 0.41 / Delta_t
-evap_Afr = 0.58 / Delta_t
-evap_Asi = 0.37 / Delta_t
-evap_ocean = 1.40 / Delta_t
-
-phi_Eur = Delta_hvap * rho_eau * evap_Eur
-phi_Am_Nord = Delta_hvap * rho_eau * evap_Am_Nord
-phi_Am_sud = Delta_hvap * rho_eau * evap_Am_sud
-phi_oceanie = Delta_hvap * rho_eau * evap_oceanie
-phi_Afr = Delta_hvap * rho_eau * evap_Afr
-phi_Asi = Delta_hvap * rho_eau * evap_Asi
-phi_ocean = Delta_hvap * rho_eau * evap_ocean
-
-Q_LATENT_CONTINENT = {
-    "Europe": phi_Eur,
-    "North America": phi_Am_Nord,
-    "South America": phi_Am_sud,
-    "Oceania": phi_oceanie,
-    "Africa": phi_Afr,
-    "Asia": phi_Asi,
-    "Océan": phi_ocean,
-    "Antarctica": 0.0,
-}
-
-SHAPEFILE_PATH = (
-    pathlib.Path("ressources/map") / "ne_110m_admin_0_countries.shp"
-)
-
-
-def create_continent_finder(shapefile_path: pathlib.Path):
-    if not GEOPANDAS_AVAILABLE:
-        return lambda lat, lon: "Océan"
-    try:
-        world = gpd.read_file(shapefile_path).to_crs(epsg=4326)
-    except Exception as e:
-        print(f"AVERTISSEMENT: Impossible de charger le shapefile: {e}")
-        return lambda lat, lon: "Océan"
-
-    def find_continent_for_point(lat: float, lon: float) -> str:
-        point = Point(lon, lat)
-        for _, row in world.iterrows():
-            if row["geometry"] is not None and row["geometry"].contains(point):
-                return row["CONTINENT"]
-        return "Océan"
-
-    return find_continent_for_point
-
-
-continent_finder = create_continent_finder(SHAPEFILE_PATH)
-
-
-def get_q_latent_base(lat: float, lon: float) -> float:
-    """Récupère la valeur de Q (W m-2) de base pour un point géographique."""
-    continent = continent_finder(lat, lon)
-
-    if continent == "Océan" and lat > 75.0:
-        print(
-            f"Point ({lat:.2f}, {lon:.2f}) dans l'océan Arctique, "
-            "correction manuelle vers Q=0."
-        )
-        continent = "Antarctica"
-
-    q_val = Q_LATENT_CONTINENT.get(continent, Q_LATENT_CONTINENT["Océan"])
-    print(
-        f"Coordonnées ({lat:.2f}, {lon:.2f}) détectées sur : "
-        f"{continent} (Q base = {q_val:.2f} W m⁻²)"
-    )
-    return q_val
-
-
-# ────────────────────────────────────────────────
-# Données d'albédo des nuages depuis CERES (inchangé)
-# ────────────────────────────────────────────────
-
-CERES_FILE_PATH = (
-    pathlib.Path("ressources/albedo")
-    / "CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc"
-)
-
-
-def load_monthly_cloud_albedo_from_ceres(
-    lat_deg: float, lon_deg: float
-) -> np.ndarray:
-    if not XARRAY_AVAILABLE:
-        exit("ERREUR: xarray non installé.")
-    try:
-        ds = xr.open_dataset(CERES_FILE_PATH, decode_times=True)
-    except FileNotFoundError:
-        exit(f"ERREUR: Fichier CERES introuvable : {CERES_FILE_PATH}")
-
-    ds = ds.assign_coords(lon=(((ds.lon + 180) % 360) - 180)).sortby("lon")
-    toa_sw_all = ds["toa_sw_all_mon"]
-    toa_sw_clr = ds["toa_sw_clr_c_mon"]
-    solar_in = ds["solar_mon"]
-    cloud_albedo_instant = xr.where(
-        solar_in > 1e-6, (toa_sw_all - toa_sw_clr) / solar_in, 0.0
-    )
-    cloud_albedo_monthly_clim = cloud_albedo_instant.groupby(
-        "time.month"
-    ).mean(dim="time", skipna=True)
-    monthly_values = cloud_albedo_monthly_clim.sel(
-        lat=lat_deg, lon=lon_deg, method="nearest"
-    ).to_numpy()
-
-    if len(monthly_values) != 12:
-        monthly_values = np.pad(
-            monthly_values, (0, 12 - len(monthly_values)), mode="edge"
-        )
-    print("Données d'albédo des nuages chargées.")
-    return monthly_values
-
-
-# ────────────────────────────────────────────────
-# Lissage et fonctions physiques (inchangés)
-# ────────────────────────────────────────────────
-
-
-def lisser_donnees_annuelles(valeurs_mensuelles: np.ndarray, sigma: float):
-    jours_par_mois = np.array(
-        [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    )
-    valeurs_journalieres_discontinues = np.repeat(
-        valeurs_mensuelles, jours_par_mois
-    )
-    return gaussian_filter1d(
-        valeurs_journalieres_discontinues, sigma=sigma, mode="wrap"
-    )
-
-
-def declination(day):
-    day_in_year = (day - 1) % 365 + 1
-    return np.radians(23.44) * np.sin(2 * pi * (284 + day_in_year) / 365)
-
-
-def cos_incidence(lat_rad, day, hour):
-    δ = declination(day)
-    H = np.radians(15 * (hour - 12))
-    ci = np.sin(lat_rad) * np.sin(δ) + np.cos(lat_rad) * np.cos(δ) * np.cos(H)
-    return max(ci, 0.0)
-
-
-def phi_net(lat_rad, day, hour, albedo_sol, albedo_nuages):
-    phi_entrant = constante_solaire * cos_incidence(lat_rad, day, hour)
-    return phi_entrant * (1 - albedo_nuages) * (1 - albedo_sol)
-
-
 def f_rhs(T, phinet, C, q_latent):
-    return (phinet - q_latent + sigma * Tatm**4 - sigma * T**4) / C
+    return (phinet - q_latent + lib.P_em_atm_thermal(Tatm) - lib.P_em_surf_thermal(T)) / C
 
 
 # ────────────────────────────────────────────────
@@ -411,7 +210,7 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0, sigma_q=3.0):
     lat_idx, lon_idx = _lat_idx(lat_deg), _lon_idx(lon_deg)
 
     # Valeur de base de Q pour la zone étudiée
-    q_base = get_q_latent_base(lat_deg, lon_deg)
+    q_base = lib.P_em_surf_evap(lat_deg, lon_deg)
 
     # ── Pré‑calcul jour/nuit pour toute la simulation ────────────────────
     sign_daynight = np.empty(N)
@@ -419,22 +218,22 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0, sigma_q=3.0):
         t_sec = k * dt
         jour = int(t_sec // 86400) + 1
         heure_solaire = ((t_sec / 3600.0) + lon_deg / 15.0) % 24.0
-        sign_daynight[k] = 1.0 if cos_incidence(lat_rad, jour, heure_solaire) > 0 else -1.0
+        sign_daynight[k] = 1.0 if f.cos_incidence(lat_rad, jour, heure_solaire) > 0 else -1.0
 
     q_latent_raw = q_base * sign_daynight
     q_latent_smoothed = gaussian_filter1d(q_latent_raw, sigma=sigma_q, mode="wrap")
 
     # ── Données d'albédo (sol & nuages) et capacité thermique ────────────
     albedo_sol_m_loc = monthly_albedo_sol[:, lat_idx, lon_idx]
-    alb_sol_daily = lisser_donnees_annuelles(albedo_sol_m_loc, sigma=15.0)
+    alb_sol_daily = f.lisser_donnees_annuelles(albedo_sol_m_loc, sigma=15.0)
 
-    alb_nuages_m = load_monthly_cloud_albedo_from_ceres(lat_deg, lon_deg)
-    alb_nuages_daily = lisser_donnees_annuelles(alb_nuages_m, sigma=15.0)
+    alb_nuages_m = f.load_monthly_cloud_albedo_from_ceres(lat_deg, lon_deg)
+    alb_nuages_daily = f.lisser_donnees_annuelles(alb_nuages_m, sigma=15.0)
 
     rzsm_lat_idx = _rzsm_lat_idx(lat_deg)
     rzsm_lon_idx = _rzsm_lon_idx(lon_deg)
     rzsm_val = RZSM_GRID[rzsm_lat_idx, rzsm_lon_idx]
-    cp_kj = compute_cp_from_rzsm(np.array([rzsm_val]))[0] if not np.isnan(rzsm_val) else CP_SEC
+    cp_kj = f.compute_cp_from_rzsm(np.array([rzsm_val]))[0] if not np.isnan(rzsm_val) else CP_SEC
     C_const = (cp_kj * 1000.0) * RHO_BULK * EPAISSEUR_ACTIVE
 
     (
@@ -462,7 +261,7 @@ def backward_euler(days, lat_deg=49.0, lon_deg=2.3, T0=288.0, sigma_q=3.0):
         albedo_nuages = alb_nuages_daily[day_of_year]
         q_latent_step = q_latent_smoothed[k]
 
-        phi_n = phi_net(lat_rad, jour, heure_solaire, albedo_sol, albedo_nuages)
+        phi_n = lib.P_inc_solar(lat_rad, jour, heure_solaire, albedo_sol, albedo_nuages)
 
         # Newton–Raphson implicite
         X = T[k]
