@@ -21,6 +21,31 @@ import pathlib
 import pandas as pd
 from scipy.ndimage import gaussian_filter1d
 
+try:
+    import geopandas as gpd
+    from shapely.geometry import Point
+
+    GEOPANDAS_AVAILABLE = True
+except ImportError:
+    GEOPANDAS_AVAILABLE = False
+
+# NOUVEAU : Importation pour le traitement des données NetCDF
+try:
+    import xarray as xr
+
+    XARRAY_AVAILABLE = True
+except ImportError:
+    XARRAY_AVAILABLE = False
+
+# NOUVEAU : Importation pour le griddage des données d'humidité
+try:
+    from scipy.stats import binned_statistic_2d
+
+    SCIPY_AVAILABLE = True
+except ImportError:
+    SCIPY_AVAILABLE = False
+
+
 # ---------- constantes physiques ----------
 constante_solaire = 1361.0  # W m-2
 sigma = 5.670374419e-8  # Stefan‑Boltzmann (SI)
@@ -122,32 +147,17 @@ SHAPEFILE_PATH = (
 
 # Crée une fonction qui associe un point géographique à un continent
 def create_continent_finder(shapefile_path: pathlib.Path):
-    """
-    Charge un shapefile et retourne une fonction capable de trouver
-    le continent pour un point (lat, lon).
-    """
     if not GEOPANDAS_AVAILABLE:
-        print(
-            "AVERTISSEMENT: GeoPandas n'est pas installé. "
-            "La détection de continent sera désactivée (Q=0)."
-        )
         return lambda lat, lon: "Océan"
-
     try:
-        print(f"Chargement du shapefile depuis : {shapefile_path}")
-        world = gpd.read_file(shapefile_path)
-        world = world.to_crs(epsg=4326)  # Conversion en système de coordonnées standard (WGS84)
-        print("Shapefile chargé avec succès.")
+        world = gpd.read_file(shapefile_path).to_crs(epsg=4326)
     except Exception as e:
-        print(f"ERREUR: Impossible de charger le shapefile : {e}")
-        print("La détection de continent sera désactivée (Q=0).")
         return lambda lat, lon: "Océan"
 
-    # Fonction interne pour trouver le continent d’un point
     def find_continent_for_point(lat: float, lon: float) -> str:
-        point = Point(lon, lat)  # Shapely attend (lon, lat)
+        point = Point(lon, lat)
         for _, row in world.iterrows():
-            if row["geometry"].contains(point):
+            if row["geometry"] is not None and row["geometry"].contains(point):
                 return row["CONTINENT"]
         return "Océan"
 
@@ -157,16 +167,45 @@ def create_continent_finder(shapefile_path: pathlib.Path):
 continent_finder = create_continent_finder(SHAPEFILE_PATH)
 
 
-# Simule une série mensuelle d'albédo des nuages pour un point donné
-def load_monthly_cloud_albedo_mock(lat_deg: float, lon_deg: float):
-    print(
-        "NOTE : Utilisation de données simulées (mock) pour l'albédo des nuages."
+# Données d'albédo des nuages depuis CERES (inchangé)
+# ────────────────────────────────────────────────
+
+CERES_FILE_PATH = (
+    pathlib.Path("ressources/albedo")
+    / "CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc"
+)
+
+
+def load_monthly_cloud_albedo_from_ceres(
+    lat_deg: float, lon_deg: float
+) -> np.ndarray:
+    if not XARRAY_AVAILABLE:
+        exit("ERREUR: xarray non installé.")
+    try:
+        ds = xr.open_dataset(CERES_FILE_PATH, decode_times=True)
+    except FileNotFoundError:
+        exit(f"ERREUR: Fichier CERES introuvable : {CERES_FILE_PATH}")
+
+    ds = ds.assign_coords(lon=(((ds.lon + 180) % 360) - 180)).sortby("lon")
+    toa_sw_all = ds["toa_sw_all_mon"]
+    toa_sw_clr = ds["toa_sw_clr_c_mon"]
+    solar_in = ds["solar_mon"]
+    cloud_albedo_instant = xr.where(
+        solar_in > 1e-6, (toa_sw_all - toa_sw_clr) / solar_in, 0.0
     )
-    amplitude = 0.15 * np.sin(np.radians(abs(lat_deg)))
-    avg_cloud_albedo = 0.3
-    mois = np.arange(12)
-    variation_saisonniere = amplitude * np.cos(2 * pi * (mois - 0.5) / 12)
-    return avg_cloud_albedo - variation_saisonniere
+    cloud_albedo_monthly_clim = cloud_albedo_instant.groupby(
+        "time.month"
+    ).mean(dim="time", skipna=True)
+    monthly_values = cloud_albedo_monthly_clim.sel(
+        lat=lat_deg, lon=lon_deg, method="nearest"
+    ).to_numpy()
+
+    if len(monthly_values) != 12:
+        monthly_values = np.pad(
+            monthly_values, (0, 12 - len(monthly_values)), mode="edge"
+        )
+    print("Données d'albédo des nuages chargées.")
+    return monthly_values
 
 
 

@@ -54,46 +54,53 @@ def P_em_surf_thermal(T: float):
 def P_em_surf_conv(lat: float, long: float, t: float):
     return 0
 
-#--- Q (chaleur latente) ---
+# ────────────────────────────────────────────────
+# Données de chaleur latente (Q) via évaporation (inchangé)
+# ────────────────────────────────────────────────
+
+Delta_hvap = 2453000
+rho_eau = 1000
+Delta_t = 31557600
+
+evap_Eur = 0.49 / Delta_t
+evap_Am_Nord = 0.47 / Delta_t
+evap_Am_sud = 0.94 / Delta_t
+evap_oceanie = 0.41 / Delta_t
+evap_Afr = 0.58 / Delta_t
+evap_Asi = 0.37 / Delta_t
+evap_ocean = 1.40 / Delta_t
+
+phi_Eur = Delta_hvap * rho_eau * evap_Eur
+phi_Am_Nord = Delta_hvap * rho_eau * evap_Am_Nord
+phi_Am_sud = Delta_hvap * rho_eau * evap_Am_sud
+phi_oceanie = Delta_hvap * rho_eau * evap_oceanie
+phi_Afr = Delta_hvap * rho_eau * evap_Afr
+phi_Asi = Delta_hvap * rho_eau * evap_Asi
+phi_ocean = Delta_hvap * rho_eau * evap_ocean
+
+Q_LATENT_CONTINENT = {
+    "Europe": phi_Eur,
+    "North America": phi_Am_Nord,
+    "South America": phi_Am_sud,
+    "Oceania": phi_oceanie,
+    "Africa": phi_Afr,
+    "Asia": phi_Asi,
+    "Océan": phi_ocean,
+    "Antarctica": 0.0,
+}
+
 def P_em_surf_evap(lat: float, lon: float) -> float:
     """Récupère la valeur de Q (W m-2) pour un point géographique .
     Latitude : en degrés 
     Longitude : en degrés
     """
     continent = f.continent_finder(lat, lon)
-    q_val = 0.0
-    for key, value in Q_CONTINENT.items():
-        if key in continent:
-            q_val = value
-            break
-    else:
-        q_val = Q_CONTINENT["Océan"]
-
+    q_val = Q_LATENT_CONTINENT.get(continent, Q_LATENT_CONTINENT["Océan"])
     print(
-        f"Coordonnées ({lat:.2f}, {lon:.2f}) détectées sur le continent : "
-        f"{continent} (Q = {q_val} W m⁻²)"
+        f"Coordonnées ({lat:.2f}, {lon:.2f}) détectées sur : "
+        f"{continent} (Q base = {q_val:.2f} W m⁻²)"
     )
     return q_val
-
-def get_daily_q_latent(
-    q_base: float, lat_deg: float, day_of_year: int
-) -> float:
-    """
-    Calcule le flux de chaleur latente pour un jour donné en utilisant
-    une fonction cosinus continue pour la variation saisonnière.
-    """
-    if q_base == 0 or q_base == Q_CONTINENT["Océan"]:
-        return q_base
-
-    amplitude = 0.4 * q_base
-    day_phase_shift = 196 if lat_deg >= 0 else 15
-
-    variation_saisonniere = amplitude * np.cos(
-        2 * pi * (day_of_year - day_phase_shift) / 365
-    )
-    return q_base + variation_saisonniere
-
-
 
 # atmosphere
 def P_abs_atm_solar(lat: float, long: float, t: float, Pinc: float):
