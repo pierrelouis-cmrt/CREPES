@@ -104,14 +104,15 @@ def P_em_surf_conv(lat: float, long: float, t: float):
     return 0
 
 # ────────────────────────────────────────────────
-# Données de chaleur latente (Q) via évaporation (inchangé)
+# Données de chaleur latente (Q) via évaporation 
 # ────────────────────────────────────────────────
 
-Delta_hvap = 2453000
+Delta_hvap = 2453000 # J kg-1, chaleur latente de vaporisation de l'eau
 rho_eau = 1000
-Delta_t = 31557600
+Delta_t = 31557600  # secondes par an (365.25 jours)
 
-evap_Eur = 0.49 / Delta_t
+# Evaporation en m/s pour chaque continent
+evap_Eur = 0.49 / Delta_t 
 evap_Am_Nord = 0.47 / Delta_t
 evap_Am_sud = 0.94 / Delta_t
 evap_oceanie = 0.41 / Delta_t
@@ -119,6 +120,7 @@ evap_Afr = 0.58 / Delta_t
 evap_Asi = 0.37 / Delta_t
 evap_ocean = 1.40 / Delta_t
 
+# Calcul de la Puissance surfacique liée à l'évaporation pour chaque continent
 phi_Eur = Delta_hvap * rho_eau * evap_Eur
 phi_Am_Nord = Delta_hvap * rho_eau * evap_Am_Nord
 phi_Am_sud = Delta_hvap * rho_eau * evap_Am_sud
