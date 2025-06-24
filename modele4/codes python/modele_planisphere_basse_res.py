@@ -94,11 +94,12 @@ except FileNotFoundError as e:
 # ────────────────────────────────────────────────
 
 # Constantes pour le calcul de la capacité thermique
-RHO_W = 1000.0
-RHO_BULK = 1300.0
-CP_SEC = 0.8
-CP_WATER = 4.187
-CP_ICE = 2.09
+
+RHO_W = 1000.0       # Densité de l'eau (kg/m³)
+RHO_BULK = 1300.0    # Densité apparente du sol sec (kg/m³)
+CP_SEC = 0.8         # Capacité thermique spécifique du sol sec (kJ/kg·K)
+CP_WATER = 4.187     # Capacité thermique spécifique de l'eau (kJ/kg·K)
+CP_ICE = 2.09        # Capacité thermique spécifique de la glace (kJ/kg·K)
 
 
 def compute_cp_from_rzsm(rzsm: np.ndarray) -> np.ndarray:

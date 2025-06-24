@@ -61,7 +61,7 @@ ax.set_ylabel("Température (K)")
 ax.set_title("Refroidissement sur 12 h – coquille d’eau mince (h = 2,7 × 10⁻⁷ W m⁻² K⁻¹)")
 ax.grid(True)
 
-# ✨ désactive l’offset ET la notation scientifique sur l’axe y
+# désactive l’offset ET la notation scientifique sur l’axe y
 ax.ticklabel_format(axis='y', style='plain', useOffset=False)
 
 # (facultatif) afficher un intervalle « visible » autour de Ti

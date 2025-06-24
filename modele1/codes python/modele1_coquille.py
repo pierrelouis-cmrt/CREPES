@@ -25,7 +25,7 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", numpy])
     import numpy
 
-
+# Constantes
 sigma = 5.67e-8        # W·m⁻²·K⁻⁴
 R = 6.371e6            # m
 C = 4.31e20            # J/K (valeur calculée)

@@ -170,11 +170,11 @@ except FileNotFoundError:
 # Capacité thermique depuis l'humidité du sol (RZSM) (inchangé)
 # ────────────────────────────────────────────────
 
-RHO_W = 1000.0
-RHO_BULK = 1300.0
-CP_SEC = 0.8
-CP_WATER = 4.187
-CP_ICE = 2.09
+RHO_W = 1000.0       # Densité de l'eau (kg/m³)
+RHO_BULK = 1300.0    # Densité apparente du sol sec (kg/m³)
+CP_SEC = 0.8         # Capacité thermique spécifique du sol sec (kJ/kg·K)
+CP_WATER = 4.187     # Capacité thermique spécifique de l'eau (kJ/kg·K)
+CP_ICE = 2.09        # Capacité thermique spécifique de la glace (kJ/kg·K)
 RZSM_CSV_PATH = pathlib.Path("ressources/Cp_humidity/average_rzsm_tout.csv")
 
 
