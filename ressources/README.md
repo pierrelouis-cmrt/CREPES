@@ -6,7 +6,7 @@ Récapitulatif du dossier `ressources`
 
 ## Dossier _Cp_humidity_
 
-
+- `average_rzsm_tout.csv` : découpe la Terre en 
 
 
 ## Dossier _albedo_
