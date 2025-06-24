@@ -155,24 +155,32 @@ import matplotlib.pyplot as plt
 from math import pi
 import pathlib
 import pandas as pd
+from scipy.ndimage import gaussian_filter1d
 
+# Bloc try/except pour vérifier si GeoPandas est installé
+try:
+    import geopandas as gpd
+    from shapely.geometry import Point
+    GEOPANDAS_AVAILABLE = True  # Indicateur que GeoPandas est disponible
+except ImportError:
+    GEOPANDAS_AVAILABLE = False  # Sinon, GeoPandas est indisponible
+
+# Calcul de la déclinaison solaire en fonction du jour de l'année
 def declination(day):
     """Retourne la déclinaison solaire (rad) pour le jour de l’année (1‑365)."""
     # Le jour est cyclique sur 365 jours
     day_in_year = (day - 1) % 365 + 1
     return np.radians(23.44) * np.sin(2 * pi * (284 + day_in_year) / 365)
 
+# Calcul du cosinus de l’angle d’incidence du rayonnement solaire
 def cos_incidence(lat_rad, day, hour):
     """Cosinus de l’angle d’incidence du rayonnement sur le plan local."""
     δ = declination(day)
-    H = np.radians(15 * (hour - 12))
+    H = np.radians(15 * (hour - 12))  # Angle horaire en radians
     ci = np.sin(lat_rad) * np.sin(δ) + np.cos(lat_rad) * np.cos(δ) * np.cos(H)
-    return max(ci, 0.0)
+    return max(ci, 0.0)  # On ne retourne pas de valeur négative
 
-# ────────────────────────────────────────────────
-# Capacité thermique basée sur l'albédo (depuis Script 2)
-# ────────────────────────────────────────────────
-
+# Références d’albédo pour différents types de surfaces
 _REF_ALBEDO = {
     "ice": 0.60,
     "water": 0.10,
@@ -181,6 +189,8 @@ _REF_ALBEDO = {
     "forest": 0.20,
     "land": 0.15,
 }
+
+# Capacité thermique massique (kJ/kg/K) selon le type de surface
 _CAPACITY_BY_TYPE = {
     "ice": 2.0,
     "water": 4.18,
@@ -190,6 +200,7 @@ _CAPACITY_BY_TYPE = {
     "land": 1.0,
 }
 
+# Associe un albédo à une capacité thermique massique
 def capacite_thermique_massique(albedo: float) -> float:
     """Retourne la capacité thermique massique (kJ kg-1 K-1) pour un albedo."""
     if np.isnan(albedo):
