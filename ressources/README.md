@@ -28,4 +28,4 @@ Récapitulatif du dossier `ressources`
 ## Fichiers
 ### Rapport
 
-- `données sourcées.pdf` :  fichier LaTeX qui résume notre réflexion liée au modèle 2 ainsi que les équations établies
+- `données sourcées.pdf` : fichier qui regroupe des données utiles pour nos modèles
