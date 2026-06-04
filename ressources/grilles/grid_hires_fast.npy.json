@@ -1,0 +1,25 @@
+{
+  "created_at": "2026-06-04T21:17:18",
+  "generator": "outils_generation_donnees/generer_donnees.py",
+  "target": "grille-hires-rapide",
+  "title": "Grille rapide haute resolution",
+  "output": "ressources/grilles/grid_hires_fast.npy",
+  "shape": [
+    337,
+    70,
+    140
+  ],
+  "dtype": "float64",
+  "dt_seconds": 1800.0,
+  "days_computed": 7,
+  "stabilized_second_year_only": false,
+  "convection": {
+    "mode": "toutes",
+    "temperature_air_K": 288.0,
+    "wind_m_s": 2.5,
+    "wind_api": false
+  },
+  "engine": "modele_courbe.f_rhs + modele_courbe.flux_convection",
+  "usage": "planisphere haute resolution + sphere haute resolution",
+  "elapsed_seconds": 66.72
+}
