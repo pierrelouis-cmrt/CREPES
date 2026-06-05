@@ -21,7 +21,7 @@ except ImportError:
     SCIPY_AVAILABLE = False
 
 RHO_W = 1000.0
-RHO_BULK = 1300.0
+RHO_BULK = 2600.0
 CP_SEC = 0.8
 CP_WATER = 4.187
 CP_ICE = 2.09
