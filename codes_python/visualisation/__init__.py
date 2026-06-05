@@ -1,2 +1,0 @@
-"""Visualisations du projet CREPES."""
-
