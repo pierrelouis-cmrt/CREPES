@@ -17,6 +17,7 @@ from matplotlib import cm
 from matplotlib.collections import LineCollection
 from matplotlib.colors import Normalize
 from matplotlib.widgets import Slider
+from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
 CODES_DIR = Path(__file__).resolve().parents[1]
 if str(CODES_DIR) not in sys.path:
@@ -180,24 +181,149 @@ def tracer_contours_planisphere(ax, couleur="black", epaisseur=0.45, alpha=0.9):
     return collection
 
 
-def _segments_cotes_xyz(rayon=1.012):
+def _echantillonner_segment(segment, pas):
+    """Reduit la densite d'une polyligne en conservant son dernier point."""
+    if pas <= 1 or len(segment) <= 2:
+        return segment
+    segment_reduit = segment[::pas]
+    if not np.array_equal(segment_reduit[-1], segment[-1]):
+        segment_reduit = np.vstack((segment_reduit, segment[-1]))
+    return segment_reduit
+
+
+def _segments_cotes_xyz(rayon=1.012, pas=2):
     """Convertit les segments de cotes lon/lat vers une sphere 3D."""
     segments_xyz = []
     for segment in segments_cotes_lonlat():
-        valeurs = np.asarray(segment, dtype=float)
+        valeurs = _echantillonner_segment(np.asarray(segment, dtype=float), pas)
         lon_rad = np.radians(valeurs[:, 0])
         lat_rad = np.radians(valeurs[:, 1])
         x = rayon * np.cos(lat_rad) * np.cos(lon_rad)
         y = rayon * np.cos(lat_rad) * np.sin(lon_rad)
         z = rayon * np.sin(lat_rad)
-        segments_xyz.append((x, y, z))
+        segments_xyz.append(np.column_stack((x, y, z)))
     return segments_xyz
+
+
+def _direction_camera(ax):
+    """Retourne le vecteur du centre de la sphere vers la camera."""
+    elev_rad = np.radians(ax.elev)
+    azim_rad = np.radians(ax.azim)
+    direction = np.array(
+        [
+            np.cos(elev_rad) * np.cos(azim_rad),
+            np.cos(elev_rad) * np.sin(azim_rad),
+            np.sin(elev_rad),
+        ],
+        dtype=float,
+    )
+    return direction / np.linalg.norm(direction)
+
+
+def _intersection_horizon(debut, fin, projection_debut, projection_fin, rayon):
+    """Calcule le point ou un segment 3D coupe le bord visible de la sphere."""
+    t = projection_debut / (projection_debut - projection_fin)
+    point = debut + np.clip(t, 0.0, 1.0) * (fin - debut)
+    norme = np.linalg.norm(point)
+    if norme == 0:
+        return point
+    return point * (rayon / norme)
+
+
+def _segments_visibles_devant_camera(segments_xyz, direction_camera, rayon=1.012):
+    """Masque les parties de cotes situees sur l'hemisphere oppose."""
+    segments_visibles = []
+    for segment in segments_xyz:
+        if len(segment) < 2:
+            continue
+
+        projections = segment @ direction_camera
+        segment_visible = []
+        point_precedent = segment[0]
+        projection_precedente = projections[0]
+        precedent_visible = projection_precedente >= 0
+        if precedent_visible:
+            segment_visible.append(point_precedent)
+
+        for point, projection in zip(segment[1:], projections[1:]):
+            point_visible = projection >= 0
+            if precedent_visible and point_visible:
+                segment_visible.append(point)
+            elif precedent_visible and not point_visible:
+                segment_visible.append(
+                    _intersection_horizon(
+                        point_precedent,
+                        point,
+                        projection_precedente,
+                        projection,
+                        rayon,
+                    )
+                )
+                if len(segment_visible) > 1:
+                    segments_visibles.append(np.asarray(segment_visible))
+                segment_visible = []
+            elif not precedent_visible and point_visible:
+                segment_visible = [
+                    _intersection_horizon(
+                        point_precedent,
+                        point,
+                        projection_precedente,
+                        projection,
+                        rayon,
+                    ),
+                    point,
+                ]
+
+            point_precedent = point
+            projection_precedente = projection
+            precedent_visible = point_visible
+
+        if len(segment_visible) > 1:
+            segments_visibles.append(np.asarray(segment_visible))
+    return segments_visibles
+
+
+class _CollectionContoursSphere(Line3DCollection):
+    """Collection 3D qui recalcule les cotes visibles avant projection."""
+
+    def __init__(self, segments_xyz, **kwargs):
+        super().__init__([], **kwargs)
+        self._segments_xyz = segments_xyz
+        self._vue_precedente = None
+
+    def _mettre_a_jour_contours(self):
+        if self.axes is None:
+            return
+        vue = (self.axes.elev, self.axes.azim, getattr(self.axes, "roll", 0))
+        if vue == self._vue_precedente:
+            return
+        self._vue_precedente = vue
+        direction = _direction_camera(self.axes)
+        self.set_segments(
+            _segments_visibles_devant_camera(self._segments_xyz, direction)
+        )
+
+    def do_3d_projection(self):
+        self._mettre_a_jour_contours()
+        return super().do_3d_projection()
 
 
 def tracer_contours_sphere(ax, couleur="black", epaisseur=0.55, alpha=0.95):
     """Ajoute les contours des continents a une sphere 3D."""
-    for x, y, z in _segments_cotes_xyz():
-        ax.plot(x, y, z, color=couleur, linewidth=epaisseur, alpha=alpha, zorder=10)
+    segments_xyz = _segments_cotes_xyz()
+    if not segments_xyz:
+        return None
+
+    collection = _CollectionContoursSphere(
+        segments_xyz,
+        colors=couleur,
+        linewidths=epaisseur,
+        alpha=alpha,
+        zorder=10,
+    )
+    ax.add_collection3d(collection, autolim=False)
+    return collection
+
 
 
 def creer_planisphere(
@@ -308,7 +434,7 @@ def creer_sphere(
 
     fig = plt.figure(figsize=(10, 9))
     plt.subplots_adjust(bottom=0.20, top=0.92)
-    ax = fig.add_subplot(111, projection="3d")
+    ax = fig.add_subplot(111, projection="3d", computed_zorder=False)
     ax.set_xlim([-1.08, 1.08])
     ax.set_ylim([-1.08, 1.08])
     ax.set_zlim([-1.08, 1.08])
