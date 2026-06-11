@@ -7,7 +7,7 @@ ulterieure.
 
 ## Lancer une simulation
 
-Depuis `CREPES/modele0_"maintenance"/` :
+Depuis `CREPES/modele0_maintenance/` :
 
 ```bash
 python3 codes_python/modele_courbe.py --lat 48.5 --lon 2.3 --days 730
