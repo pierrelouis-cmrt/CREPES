@@ -43,11 +43,14 @@ ENV/
 .cache/
 
 # Generated climate grids that are too large for Git/GitHub.
-# Keep only the low-resolution quick grid versioned; regenerate the rest locally.
-ressources/grilles/grid_*.npy
-ressources/grilles/grid_*.npy.json
-!ressources/grilles/grid_lowres_fast.npy
-!ressources/grilles/grid_lowres_fast.npy.json
+# Applies to every model folder; keep only the low-resolution quick grid versioned.
+**/ressources/grilles/grid_*.npy
+**/ressources/grilles/grid_*.npy.json
+!**/ressources/grilles/grid_lowres_fast.npy
+!**/ressources/grilles/grid_lowres_fast.npy.json
+
+# Local API/cache outputs created by model runs.
+**/ressources/caches/
 
 # Environment files
 .env
