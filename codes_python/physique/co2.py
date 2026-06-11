@@ -5,6 +5,7 @@ Created on Fri Jun 13 16:21:27 2025
 @author: danab
 """
 import numpy as np
+import matplotlib.pyplot as plt
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -97,7 +98,7 @@ def temperature_US1976(z):
 
 # ==> CHOISIR ICI LE MODÈLE DE TEMPÉRATURE À UTILISER
 def temperature(z):
-    return temperature_simple(z)
+    return temperature_US1976(z)
 
 # Calcule la densité moléculaire de l’air (nombre de molécules par m³) via l’équation des gaz parfaits
 def air_number_density(z):
@@ -168,6 +169,23 @@ def simulate_radiative_transfer(CO2_fraction, z_max = 80000, delta_z = 10, lambd
         # Le flux sortant de la couche devient le flux incident sur la suivante
         flux_in = upward_flux[i, :]
 
-   # print(f"Total outgoing flux at the top of the atmosphere: {upward_flux[-1,:].sum():.2f} W/m^2")
+    print(f"Total outgoing flux at the top of the atmosphere: {upward_flux[-1,:].sum():.2f} W/m^2")
 
     return lambda_range, z_range, upward_flux, optical_thickness, earth_flux
+
+def plot_temperature_altitude(z_max=80000, delta_z=100):
+    z_range = np.arange(0, z_max + delta_z, delta_z)
+    temperatures = temperature(z_range)
+
+    plt.figure(figsize=(7, 5))
+    plt.plot(temperatures, z_range / 1000)
+    plt.xlabel("Température (K)")
+    plt.ylabel("Altitude (km)")
+    plt.title("Température en fonction de l'altitude")
+    plt.grid(True)
+    plt.tight_layout()
+
+if __name__ == "__main__":
+    print(simulate_radiative_transfer(0.00042))
+    plot_temperature_altitude()
+    plt.show()
