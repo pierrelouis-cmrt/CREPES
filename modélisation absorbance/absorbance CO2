@@ -26,7 +26,7 @@ def make_cross_section_CO2_all_bands():
         s = calc_spectrum(
             wmin=wmin, wmax=wmax,
             molecule="CO2", isotope="1,2,3",
-            Tgas=288, pressure=1.013,
+            Tgas=255, pressure=1.013,
             mole_fraction=400e-6,   # 400 ppm
             path_length=100,        # 1m = 100 cm
             databank="hitran", verbose=False
