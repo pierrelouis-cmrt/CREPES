@@ -19,16 +19,16 @@ def make_cross_section_CO2_all_bands():
         (2100, 2450),  # bande à 2349 cm⁻¹ ~ 4.3 µm
         
     ]
-    all_wavelengths = []
-    all_absorbance = []
+    all_wavelengths = []       #va permettre de stocker les longueurs d'ondes de tous les spectres
+    all_absorbance = []        #va permettre de stocker les absorbances de tous les spectres
     for wmin, wmax in bands:
         
         s = calc_spectrum(
             wmin=wmin, wmax=wmax,
             molecule="CO2", isotope="1,2,3",
-            Tgas=288, pressure=1.013,
-            mole_fraction=400e-6,   # 400 ppm
-            path_length=100,        # 1m = 100 cm
+            Tgas=255, pressure=1.013,
+            mole_fraction=440e-6,   # 440 ppm
+            path_length=100,        # 1m = 100 cm   #epaisseur de la colonne d'air
             databank="hitran", verbose=False
         )
         longueur_onde_nm, absorbance = s.get("absorbance", wunit="nm")
@@ -38,7 +38,7 @@ def make_cross_section_CO2_all_bands():
         all_absorbance.append(absorbance)
     wavelengths = np.concatenate(all_wavelengths)
     absorbances = np.concatenate(all_absorbance)
-    sort_idx = np.argsort(wavelengths)
+    sort_idx = np.argsort(wavelengths)    #trie les longueurs d'ondes pour garantir que l'interpolation fonctionne correctement
     return interp1d(
         wavelengths[sort_idx], absorbances[sort_idx],
         kind="linear", bounds_error=False, fill_value=0.0
