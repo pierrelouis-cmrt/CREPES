@@ -1,316 +1,343 @@
-# Modele 2 - colonne CO2 a 6 couches
+# Modèle 2 - colonne CO2 à 6 couches
 
-Le fichier `modele2.py` est une premiere version simple du modele 2. Il reprend
-le noyau radiatif du modele 1, mais avec :
+Le modèle 2 est un prototype de colonne atmosphérique verticale. Il sert à
+remplacer une correction atmosphérique globale par un calcul explicite de
+l'absorption et de la réémission infrarouge par couches.
 
-- 6 couches verticales ;
-- une temperature differente par couche, lue sur l'image du tableau ;
-- une pression basse/haute calculee avec `profil_atmosphere_co2.py` ;
-- une moyenne de CO2 par couche ;
-- une emissivite calculee avec une epaisseur optique effective.
-
-Le but n'est pas encore de faire un modele complet. Le but est d'avoir un noyau
-clair :
+L'idée centrale est la même que dans le plan d'attaque :
 
 ```text
-CO2 moyen + epaisseur en pression -> opacite IR -> transmission/emissivite -> flux
+CO2 -> opacité infrarouge -> transmission / émissivité -> flux IR montants et descendants
 ```
 
-## Lancement
+Le script ne prédit pas encore l'évolution temporelle du climat. Les
+températures sont imposées, puis le modèle calcule les flux infrarouges
+correspondants. Cette étape est volontairement limitée : elle permet de vérifier
+que le noyau radiatif est compréhensible avant d'ajouter une dynamique thermique.
 
-Depuis la racine du depot :
+## Fichiers du dossier
+
+| Fichier | Rôle |
+| --- | --- |
+| `modele2.py` | Point d'entrée du modèle 2. Calcule les opacités des couches, les transmissions, les émissivités, le flux infrarouge sortant au sommet et le flux infrarouge descendant à la surface. |
+| `profil_vertical_atmosphere_co2.py` | Outil de profil vertical. Calcule pression, température standard, CO2, pression partielle du CO2 et concentration moléculaire en fonction de l'altitude. |
+| `profil_vertical_atmosphere_co2.csv` | Export numérique du profil vertical de référence. |
+| `profil_vertical_atmosphere_co2.png` | Graphique de diagnostic du profil vertical de référence. |
+| `requirements.txt` | Dépendances Python nécessaires aux scripts du modèle 2. |
+
+Les fichiers `evolution_co2.py` et `spectre_absorbance_co2.py` ne font plus
+partie de cette version nettoyée du modèle 2. Le plan d'attaque prévoit bien un
+meilleur découpage spectral et une calibration plus poussée, mais ce n'est pas
+encore intégré dans ce dossier.
+
+## Installation
+
+Depuis la racine du dépôt :
+
+```bash
+./.venv/bin/python -m pip install -r modele2/requirements.txt
+```
+
+Les dépendances actuelles sont volontairement réduites :
+
+- `numpy` pour les calculs numériques ;
+- `matplotlib` pour le graphique du profil vertical.
+
+## Lancer le modèle 2
+
+Depuis la racine du dépôt :
 
 ```bash
 ./.venv/bin/python modele2/modele2.py
 ```
 
-Le script affiche :
+Le script affiche trois blocs :
 
-- les 6 couches utilisees ;
-- la pression basse/haute de chaque couche ;
-- le CO2 moyen par couche ;
-- l'epaisseur optique, la transmission et l'emissivite par bande ;
-- le flux infrarouge sortant au sommet ;
-- le flux infrarouge descendant a la surface.
+- `couches_atmospheriques` : altitude, température, pressions basse/haute et
+  CO2 moyen de chaque couche ;
+- `opacites_par_couche` : profondeur optique, transmission et émissivité pour
+  chaque couple couche/bande infrarouge ;
+- les deux flux globaux calculés :
+  - `flux_infrarouge_sortant_sommet_W_m2`, c'est-à-dire l'OLR ;
+  - `flux_infrarouge_descendant_surface_W_m2`, c'est-à-dire le flux IR
+    atmosphérique reçu par la surface.
 
-## Couches utilisees
+## Générer le profil vertical
 
-Les temperatures viennent de l'image fournie.
+Pour régénérer le CSV et le graphique du profil vertical :
 
-| Couche | Altitude | Zone | Temperature |
+```bash
+./.venv/bin/python modele2/profil_vertical_atmosphere_co2.py --max-altitude-km 50 --surface-co2-ppm 420 --output modele2/profil_vertical_atmosphere_co2.png --csv modele2/profil_vertical_atmosphere_co2.csv --no-plot
+```
+
+Options utiles :
+
+| Option | Signification |
+| --- | --- |
+| `--max-altitude-km` | Altitude maximale du profil. Doit rester inférieure ou égale à 84,852 km. |
+| `--step-m` | Pas vertical du profil en mètres. |
+| `--surface-co2-ppm` | Concentration de CO2 à la surface. |
+| `--co2-gradient-ppm-per-km` | Gradient linéaire du CO2 en ppm/km. La valeur `0` signifie que le CO2 est bien mélangé. |
+| `--surface-pressure-pa` | Pression de surface en pascals. |
+| `--surface-temperature-k` | Température de surface en kelvins. |
+| `--output` | Chemin du graphique produit. |
+| `--csv` | Chemin du CSV produit. |
+| `--no-plot` | Calcule sans ouvrir de fenêtre graphique. |
+
+## Hypothèses actuelles
+
+Le modèle 2 repose sur des hypothèses simples :
+
+- une seule colonne atmosphérique verticale ;
+- 6 couches imposées entre 0 et 80 km ;
+- températures des couches imposées, donc pas encore de bilan d'énergie
+  évolutif ;
+- pression issue de l'atmosphère standard 1976 ;
+- CO2 constant par défaut à 420 ppm ;
+- deux bandes absorbantes simplifiées pour le CO2 ;
+- pas de vapeur d'eau, pas de nuages, pas de convection, pas de diffusion et
+  pas d'échanges horizontaux ;
+- le reste du spectre infrarouge est traité comme transparent.
+
+Ces choix ne cherchent pas à reproduire toute l'atmosphère réelle. Ils servent à
+obtenir un noyau radiatif lisible, testable et améliorable.
+
+## Couches utilisées
+
+Les températures viennent de l'image fournie. Les pressions sont calculées avec
+le profil d'atmosphère standard.
+
+| Couche | Altitude | Zone | Température |
 | --- | ---: | --- | ---: |
-| 1 | 0-5 km | troposphere basse | 271 K |
-| 2 | 5-10 km | troposphere moyenne | 236 K |
-| 3 | 10-30 km | tropopause | 223 K |
-| 4 | 30-50 km | stratosphere | 257 K |
-| 5 | 50-65 km | mesosphere basse | 252 K |
-| 6 | 65-80 km | mesosphere haute | 212 K |
+| 1 | 0-5 km | Troposphère basse | 271 K |
+| 2 | 5-10 km | Troposphère moyenne | 236 K |
+| 3 | 10-30 km | Tropopause | 223 K |
+| 4 | 30-50 km | Stratosphère | 257 K |
+| 5 | 50-65 km | Mésosphère basse | 252 K |
+| 6 | 65-80 km | Mésosphère haute | 212 K |
 
-Les pressions ne sont pas lues sur l'image. Elles sont deduites avec le profil
-d'atmosphere standard deja code dans `profil_atmosphere_co2.py`.
+Ce découpage est encore grossier. Dans le plan d'attaque, le modèle 2 devait
+plutôt évoluer vers 8 à 10 couches et vérifier que les résultats changent peu
+quand on affine la grille verticale.
 
 ## Moyenne de CO2 par couche
 
-Le script `profil_atmosphere_co2.py` donne un profil vertical :
+Le script `profil_vertical_atmosphere_co2.py` produit un profil :
 
 ```text
-altitude -> pression, temperature, CO2
+altitude -> pression, température, CO2
 ```
 
-Pour une couche \(k\), on calcule une moyenne ponderee par la masse d'air. Comme
-en hydrostatique la masse d'air par unite de surface est proportionnelle a
-\(\Delta p\), on utilise :
+Pour une couche \(k\), le modèle calcule une moyenne de CO2 pondérée par la
+masse d'air. En équilibre hydrostatique, la masse d'air par unité de surface est
+proportionnelle à la différence de pression. On utilise donc :
 
 $$
-\overline{C}_{k}
+\overline{C}_k
 =
 \frac{\int_{p_{\mathrm{haut}}}^{p_{\mathrm{bas}}} C(p)\,dp}
-{\int_{p_{\mathrm{haut}}}^{p_{\mathrm{bas}}} dp}.
+{\int_{p_{\mathrm{haut}}}^{p_{\mathrm{bas}}} dp}
 $$
 
-Dans la version actuelle, le profil CO2 est constant a \(420\ \mathrm{ppm}\).
+Dans la version actuelle, le profil de CO2 est constant :
+
+$$
+C(p)=420\ \mathrm{ppm}
+$$
+
 Donc toutes les couches ont :
 
 $$
-\overline{C}_{k} = 420\ \mathrm{ppm}.
+\overline{C}_k=420\ \mathrm{ppm}
 $$
 
-Mais la methode restera valable si on ajoute ensuite un gradient vertical de
-CO2.
+La méthode reste toutefois correcte si on ajoute plus tard un gradient vertical
+de CO2.
 
-## Demonstration de la formule d'opacite
+## Opacité infrarouge
 
-On travaille dans une bande infrarouge \(b\), par exemple autour de
-\(15\ \mu\mathrm{m}\). On suppose une couche plane-parallele, sans diffusion ni
-reflexion.
-
-Sur une petite distance \(ds\), la loi de Beer-Lambert donne :
+Dans une bande infrarouge \(b\), la loi de Beer-Lambert donne :
 
 $$
-dI_b = -\sigma_b n_{\mathrm{CO_2}} I_b\,ds.
+dI_b=-\sigma_b n_{\mathrm{CO}_2} I_b\,ds
 $$
 
-Donc :
+Après intégration sur une couche :
 
 $$
-\frac{dI_b}{I_b}
-=
--\sigma_b n_{\mathrm{CO_2}}\,ds.
-$$
-
-En integrant sur une couche :
-
-$$
-\ln\left(\frac{I_{b,\mathrm{sortie}}}{I_{b,\mathrm{entree}}}\right)
-=
--\int_{\mathrm{couche}} \sigma_b n_{\mathrm{CO_2}}\,ds.
-$$
-
-On definit la profondeur optique :
-
-$$
-\tau_b
-=
-\int_{\mathrm{couche}} \sigma_b n_{\mathrm{CO_2}}\,ds.
-$$
-
-Alors :
-
-$$
-\mathcal{T}_b
-=
 \frac{I_{b,\mathrm{sortie}}}{I_{b,\mathrm{entree}}}
 =
-e^{-\tau_b}.
+\exp(-\tau_b)
 $$
 
-Si le trajet est vertical, \(ds=dz\). Le CO2 est suppose bien melange :
-
-$$
-n_{\mathrm{CO_2}}
-=
-\chi_{\mathrm{CO_2}} n_{\mathrm{air}},
-$$
-
-avec :
-
-$$
-\chi_{\mathrm{CO_2}}
-=
-C_{\mathrm{CO_2}}\times 10^{-6}
-$$
-
-si \(C_{\mathrm{CO_2}}\) est donne en ppm.
-
-Donc :
+La profondeur optique est :
 
 $$
 \tau_b
 =
-\sigma_b \chi_{\mathrm{CO_2}}
-\int_{\mathrm{couche}} n_{\mathrm{air}}\,dz.
+\int_{\mathrm{couche}}\sigma_b n_{\mathrm{CO}_2}\,ds
 $$
 
-L'equilibre hydrostatique donne :
+Pour un trajet vertical et un CO2 bien mélangé :
 
 $$
-\frac{dp}{dz} = -\rho g.
-$$
-
-Donc :
-
-$$
-\rho\,dz = -\frac{dp}{g}.
-$$
-
-En integrant sur une couche :
-
-$$
-\int_{\mathrm{couche}} \rho\,dz
-=
-\frac{\Delta p_k}{g},
+n_{\mathrm{CO}_2}=\chi_{\mathrm{CO}_2}n_{\mathrm{air}}
 $$
 
 avec :
 
 $$
-\Delta p_k
-=
-p_{\mathrm{bas},k} - p_{\mathrm{haut},k}.
+\chi_{\mathrm{CO}_2}=C_{\mathrm{CO}_2}\times10^{-6}
 $$
 
-La quantite de CO2 dans une couche est donc proportionnelle a :
+si \(C_{\mathrm{CO}_2}\) est exprimé en ppm.
+
+L'équilibre hydrostatique donne :
 
 $$
-C_{\mathrm{CO2}}\,\Delta p_k.
+\frac{dp}{dz}=-\rho g
 $$
 
-On normalise avec une concentration de reference :
+Donc la masse d'air d'une couche est proportionnelle à :
 
 $$
-C_0 = 280\ \mathrm{ppm},
+\Delta p_k=p_{\mathrm{bas},k}-p_{\mathrm{haut},k}
 $$
 
-et avec la pression de surface :
-
-$$
-p_s \simeq 101325\ \mathrm{Pa}.
-$$
-
-Toute la physique spectrale de la bande est regroupee dans un coefficient
-effectif \(a_b\). On obtient la parametrisation :
+Le modèle regroupe toute la complexité spectrale dans un coefficient effectif
+\(a_b\). La profondeur optique utilisée dans le code est :
 
 $$
 \boxed{
 \Delta\tau_{k,b}
 =
 a_b
-\frac{\overline{C}_{k}}{C_0}
+\frac{\overline{C}_k}{C_0}
 \frac{\Delta p_k}{p_s}
 }
 $$
 
-Dans le script :
+avec :
+
+$$
+\begin{aligned}
+C_0 &= 280\ \mathrm{ppm},\\
+p_s &= 101325\ \mathrm{Pa}
+\end{aligned}
+$$
+
+Dans `modele2.py`, cela correspond à :
 
 ```python
 tau = a_bande * (co2_moyen_ppm / 280.0) * (delta_p / p_surface)
 ```
 
-Pour tenir compte de trajets obliques moyens, on peut ajouter un facteur
-diffusif \(D\). Pour l'instant :
+Le coefficient \(a_b\) n'est pas une constante fondamentale. C'est un paramètre
+de modèle à calibrer pour obtenir un ordre de grandeur réaliste du forçage CO2.
+
+## Transmission et émissivité
+
+La transmission de la couche est :
 
 $$
-D = 1.
+\mathcal{T}_{k,b}=\exp(-D\Delta\tau_{k,b})
 $$
 
-Donc :
+Le facteur diffusif \(D\) vaut actuellement :
 
 $$
-\boxed{
-\mathcal{T}_{k,b}
-=
-\exp(-D\Delta\tau_{k,b})
-}
+D=1
 $$
 
-Dans le script :
+Une valeur proche de \(1{,}66\) pourra être testée plus tard pour représenter
+des trajets radiatifs obliques moyens.
 
-```python
-transmission = exp(-D * tau)
-```
-
-Enfin, sans diffusion ni reflexion, la fraction non transmise est absorbee :
+Sans diffusion ni réflexion, la fraction non transmise est absorbée :
 
 $$
-\alpha_{k,b}
-=
-1-\mathcal{T}_{k,b}.
+\alpha_{k,b}=1-\mathcal{T}_{k,b}
 $$
 
-Par la loi de Kirchhoff, a l'equilibre thermique local :
+Par la loi de Kirchhoff, à l'équilibre thermique local :
 
 $$
-\varepsilon_{k,b}
-=
-\alpha_{k,b}.
+\varepsilon_{k,b}=\alpha_{k,b}
 $$
 
 Donc :
 
 $$
-\boxed{
-\varepsilon_{k,b}
+\boxed{\varepsilon_{k,b}=1-\mathcal{T}_{k,b}}
+$$
+
+## Flux infrarouges
+
+Pour une bande \(b\), le flux de corps noir de température \(T\) est :
+
+$$
+E_b(T)=\int_{\lambda_1}^{\lambda_2}\pi B_\lambda(T)\,d\lambda
+$$
+
+Le flux montant part de la surface :
+
+$$
+F^\uparrow_{0,b}=E_b(T_s)
+$$
+
+Puis chaque couche transforme le flux montant selon :
+
+$$
+F^\uparrow_{k+1,b}
 =
-1-\mathcal{T}_{k,b}
-}
+\mathcal{T}_{k,b}F^\uparrow_{k,b}
++
+(1-\mathcal{T}_{k,b})E_b(T_k)
 $$
 
-Dans le script :
-
-```python
-emissivite = 1.0 - transmission
-```
-
-Le coefficient \(a_b\) n'est pas une constante fondamentale. C'est une opacite
-effective de bande. Il faudra ensuite le recalibrer pour que le doublement du
-CO2 donne un forcage radiatif proche de l'ordre de grandeur attendu.
-
-## Spectre d'absorbance du CO2 avec RADIS
-
-Le script `spectre_absorbance_co2.py` reste utile comme outil d'exploration et
-de calibration. Il calcule un spectre d'absorbance infrarouge du CO2 avec RADIS
-et les raies HITRAN. La concentration, la pression, la temperature et la longueur
-du trajet optique sont parametrables.
-
-```bash
-./.venv/bin/python modele2/spectre_absorbance_co2.py --co2-ppm 800 --pressure-bar 0.8 --output modele2/spectre_800ppm.png --csv modele2/spectre_800ppm.csv --no-plot
-```
-
-Options principales :
-
-- `--co2-ppm` : concentration volumique en ppm ;
-- `--pressure-bar` : pression totale en bar ;
-- `--temperature-k` : temperature en kelvins ;
-- `--path-length-m` : trajet optique en metres ;
-- `--output` : fichier image produit ;
-- `--csv` : export des valeurs numeriques.
-
-L'absorbance est definie par :
+Le flux descendant part du sommet de l'atmosphère avec :
 
 $$
-A = -\ln(\mathcal{T}).
+F^\downarrow_{N,b}=0
 $$
 
-## Profil vertical de l'atmosphere
+Puis chaque couche transforme le flux descendant selon :
 
-Le script `profil_atmosphere_co2.py` calcule, en fonction de l'altitude, la
-pression atmospherique, le rapport de melange du CO2 en ppm, sa pression
-partielle et sa concentration en molecules par metre cube.
+$$
+F^\downarrow_{k,b}
+=
+\mathcal{T}_{k,b}F^\downarrow_{k+1,b}
++
+(1-\mathcal{T}_{k,b})E_b(T_k)
+$$
 
-```bash
-./.venv/bin/python modele2/profil_atmosphere_co2.py --max-altitude-km 50 --surface-co2-ppm 420 --output modele2/profil_atmosphere_co2.png --csv modele2/profil_atmosphere_co2.csv --no-plot
-```
+Les sorties principales sont :
 
-Par defaut, le rapport de melange reste constant a 420 ppm. Une variation
-lineaire peut etre testee avec `--co2-gradient-ppm-per-km`. Par exemple,
-`--co2-gradient-ppm-per-km -0.2` retire 0,2 ppm par kilometre.
+$$
+OLR=\sum_b F^\uparrow_{N,b}
+$$
+
+et :
+
+$$
+LW_{\mathrm{down},\mathrm{surface}}=\sum_b F^\downarrow_{0,b}
+$$
+
+Dans le script, les bandes CO2 sont traitées explicitement. Le reste du spectre
+est considéré transparent et sort directement vers l'espace.
+
+## Limites et validations à faire
+
+Cette version est propre pour lire et tester le noyau, mais elle n'est pas
+encore calibrée scientifiquement. Les prochaines validations importantes sont :
+
+- vérifier que si les coefficients d'opacité valent zéro, alors
+  \(F^\downarrow_{\mathrm{IR}}(0)=0\) et \(OLR=\sigma T_s^4\) ;
+- vérifier qu'à températures fixées, augmenter le CO2 diminue l'OLR ;
+- calibrer les coefficients \(a_b\) pour que le doublement
+  \(280 \to 560\ \mathrm{ppm}\) donne un forçage proche de
+  \(3{,}7\) à \(3{,}9\ \mathrm{W\,m^{-2}}\) ;
+- tester une grille verticale plus fine, par exemple 8 à 10 couches ;
+- découper la bande CO2 en sous-bandes plus crédibles, notamment ailes faibles
+  et coeur saturé ;
+- ajouter ensuite seulement les bilans d'énergie et l'évolution temporelle des
+  températures.
