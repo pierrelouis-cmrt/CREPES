@@ -1,4 +1,4 @@
-# absorbance du CO2
+# Source absorbance du CO2
 
 [Source bande absorbance CO2](https://acces.ens-lyon.fr/acces/thematiques/CCCIC/ressources/irspco2)
 
@@ -10,7 +10,7 @@ bande 4,2 à 4,35 micrometre      Absorbance moyenne : 3,25
 
 # Utilité du code
 
-Courbe du pourcentage d'absorbance du CO2 en fonction de la longeur d'onde, a 440
+Courbe de l'absorbance du CO2 en fonction de la longeur d'onde, a 440 ppm sur 1m
 
 # Fonctionnement du code 
 
