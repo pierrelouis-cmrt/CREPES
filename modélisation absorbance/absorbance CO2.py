@@ -12,24 +12,46 @@ from pathlib import Path
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-CACHE_DIR = SCRIPT_DIR / ".cache"
-MPL_CACHE_DIR = CACHE_DIR / "matplotlib"
-XDG_CACHE_DIR = CACHE_DIR / "xdg"
-RADIS_CACHE_DIR = CACHE_DIR / "radisdb"
-HITRAN_DIR = RADIS_CACHE_DIR / "hitran"
-CO2_DB_PATH = HITRAN_DIR / "CO2.h5"
-LOCAL_DATABANK_NAME = "CREPES-ABSORBANCE-CO2"
 
-for directory in (MPL_CACHE_DIR, XDG_CACHE_DIR, HITRAN_DIR):
-    directory.mkdir(parents=True, exist_ok=True)
+
+def default_cache_dir() -> Path:
+    """Return a simple user cache path that works on Windows, macOS and Linux."""
+    if os.name == "nt":
+        base = os.environ.get("LOCALAPPDATA")
+        if base:
+            return Path(base) / "CREPES" / "absorbance_co2"
+        return Path.home() / "AppData" / "Local" / "CREPES" / "absorbance_co2"
+
+    base = os.environ.get("XDG_CACHE_HOME")
+    if base:
+        return Path(base) / "crepes" / "absorbance_co2"
+    return Path.home() / ".cache" / "crepes" / "absorbance_co2"
+
+
+def setup_cache_dirs() -> tuple[Path, Path, Path]:
+    """Create cache directories, falling back to the script folder if needed."""
+    last_error = None
+    for cache_dir in (default_cache_dir(), SCRIPT_DIR / ".cache"):
+        matplotlib_dir = cache_dir / "matplotlib"
+        radis_dir = cache_dir / "radisdb"
+        try:
+            for directory in (matplotlib_dir, radis_dir):
+                directory.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            last_error = exc
+            continue
+        return cache_dir, matplotlib_dir, radis_dir
+
+    raise RuntimeError("Impossible de creer un dossier de cache.") from last_error
+
+
+CACHE_DIR, MPL_CACHE_DIR, RADIS_CACHE_DIR = setup_cache_dirs()
 
 os.environ.setdefault("MPLCONFIGDIR", str(MPL_CACHE_DIR))
-os.environ.setdefault("XDG_CACHE_HOME", str(XDG_CACHE_DIR))
 
 import numpy as np
 import radis
 from radis import calc_spectrum
-from radis.io.hitran import fetch_hitran
 from radis.misc.warning import LinestrengthCutoffWarning, MissingReferenceWarning
 from scipy.interpolate import interp1d
 
@@ -44,59 +66,15 @@ BANDS_CM_1 = [
 ]
 
 
-def _remove_incomplete_hapi_downloads() -> None:
-    """Remove local HAPI headers that were left without data files."""
-    download_dir = HITRAN_DIR / "downloads__can_be_deleted" / "CO2"
-    if not download_dir.exists():
-        return
-
-    for header_path in download_dir.glob("*.header"):
-        data_path = header_path.with_suffix(".data")
-        if not data_path.exists():
-            header_path.unlink()
-
-
-def _ensure_local_co2_databank(regen_cache: bool = False) -> Path:
-    """Return a local RADIS/HITRAN CO2 database path, downloading it if needed."""
+def prepare_radis_cache(regen_cache: bool = False) -> None:
+    """Prepare RADIS cache; RADIS downloads HITRAN automatically if needed."""
     if regen_cache:
-        if CO2_DB_PATH.exists():
-            CO2_DB_PATH.unlink()
-        shutil.rmtree(HITRAN_DIR / "downloads__can_be_deleted", ignore_errors=True)
-
-    if CO2_DB_PATH.exists():
-        return CO2_DB_PATH
-
-    _remove_incomplete_hapi_downloads()
-
-    try:
-        with contextlib.redirect_stdout(io.StringIO()):
-            _, local_paths = fetch_hitran(
-                "CO2",
-                isotope="1,2,3",
-                local_databases=str(HITRAN_DIR),
-                databank_name=LOCAL_DATABANK_NAME,
-                cache="regen" if regen_cache else True,
-                verbose=False,
-                return_local_path=True,
-                engine="pytables",
-                output="pandas",
-            )
-    except Exception as exc:
-        raise RuntimeError(
-            "Impossible de préparer la base HITRAN locale pour CO2. "
-            "RADIS télécharge ces raies au premier lancement ; vérifie la connexion "
-            "réseau, puis relance avec --regen-cache si un téléchargement a été "
-            "interrompu."
-        ) from exc
-
-    if not local_paths:
-        raise RuntimeError("RADIS n'a retourné aucun fichier local HITRAN pour CO2.")
-
-    return Path(local_paths[0])
+        shutil.rmtree(RADIS_CACHE_DIR, ignore_errors=True)
+    RADIS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def make_cross_section_co2_all_bands(regen_cache: bool = False):
-    co2_databank = _ensure_local_co2_databank(regen_cache=regen_cache)
+    prepare_radis_cache(regen_cache=regen_cache)
 
     all_wavelengths = []
     all_absorbance = []
@@ -112,18 +90,25 @@ def make_cross_section_co2_all_bands(regen_cache: bool = False):
             )
 
             with contextlib.redirect_stdout(io.StringIO()):
-                spectrum = calc_spectrum(
-                    wmin=wmin,
-                    wmax=wmax,
-                    molecule="CO2",
-                    isotope="1,2,3",
-                    Tgas=255,
-                    pressure=1.013,
-                    mole_fraction=400e-6,  # 400 ppm
-                    path_length=100,  # 1 m = 100 cm
-                    databank=str(co2_databank),
-                    verbose=False,
-                )
+                try:
+                    spectrum = calc_spectrum(
+                        wmin=wmin,
+                        wmax=wmax,
+                        molecule="CO2",
+                        isotope="1,2,3",
+                        Tgas=255,
+                        pressure=1.013,
+                        mole_fraction=400e-6,  # 400 ppm
+                        path_length=100,  # 1 m = 100 cm
+                        databank="hitran",
+                        verbose=False,
+                    )
+                except Exception as exc:
+                    raise RuntimeError(
+                        "RADIS n'a pas pu charger les donnees HITRAN du CO2. "
+                        "Au premier lancement, il faut une connexion Internet. "
+                        f"Cache utilise : {RADIS_CACHE_DIR}"
+                    ) from exc
         wavelength_nm, absorbance = spectrum.get("absorbance", wunit="nm")
         wavelength_um = wavelength_nm * 1e-3
 

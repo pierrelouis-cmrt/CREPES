@@ -171,9 +171,10 @@ E_b(T)
 \pi B_\lambda(T)\,d\lambda
 $$
 
-Le facteur $\pi$ convertit la luminance en flux hémisphérique pour une émission
-diffuse de corps noir. L'intégration numérique est faite par méthode des milieux,
-avec `2000` pas par bande.
+Le facteur $\pi$ vient de l'intégration sur l'angle solide d'un hémisphère et
+convertit la luminance en flux hémisphérique pour une émission diffuse de corps
+noir. L'intégration numérique est faite par méthode des milieux, avec `2000` pas
+par bande.
 
 Pour $T_s = 288.15\ \mathrm{K}$ :
 

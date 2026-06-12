@@ -90,7 +90,7 @@ BANDES_CO2 = (
 
 
 def luminance_spectrale_planck(longueur_onde_m: float, temperature_k: float) -> float:
-    """Luminance spectrale de Planck B_lambda en W m-3 sr-1."""
+    """Luminance spectrale de Planck B_lambda par unité d'angle solide."""
 
     exposant = (
         CONSTANTE_PLANCK

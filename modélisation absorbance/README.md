@@ -23,6 +23,12 @@ Depuis la racine du dépôt :
 ./.venv/bin/python "modélisation absorbance/absorbance CO2.py"
 ```
 
+Sous Windows, depuis PowerShell :
+
+```powershell
+.\.venv\Scripts\python.exe "modélisation absorbance\absorbance CO2.py"
+```
+
 Dans un environnement non interactif (CI, sandbox), ce lancement enregistre
 automatiquement `modélisation absorbance/absorbance_CO2.png` au lieu d'ouvrir
 une fenêtre.
@@ -40,8 +46,12 @@ Pour générer une image :
 ```
 
 RADIS télécharge les raies HITRAN au premier lancement. Le script stocke maintenant
-ce cache dans `modélisation absorbance/.cache/` au lieu de dépendre de
-`~/.radisdb`. Si un téléchargement est interrompu, relancer avec :
+ce cache dans le cache utilisateur du système :
+
+- Windows : `%LOCALAPPDATA%\CREPES\absorbance_co2\`
+- macOS/Linux : `~/.cache/crepes/absorbance_co2/`
+
+Si un téléchargement est interrompu, relancer avec :
 
 ```bash
 ./.venv/bin/python "modélisation absorbance/absorbance CO2.py" --regen-cache --no-plot
