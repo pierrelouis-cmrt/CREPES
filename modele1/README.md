@@ -1,9 +1,9 @@
 # Modèle 1 CO₂ - colonne radiative simplifiée
 
 `modele1.py` est un script autonome. Il ne dépend pas du modèle 0 et ne charge
-aucune donnée externe au lancement. Les noms de variables et de grandeurs dans le
-code sont en anglais ; les commentaires et cette documentation restent en
-français. Le script calcule uniquement deux flux infrarouges :
+aucune donnée externe au lancement. Les identifiants du code, les commentaires et
+cette documentation sont en français, hors notations scientifiques et noms de
+bibliothèques. Le script calcule uniquement deux flux infrarouges :
 
 - le flux ascendant sortant en haut de l'atmosphère ;
 - le flux descendant reçu par la surface.
@@ -23,7 +23,7 @@ $$
 T_s = 288.15\ \mathrm{K} = 15\ ^\circ\mathrm{C}
 $$
 
-Dans le script, cette valeur est `SURFACE_TEMPERATURE_K`.
+Dans le script, cette valeur est `TEMPERATURE_SURFACE_K`.
 
 Flux infrarouge total émis par la surface, avec la loi de Stefan-Boltzmann :
 
@@ -39,16 +39,16 @@ $$
 F_s = 390.918507769\ \mathrm{W\,m^{-2}}
 $$
 
-La constante utilisée dans le code est `STEFAN_BOLTZMANN_CONSTANT`.
+La constante utilisée dans le code est `CONSTANTE_STEFAN_BOLTZMANN`.
 
 Atmosphère : trois couches arbitraires, toutes à la même température et au même
 taux de CO₂.
 
 | Nom dans le script | Altitude basse | Altitude haute | Température | CO₂ |
 | --- | ---: | ---: | ---: | ---: |
-| `layer_1` | 0 km | 5 km | 253.15 K | 425.65 ppm |
-| `layer_2` | 5 km | 10 km | 253.15 K | 425.65 ppm |
-| `layer_3` | 10 km | 20 km | 253.15 K | 425.65 ppm |
+| `couche_1` | 0 km | 5 km | 253.15 K | 425.65 ppm |
+| `couche_2` | 5 km | 10 km | 253.15 K | 425.65 ppm |
+| `couche_3` | 10 km | 20 km | 253.15 K | 425.65 ppm |
 
 La température atmosphérique retenue est :
 
@@ -60,7 +60,7 @@ Elle correspond à la température radiative effective de la Terre vue depuis
 l'espace, donnée par NASA Earth Observatory. Ce choix est cohérent pour un modèle
 qui condense l'atmosphère en couches radiatives uniformes.
 
-Dans le script, cette valeur est `ATMOSPHERE_TEMPERATURE_K`.
+Dans le script, cette valeur est `TEMPERATURE_ATMOSPHERE_K`.
 
 Le taux de CO₂ retenu est :
 
@@ -72,8 +72,9 @@ Cette valeur vient de la moyenne globale annuelle NOAA GML pour 2025, dernier
 millésime annuel complet disponible dans la série globale au moment de la
 rédaction.
 
-Dans le script, cette valeur est `CO2_CONCENTRATION_PPM`. Les trois couches sont
-regroupées dans `ATMOSPHERE_LAYERS`, et leur nombre est fixé par `LAYER_COUNT`.
+Dans le script, cette valeur est `CONCENTRATION_CO2_PPM`. Les trois couches sont
+regroupées dans `COUCHES_ATMOSPHERE`, et leur nombre est fixé par
+`NOMBRE_COUCHES`.
 
 ## 2. Solaire et albédo
 
@@ -97,9 +98,9 @@ F_{\mathrm{SW}}
 = 238\ \mathrm{W\,m^{-2}}
 $$
 
-Dans le code, ces valeurs sont `SOLAR_IRRADIANCE` et `SURFACE_ALBEDO`. Le flux
-calculé est `GLOBAL_MEAN_ABSORBED_SOLAR_FLUX`. Les valeurs numériques
-`SOLAR_IRRADIANCE = 1360.0` et `SURFACE_ALBEDO = 0.30` viennent du modèle des
+Dans le code, ces valeurs sont `IRRADIANCE_SOLAIRE` et `ALBEDO_SURFACE`. Le flux
+calculé est `FLUX_SOLAIRE_MOYEN_GLOBAL_ABSORBE`. Les valeurs numériques
+`IRRADIANCE_SOLAIRE = 1360.0` et `ALBEDO_SURFACE = 0.30` viennent du modèle des
 Carcajous callipyges de l'année dernière. Ce flux est conservé dans le code mais
 n'est pas utilisé pour recalculer les températures.
 
@@ -118,7 +119,7 @@ Bandes codées :
 | `CO2_15um` | $14.25-15.75\ \mu\mathrm{m}$ | $A_b = 1.0$ |
 | `CO2_4_3um` | $4.20-4.35\ \mu\mathrm{m}$ | $A_b = 3.25$ |
 
-Dans le script, ces bandes sont regroupées dans `CO2_BANDS`.
+Dans le script, ces bandes sont regroupées dans `BANDES_CO2`.
 
 Les bornes et les absorbances viennent du script local
 `modélisation absorbance/absorbance CO2.py`, qui calcule un spectre CO₂ avec
@@ -237,12 +238,12 @@ A_b = 3.25
 \varepsilon_b = 0.9612
 $$
 
-On utilise donc bien `emissivity = 1 - exp(-absorbance)`, et non
-`emissivity = absorbance`. Ce choix respecte la loi de Kirchhoff : à l'équilibre
+On utilise donc bien `emissivite = 1 - exp(-absorbance)`, et non
+`emissivite = absorbance`. Ce choix respecte la loi de Kirchhoff : à l'équilibre
 thermique local, absorptivité et émissivité sont égales pour une même bande.
 
-Dans le script, les conversions sont faites par `transmission_from_absorbance()`
-et `emissivity_from_absorbance()`.
+Dans le script, les conversions sont faites par `transmission_depuis_absorbance()`
+et `emissivite_depuis_absorbance()`.
 
 ## 6. Propagation radiative
 
@@ -250,8 +251,8 @@ On note $N=3$ le nombre de couches. L'indice $k$ désigne une interface, pas
 une couche :
 
 - $k=0$ : surface ;
-- $k=1$ : interface entre `layer_1` et `layer_2` ;
-- $k=2$ : interface entre `layer_2` et `layer_3` ;
+- $k=1$ : interface entre `couche_1` et `couche_2` ;
+- $k=2$ : interface entre `couche_2` et `couche_3` ;
 - $k=3=N$ : sommet de l'atmosphère.
 
 La couche traversée vers le haut entre les interfaces $k$ et $k+1$ est donc
@@ -357,8 +358,8 @@ python3 modele1/modele1.py
 Sortie actuelle :
 
 ```text
-outgoing_longwave_flux_top_atmosphere_W_m2 = 380.782258
-downward_longwave_flux_surface_W_m2 = 16.311241
+flux_infrarouge_sortant_sommet_atmosphere_W_m2 = 380.782258
+flux_infrarouge_descendant_surface_W_m2 = 16.311241
 ```
 
 Le premier flux est l'OLR simplifié du modèle. Le second est le flux infrarouge
@@ -393,8 +394,8 @@ $$
 Test exécuté :
 
 ```text
-outgoing_longwave_flux_top_atmosphere = 390.918507769 W m^-2
-downward_longwave_flux_surface = 0 W m^-2
+flux_infrarouge_sortant_sommet_atmosphere = 390.918507769 W m^-2
+flux_infrarouge_descendant_surface = 0 W m^-2
 ```
 
 ## 9. Limites du modèle
@@ -422,10 +423,10 @@ température -> émission de Planck -> absorption CO₂ -> transmission/réémis
 
 | Élément | Valeur utilisée | Source |
 | --- | ---: | --- |
-| `ATMOSPHERE_TEMPERATURE_K` | $253.15\ \mathrm{K}$ | Température radiative effective terrestre indiquée par NASA Earth Observatory |
-| `CO2_CONCENTRATION_PPM` | $425.65\ \mathrm{ppm}$ | Moyenne globale annuelle NOAA GML pour 2025 |
-| `SOLAR_IRRADIANCE` | $1360\ \mathrm{W\,m^{-2}}$ | Modèle des Carcajous callipyges de l'année dernière |
-| `SURFACE_ALBEDO` | $0.30$ | Modèle des Carcajous callipyges de l'année dernière |
+| `TEMPERATURE_ATMOSPHERE_K` | $253.15\ \mathrm{K}$ | Température radiative effective terrestre indiquée par NASA Earth Observatory |
+| `CONCENTRATION_CO2_PPM` | $425.65\ \mathrm{ppm}$ | Moyenne globale annuelle NOAA GML pour 2025 |
+| `IRRADIANCE_SOLAIRE` | $1360\ \mathrm{W\,m^{-2}}$ | Modèle des Carcajous callipyges de l'année dernière |
+| `ALBEDO_SURFACE` | $0.30$ | Modèle des Carcajous callipyges de l'année dernière |
 | Bande `CO2_15um` | $14.25-15.75\ \mu\mathrm{m}$, $A_b=1.0$ | `modélisation absorbance/absorbance CO2.py`, RADIS/HITRAN |
 | Bande `CO2_4_3um` | $4.20-4.35\ \mu\mathrm{m}$, $A_b=3.25$ | `modélisation absorbance/absorbance CO2.py`, RADIS/HITRAN |
 | Positions IR du CO₂ | autour de $15\ \mu\mathrm{m}$ et $4.3\ \mu\mathrm{m}$ | ENS Lyon ACCES |
