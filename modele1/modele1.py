@@ -89,7 +89,7 @@ BANDES_CO2 = (
 )
 
 
-def luminance_spectrale_planck(longueur_onde_m: float, temperature_k: float) -> float:
+def luminance_spectrale_planck(longueur_onde_m: float, temperature_k: float) -> float: #details par bande d'absorption de sigmaT4 => loi de Planck
     """Luminance spectrale de Planck B_lambda par unité d'angle solide."""
 
     exposant = (
@@ -103,7 +103,7 @@ def luminance_spectrale_planck(longueur_onde_m: float, temperature_k: float) -> 
         * VITESSE_LUMIERE**2
         / longueur_onde_m**5
         / (exp(exposant) - 1.0)
-    )
+    )# sortie fct = luminance specteale de Planck en W m-3 par angle solide, pour une longueur d'onde et une température données
 
 
 def flux_bande_corps_noir(
@@ -116,17 +116,17 @@ def flux_bande_corps_noir(
 
     longueur_onde_min_m = longueur_onde_min_um * 1e-6
     longueur_onde_max_m = longueur_onde_max_um * 1e-6
-    pas_m = (longueur_onde_max_m - longueur_onde_min_m) / nombre_pas
+    pas_m = (longueur_onde_max_m - longueur_onde_min_m) / nombre_pas # pas d'intégration en mètre
 
     somme = 0.0
     for indice in range(nombre_pas):
-        longueur_onde_m = longueur_onde_min_m + (indice + 0.5) * pas_m
-        somme += pi * luminance_spectrale_planck(longueur_onde_m, temperature_k) * pas_m
+        longueur_onde_m = longueur_onde_min_m + (indice + 0.5) * pas_m # flux hémisphérique = intégrale de la luminance spectrale de Planck sur les longueurs d'ondes de la bande, multipliée par pi pour intégrer sur les angles solides
+        somme += pi * luminance_spectrale_planck(longueur_onde_m, temperature_k) * pas_m 
 
-    return somme
+    return somme # retourne le flux hémisphérique de corps noir en W m-2 pour une température et une bande spectrale données (ici le flux d'une couche)(appeler plus tard layer_emession)
 
 
-def transmission_depuis_absorbance(absorbance: float) -> float:
+def transmission_depuis_absorbance(absorbance: float) -> float: # fct de transmission à partir de l'absorbance, selon la convention RADIS, prepare pr la formule d'émissivitée
     """Convention RADIS : transmission = exp(-absorbance)."""
 
     return exp(-absorbance)
@@ -135,7 +135,7 @@ def transmission_depuis_absorbance(absorbance: float) -> float:
 def emissivite_depuis_absorbance(absorbance: float) -> float:
     """À l'équilibre, émissivité = absorptivité = 1 - transmission."""
 
-    return -expm1(-absorbance)
+    return -expm1(-absorbance) # expm1(x) = exp(x) - 1, donc 1 - exp(-absorbance) = 1 - transmission = émissivité
 
 
 def propager_flux_montant(
@@ -144,13 +144,13 @@ def propager_flux_montant(
     transmission: float,
     emissivite: float,
     couches: tuple[CoucheAtmospherique, ...],
-) -> float:
+) -> float: #  layers est un tuple (une structure de données immuable et ordonnée en Python)(ici les 3 couches)
     """Propage un flux IR montant à travers toutes les couches."""
 
     flux = flux_entrant
     for _couche in couches:
         flux = transmission * flux + emissivite * emission_couche
-    return flux
+    return flux # retourne le flux montant après avoir traversé toutes les couches
 
 
 def propager_flux_descendant(
@@ -164,13 +164,13 @@ def propager_flux_descendant(
     flux = 0.0
     for _couche in reversed(couches):
         flux = transmission * flux + emissivite * emission_couche
-    return flux
+    return flux # retourne le flux descendant à la surface après avoir traversé toutes les couches
 
-
+#ici calcule du bilan des flux de chaque bande avec : la prod du corps noir, l'emissivité de la bande et la transsmission 
 def calculer_flux(
     couches: tuple[CoucheAtmospherique, ...] = COUCHES_ATMOSPHERE,
     bandes: tuple[BandeSpectrale, ...] = BANDES_CO2,
-) -> tuple[float, float]:
+) -> tuple[float, float]: 
     """Retourne l'OLR au sommet et le flux IR descendant à la surface."""
 
     if len(couches) != NOMBRE_COUCHES:
