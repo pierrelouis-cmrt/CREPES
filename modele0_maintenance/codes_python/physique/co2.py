@@ -112,11 +112,48 @@ def air_number_density(z):
 # ================
 
 # Modèle simplifié de l'absorption infrarouge du CO₂ autour de la longueur d’onde de 15 μm
-def cross_section_CO2(wavelength):
-    LAMBDA_0 = 15.0e-6  # Centre de la bande d’absorption infrarouge principale du CO₂ (en m)
-    exponent = -22.5 - 24 * np.abs((wavelength - LAMBDA_0) / LAMBDA_0)  # Exposant décroissant avec l’écart à la bande centrale
-    sigma = 10 ** exponent  # Convertit l’exposant en valeur réelle (section efficace)
-    return sigma  # Renvoie les sections efficaces d’absorption (en m²/molécule)
+from scipy.interpolate import interp1d
+from radis import calc_spectrum
+import warnings
+from radis.misc.warning import LinestrengthCutoffWarning
+
+
+
+
+def make_cross_section_CO2_all_bands():
+    warnings.filterwarnings("ignore", category=LinestrengthCutoffWarning)
+    #d'après:  https://acces.ens-lyon.fr/acces/thematiques/CCCIC/ressources/irspco2
+    bands = [
+        (600, 760),   # bande a 667 cm⁻¹ ~ 15 µm 
+        (1200,1500),  # bande à 1388 cm⁻¹ ~ 7.2 µm
+        (2100, 2450),  # bande à 2349 cm⁻¹ ~ 4.3 µm
+        
+    ]
+    all_wavelengths = []
+    all_sigmas = []
+    for wmin, wmax in bands:
+        
+        s = calc_spectrum(
+            wmin=wmin, wmax=wmax,
+            molecule="CO2", isotope="1,2,3",
+            Tgas=300, pressure=1.013,                #temperature/pression du gaz pour récupérer les coefficients d'absorption
+            mole_fraction=1.0, path_length=1.0,      
+            databank="hitran", verbose=False
+        )
+        wl_nm, abscoeff = s.get("abscoeff", wunit="nm")   #recupere les longueurs d'ondes et les coefficients d'absorption (en cm⁻¹) pour la bande considérée
+        wl_m = wl_nm * 1e-9         #converti les nm en m
+        kB = 1.380649e-23
+        n  = 1.013e5 / (kB * 300)     # molécules/m³   (n=N/V = P/(kB*T) loi GP)
+        sigma = (abscoeff * 100) / n   # cm⁻¹ → m⁻¹ → m²/molécule
+        all_wavelengths.append(wl_m)
+        all_sigmas.append(sigma)
+    wavelengths = np.concatenate(all_wavelengths)
+    sigmas      = np.concatenate(all_sigmas)
+    sort_idx    = np.argsort(wavelengths)
+    return interp1d(wavelengths[sort_idx], sigmas[sort_idx],
+                    kind="linear", bounds_error=False, fill_value=0.0)
+
+cross_section_CO2 = make_cross_section_CO2_all_bands()
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -168,11 +205,13 @@ def simulate_radiative_transfer(CO2_fraction, z_max = 80000, delta_z = 10, lambd
 
         # Le flux sortant de la couche devient le flux incident sur la suivante
         flux_in = upward_flux[i, :]
+        
 
     print(f"Total outgoing flux at the top of the atmosphere: {upward_flux[-1,:].sum():.2f} W/m^2")
 
     return lambda_range, z_range, upward_flux, optical_thickness, earth_flux
 
+<<<<<<< Updated upstream
 def plot_temperature_altitude(z_max=80000, delta_z=100):
     z_range = np.arange(0, z_max + delta_z, delta_z)
     temperatures = temperature(z_range)
@@ -189,3 +228,16 @@ if __name__ == "__main__":
     print(simulate_radiative_transfer(0.00042))
     plot_temperature_altitude()
     plt.show()
+=======
+
+
+
+
+CO2_fraction = 420e-6  # 420 ppm, concentration actuelle
+
+lambda_range, z_range, upward_flux, optical_thickness, earth_flux = simulate_radiative_transfer(CO2_fraction)
+
+print(f"Flux surface    : {earth_flux.sum():.2f} W/m²")
+print(f"Flux sortant TOA: {upward_flux[-1,:].sum():.2f} W/m²")
+print(f"Effet de serre  : {earth_flux.sum() - upward_flux[-1,:].sum():.2f} W/m²")
+>>>>>>> Stashed changes
