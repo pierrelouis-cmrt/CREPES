@@ -162,35 +162,11 @@ def calculate_fluxes(layers: tuple[AtmosphericLayer, ...] = ATMOSPHERE_LAYERS,ba
     top_absorbing_band_flux = 0.0
     surface_downward_flux = 0.0
 
-    for band in bands:
-        surface_band_flux = blackbody_band_flux(
-            SURFACE_TEMPERATURE_K,
-            band.wavelength_min_um,
-            band.wavelength_max_um,
-        )
-        layer_band_flux = blackbody_band_flux(
-            ATMOSPHERE_TEMPERATURE_K,
-            band.wavelength_min_um,
-            band.wavelength_max_um,
-        )
+    #ici calcule du bilan des flux de chaque bande avec : la prod du corps noir, l'emissivité de la bande et la transsmission 
+    # exemple de valeurs typiques renvoyées : 16 W.m-2 pr downward_flux
+    #                                         400 W.m-2 pr top_atmosphere_flux
 
-        transmission = transmission_from_absorbance(band.absorbance)
-        emissivity = emissivity_from_absorbance(band.absorbance)
 
-        surface_absorbing_band_flux += surface_band_flux
-        top_absorbing_band_flux += propagate_upward_flux(
-            surface_band_flux,
-            layer_band_flux,
-            transmission,
-            emissivity,
-            layers,
-        )
-        surface_downward_flux += propagate_downward_flux(
-            layer_band_flux,
-            transmission,
-            emissivity,
-            layers,
-        )
 
     transparent_surface_flux = surface_total_flux - surface_absorbing_band_flux
     top_atmosphere_flux = transparent_surface_flux + top_absorbing_band_flux
