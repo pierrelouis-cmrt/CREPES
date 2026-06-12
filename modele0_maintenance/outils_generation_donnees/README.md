@@ -71,7 +71,7 @@ Groupes :
 ```bash
 --fast-days 3              # durée des grilles rapides
 --sans-convection          # coupe les deux convections
---convection forcee        # forcee seule
+--convection forcee        # forcée seule
 --convection naturelle     # naturelle seule
 --vent 4.0                 # vent constant
 --vent-api                 # vent NASA/cache, déconseillé sur grille complète

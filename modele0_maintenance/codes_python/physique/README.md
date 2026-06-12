@@ -1,3 +1,3 @@
 # Physique
 
-Modules physiques elementaires du projet CREPES.
+Modules physiques élémentaires du projet CREPES.
