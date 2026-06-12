@@ -44,11 +44,11 @@ La constante utilisée dans le code est `CONSTANTE_STEFAN_BOLTZMANN`.
 Atmosphère : trois couches arbitraires, toutes à la même température et au même
 taux de CO₂.
 
-| Nom dans le script | Altitude basse | Altitude haute | Température | CO₂ |
-| --- | ---: | ---: | ---: | ---: |
-| `couche_1` | 0 km | 5 km | 253.15 K | 425.65 ppm |
-| `couche_2` | 5 km | 10 km | 253.15 K | 425.65 ppm |
-| `couche_3` | 10 km | 20 km | 253.15 K | 425.65 ppm |
+| Nom dans le script | Altitude basse | Altitude haute | Température |        CO₂ |
+| ------------------ | -------------: | -------------: | ----------: | ---------: |
+| `couche_1`         |           0 km |           5 km |    253.15 K | 425.65 ppm |
+| `couche_2`         |           5 km |          10 km |    253.15 K | 425.65 ppm |
+| `couche_3`         |          10 km |          20 km |    253.15 K | 425.65 ppm |
 
 La température atmosphérique retenue est :
 
@@ -114,10 +114,10 @@ Le spectre infrarouge est séparé en trois parties :
 
 Bandes codées :
 
-| Bande | Intervalle spectral | Absorbance moyenne |
-| --- | ---: | ---: |
-| `CO2_15um` | $14.25-15.75\ \mu\mathrm{m}$ | $A_b = 1.0$ |
-| `CO2_4_3um` | $4.20-4.35\ \mu\mathrm{m}$ | $A_b = 3.25$ |
+| Bande       |          Intervalle spectral | Absorbance moyenne |
+| ----------- | ---------------------------: | -----------------: |
+| `CO2_15um`  | $14.25-15.75\ \mu\mathrm{m}$ |        $A_b = 1.0$ |
+| `CO2_4_3um` |   $4.20-4.35\ \mu\mathrm{m}$ |       $A_b = 3.25$ |
 
 Dans le script, ces bandes sont regroupées dans `BANDES_CO2`.
 
@@ -422,15 +422,15 @@ température -> émission de Planck -> absorption CO₂ -> transmission/réémis
 
 ## 10. Sources utiles
 
-| Élément | Valeur utilisée | Source |
-| --- | ---: | --- |
-| `TEMPERATURE_ATMOSPHERE_K` | $253.15\ \mathrm{K}$ | Température radiative effective terrestre indiquée par NASA Earth Observatory |
-| `CONCENTRATION_CO2_PPM` | $425.65\ \mathrm{ppm}$ | Moyenne globale annuelle NOAA GML pour 2025 |
-| `IRRADIANCE_SOLAIRE` | $1360\ \mathrm{W\,m^{-2}}$ | Modèle des Carcajous callipyges de l'année dernière |
-| `ALBEDO_SURFACE` | $0.30$ | Modèle des Carcajous callipyges de l'année dernière |
-| Bande `CO2_15um` | $14.25-15.75\ \mu\mathrm{m}$, $A_b=1.0$ | `modélisation absorbance/absorbance CO2.py`, RADIS/HITRAN |
-| Bande `CO2_4_3um` | $4.20-4.35\ \mu\mathrm{m}$, $A_b=3.25$ | `modélisation absorbance/absorbance CO2.py`, RADIS/HITRAN |
-| Positions IR du CO₂ | autour de $15\ \mu\mathrm{m}$ et $4.3\ \mu\mathrm{m}$ | ENS Lyon ACCES |
+| Élément                    |                                       Valeur utilisée | Source                                                                        |
+| -------------------------- | ----------------------------------------------------: | ----------------------------------------------------------------------------- |
+| `TEMPERATURE_ATMOSPHERE_K` |                                  $253.15\ \mathrm{K}$ | Température radiative effective terrestre indiquée par NASA Earth Observatory |
+| `CONCENTRATION_CO2_PPM`    |                                $425.65\ \mathrm{ppm}$ | Moyenne globale annuelle NOAA GML pour 2025                                   |
+| `IRRADIANCE_SOLAIRE`       |                            $1360\ \mathrm{W\,m^{-2}}$ | Modèle des Carcajous callipyges de l'année dernière                           |
+| `ALBEDO_SURFACE`           |                                                $0.30$ | Modèle des Carcajous callipyges de l'année dernière                           |
+| Bande `CO2_15um`           |               $14.25-15.75\ \mu\mathrm{m}$, $A_b=1.0$ | `modélisation absorbance/absorbance CO2.py`, RADIS/HITRAN                     |
+| Bande `CO2_4_3um`          |                $4.20-4.35\ \mu\mathrm{m}$, $A_b=3.25$ | `modélisation absorbance/absorbance CO2.py`, RADIS/HITRAN                     |
+| Positions IR du CO₂        | autour de $15\ \mu\mathrm{m}$ et $4.3\ \mu\mathrm{m}$ | ENS Lyon ACCES                                                                |
 
 Liens :
 
