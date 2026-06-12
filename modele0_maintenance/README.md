@@ -1,9 +1,9 @@
-# CREPES - modele 0 maintenance
+# CREPES - modèle 0 maintenance
 
 Projet climat combinant les apports des quatre groupes sources. Le moteur
-stable par defaut reprend le modele 4 Carcajous. Les autres briques sont soit
-branchees de facon explicite, soit conservees comme sources pour reprise
-ulterieure.
+stable par défaut reprend le modèle 4 Carcajous. Les autres briques sont soit
+branchées de façon explicite, soit conservées comme sources pour reprise
+ultérieure.
 
 ## Lancer une simulation
 
@@ -13,7 +13,7 @@ Depuis `CREPES/modele0_maintenance/` :
 python3 codes_python/modele_courbe.py --lat 48.5 --lon 2.3 --days 730
 ```
 
-Sans fenetre graphique :
+Sans fenêtre graphique :
 
 ```bash
 python3 codes_python/modele_courbe.py --lat 48.5 --lon 2.3 --days 2 --no-plot
@@ -21,25 +21,25 @@ python3 codes_python/modele_courbe.py --lat 48.5 --lon 2.3 --days 2 --no-plot
 
 ## Convection
 
-Par defaut, les deux convections sont actives :
+Par défaut, les deux convections sont actives :
 
-- convection forcee Chevreaux ;
+- convection forcée Chevreaux ;
 - convection naturelle Ornithorynquietant.
 
-Le lancement standard utilise un vent constant de `2.5 m/s`, sans appel reseau.
-Pour desactiver tres simplement les deux convections :
+Le lancement standard utilise un vent constant de `2.5 m/s`, sans appel réseau.
+Pour désactiver très simplement les deux convections :
 
 ```bash
 python3 codes_python/modele_courbe.py --sans-convection --no-plot
 ```
 
-Equivalent explicite :
+Équivalent explicite :
 
 ```bash
 python3 codes_python/modele_courbe.py --convection aucune --no-plot
 ```
 
-Ne garder que la convection forcee Chevreaux :
+Ne garder que la convection forcée Chevreaux :
 
 ```bash
 python3 codes_python/modele_courbe.py --convection forcee --vent 2.5 --temperature-air 288 --no-plot
@@ -57,24 +57,24 @@ Pour utiliser le vent journalier NASA/cache au lieu du vent constant :
 python3 codes_python/modele_courbe.py --vent-api --no-plot
 ```
 
-## Generation des donnees
+## Génération des données
 
-Le script global recommande est :
+Le script global recommandé est :
 
 ```bash
 python3 outils_generation_donnees/generer_donnees.py
 ```
 
-La documentation detaillee est dans `outils_generation_donnees/README.md`.
+La documentation détaillée est dans `outils_generation_donnees/README.md`.
 
 Il affiche un menu console pour :
 
-- voir l'etat des ressources ;
-- regenerer les grilles rapides ;
-- regenerer les grilles annuelles ;
-- choisir une cible precise ;
-- regenerer les CSV `12_mois` derives d'une grille annuelle ;
-- lancer explicitement la regeneration d'albedo via NASA POWER.
+- voir l'état des ressources ;
+- régénérer les grilles rapides ;
+- régénérer les grilles annuelles ;
+- choisir une cible précise ;
+- régénérer les CSV `12_mois` dérivés d'une grille annuelle ;
+- lancer explicitement la régénération d'albédo via NASA POWER.
 
 Commandes non interactives utiles :
 
@@ -88,25 +88,25 @@ python3 outils_generation_donnees/generer_donnees.py --run temperatures-12mois -
 python3 outils_generation_donnees/generer_donnees.py --run albedo-surface-nasa --dry-run --yes
 ```
 
-Les grilles rapides generees par defaut couvrent 7 jours avec les deux
+Les grilles rapides générées par défaut couvrent 7 jours avec les deux
 convections actives :
 
 - `ressources/grilles/grid_lowres_fast.npy` ;
 - `ressources/grilles/grid_hires_fast.npy`.
 
-Les fichiers `.npy.json` associes indiquent la duree, la resolution, le mode de
-convection, le vent et le moteur utilise.
+Les fichiers `.npy.json` associés indiquent la durée, la résolution, le mode de
+convection, le vent et le moteur utilisé.
 
-Les donnees actives generees par code restent generables par ces cibles. Les
-autres entrees (`CERES`, RZSM, shapefiles, PDF sources) sont des sources locales
-a fournir ou remplacer manuellement.
+Les données actives générées par code restent générables par ces cibles. Les
+autres entrées (`CERES`, RZSM, shapefiles, PDF sources) sont des sources locales
+à fournir ou remplacer manuellement.
 
-## Modules conserves
+## Modules conservés
 
-Non branches volontairement :
+Non branchés volontairement :
 
-- `codes_python/physique/diffusion.py` : conserve, mais le flux de surface reste ambigu.
-- gaz a effet de serre : non integre pour l'instant.
+- `codes_python/physique/diffusion.py` : conservé, mais le flux de surface reste ambigu.
+- gaz à effet de serre : non intégré pour l'instant.
 
 ## Visualisations
 
@@ -117,22 +117,22 @@ python3 codes_python/visualisation/affichage_3D_rapide.py --month janvier --hour
 python3 codes_python/visualisation/interface_carte_courbe.py
 ```
 
-Options de grilles pour les planispheres et spheres : `--grille auto`,
+Options de grilles pour les planisphères et sphères : `--grille auto`,
 `--grille rapide`, `--grille 1an`, `--grille stabilisee`.
 
 ## Structure
 
-| Dossier | Role |
+| Dossier | Rôle |
 | --- | --- |
 | `codes_python/` | moteur, modules physiques et visualisations |
-| `ressources/` | donnees finales utilisees par le moteur |
-| `outils_generation_donnees/` | generateur principal, generateur albedo NASA et README de generation |
-| `documents_sources/` | PDF de synthese copies depuis les groupes |
-| `PROVENANCE.md` | tracabilite courte des apports |
-| `THEORIE.md` | resume theorique utile |
+| `ressources/` | données finales utilisées par le moteur |
+| `outils_generation_donnees/` | générateur principal, générateur albédo NASA et README de génération |
+| `documents_sources/` | PDF de synthèse copiés depuis les groupes |
+| `PROVENANCE.md` | traçabilité courte des apports |
+| `THEORIE.md` | résumé théorique utile |
 
-## Dependances
+## Dépendances
 
-Installer les dependances du fichier `requirements.txt`, ou utiliser un
-environnement Python deja compatible avec `numpy`, `pandas`, `scipy`,
+Installer les dépendances du fichier `requirements.txt`, ou utiliser un
+environnement Python déjà compatible avec `numpy`, `pandas`, `scipy`,
 `matplotlib`, `xarray`, `geopandas`, `cartopy`, `pyshp` et `requests`.
