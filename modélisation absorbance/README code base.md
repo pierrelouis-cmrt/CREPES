@@ -19,7 +19,7 @@ Courbe de l'absorbance du CO₂ en fonction de la longueur d'onde, à 440 ppm su
 | 14,25 – 15,75 |
 
 
-# 1er modèle
+# Valeur pour le 1er modèle
 Mesures prises à 440 ppm sur 1 m de colonne d'air :
 
 | Bande (µm)        | Absorbance moyenne |
