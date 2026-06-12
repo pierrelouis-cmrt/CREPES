@@ -1,45 +1,18 @@
 # Modèle 1 CO₂ - colonne radiative simplifiée
 
-`modele1.py` est un script autonome. Il ne dépend pas du modèle 0 et ne charge
-aucune donnée externe au lancement. Les identifiants du code, les commentaires et
-cette documentation sont en français, hors notations scientifiques et noms de
-bibliothèques. Le script calcule uniquement deux flux infrarouges :
+`modele1.py` repars de 0 et ne se base pas pour l'instant sur le modèle 0 (provenant de l'année dernière). Le script calcule uniquement deux flux infrarouges :
 
 - le flux ascendant sortant en haut de l'atmosphère ;
 - le flux descendant reçu par la surface.
-
-Le modèle est volontairement minimal : une surface chaude émet dans l'infrarouge,
-deux bandes du CO₂ absorbent et réémettent, et tout le reste du spectre est
-transparent.
 
 ## 1. Structure du modèle
 
 Le modèle représente une colonne atmosphérique globale moyenne, sans latitude,
 sans cycle jour/nuit et sans évolution temporelle. Les températures sont fixées.
 
-Surface :
+Surface : $T_s = 288.15\ \mathrm{K} = 15\ ^\circ\mathrm{C}$
 
-$$
-T_s = 288.15\ \mathrm{K} = 15\ ^\circ\mathrm{C}
-$$
-
-Dans le script, cette valeur est `TEMPERATURE_SURFACE_K`.
-
-Flux infrarouge total émis par la surface, avec la loi de Stefan-Boltzmann :
-
-$$
-F_s = \sigma T_s^4
-$$
-
-$$
-\sigma = 5.670374419\times10^{-8}\ \mathrm{W\,m^{-2}\,K^{-4}}
-$$
-
-$$
-F_s = 390.918507769\ \mathrm{W\,m^{-2}}
-$$
-
-La constante utilisée dans le code est `CONSTANTE_STEFAN_BOLTZMANN`.
+Flux infrarouge total émis par la surface, avec la loi de Stefan-Boltzmann : $F_s = \sigma T_s^4$
 
 Atmosphère : trois couches arbitraires, toutes à la même température et au même
 taux de CO₂.
@@ -50,31 +23,16 @@ taux de CO₂.
 | `couche_2`         |           5 km |          10 km |    253.15 K | 425.65 ppm |
 | `couche_3`         |          10 km |          20 km |    253.15 K | 425.65 ppm |
 
-La température atmosphérique retenue est :
-
-$$
-T_{\mathrm{atm}} = 253.15\ \mathrm{K} = -20\ ^\circ\mathrm{C}
-$$
+La température atmosphérique retenue est : $T_{\mathrm{atm}} = 253.15\ \mathrm{K} = -20\ ^\circ\mathrm{C}$
 
 Elle correspond à la température radiative effective de la Terre vue depuis
-l'espace, donnée par NASA Earth Observatory. Ce choix est cohérent pour un modèle
-qui condense l'atmosphère en couches radiatives uniformes.
+l'espace, donnée par NASA Earth Observatory.
 
-Dans le script, cette valeur est `TEMPERATURE_ATMOSPHERE_K`.
-
-Le taux de CO₂ retenu est :
-
-$$
-C_{\mathrm{CO2}} = 425.65\ \mathrm{ppm}
-$$
+Le taux de CO₂ retenu est : $C_{\mathrm{CO2}} = 425.65\ \mathrm{ppm}$
 
 Cette valeur vient de la moyenne globale annuelle NOAA GML pour 2025, dernier
 millésime annuel complet disponible dans la série globale au moment de la
 rédaction.
-
-Dans le script, cette valeur est `CONCENTRATION_CO2_PPM`. Les trois couches sont
-regroupées dans `COUCHES_ATMOSPHERE`, et leur nombre est fixé par
-`NOMBRE_COUCHES`.
 
 ## 2. Solaire et albédo
 
@@ -86,23 +44,7 @@ S_0 = 1360\ \mathrm{W\,m^{-2}},
 A = 0.30
 $$
 
-Flux solaire global moyen absorbé :
-
-$$
-F_{\mathrm{SW}} = \frac{S_0(1-A)}{4}
-$$
-
-$$
-F_{\mathrm{SW}}
-= \frac{1360(1-0.30)}{4}
-= 238\ \mathrm{W\,m^{-2}}
-$$
-
-Dans le code, ces valeurs sont `IRRADIANCE_SOLAIRE` et `ALBEDO_SURFACE`. Le flux
-calculé est `FLUX_SOLAIRE_MOYEN_GLOBAL_ABSORBE`. Les valeurs numériques
-`IRRADIANCE_SOLAIRE = 1360.0` et `ALBEDO_SURFACE = 0.30` viennent du modèle des
-Carcajous callipyges de l'année dernière. Ce flux est conservé dans le code mais
-n'est pas utilisé pour recalculer les températures.
+Flux solaire global moyen absorbé : $F_{\mathrm{SW}} = \frac{S_0(1-A)}{4}$
 
 ## 3. Bandes infrarouges du CO₂
 
@@ -119,8 +61,6 @@ Bandes codées :
 | `CO2_15um`  | $14.25-15.75\ \mu\mathrm{m}$ |        $A_b = 1.0$ |
 | `CO2_4_3um` |   $4.20-4.35\ \mu\mathrm{m}$ |       $A_b = 3.25$ |
 
-Dans le script, ces bandes sont regroupées dans `BANDES_CO2`.
-
 Les bornes et les absorbances viennent du script local
 `modélisation absorbance/absorbance CO2.py`, qui calcule un spectre CO₂ avec
 RADIS/HITRAN et récupère :
@@ -130,7 +70,7 @@ s.get("absorbance")
 ```
 
 Le modèle 1 ne relance pas RADIS : il reprend ces résultats sous forme de deux
-bandes effectives.
+bandes obtenues avec une lecture graphique.
 
 Les positions spectrales sont cohérentes avec les bandes IR usuelles du CO₂. La
 ressource ENS Lyon indique notamment des bandes à `667 cm^-1` et `2349 cm^-1`,
@@ -200,7 +140,7 @@ Ce flux traverse directement les trois couches.
 
 ## 5. Absorbance, transmission et émissivité
 
-L'absorbance RADIS est traitée comme une épaisseur optique effective. Elle peut
+L'absorbance $A_{b}$ RADIS est traitée comme une épaisseur optique effective. Elle peut
 donc être supérieure à 1. L'émissivité, elle, doit rester entre 0 et 1.
 
 Transmission de Beer-Lambert :
@@ -213,12 +153,6 @@ $$
 
 $$
 \varepsilon_b = 1-\mathcal{T}_b
-$$
-
-Dans le code, la forme stable utilisée est :
-
-$$
-\varepsilon_b = -\operatorname{expm1}(-A_b)
 $$
 
 Valeurs obtenues :
@@ -238,13 +172,6 @@ A_b = 3.25
 \qquad
 \varepsilon_b = 0.9612
 $$
-
-On utilise donc bien `emissivite = 1 - exp(-absorbance)`, et non
-`emissivite = absorbance`. Ce choix respecte la loi de Kirchhoff : à l'équilibre
-thermique local, absorptivité et émissivité sont égales pour une même bande.
-
-Dans le script, les conversions sont faites par `transmission_depuis_absorbance()`
-et `emissivite_depuis_absorbance()`.
 
 ## 6. Propagation radiative
 
@@ -337,9 +264,6 @@ F^\uparrow_{k,\mathrm{total}}
 F^\downarrow_{k,\mathrm{total}}
 $$
 
-Ce bilan est un diagnostic : le modèle ne l'utilise pas pour ajuster les
-températures, qui restent imposées.
-
 Le flux sortant au sommet additionne :
 
 - le flux hors bandes, transparent ;
@@ -399,28 +323,7 @@ flux_infrarouge_sortant_sommet_atmosphere = 390.918507769 W m^-2
 flux_infrarouge_descendant_surface = 0 W m^-2
 ```
 
-## 9. Limites du modèle
-
-Cette version exclut :
-
-- les nuages ;
-- la vapeur d'eau ;
-- l'ozone, le méthane et les autres gaz absorbants ;
-- la convection sensible ;
-- la chaleur latente ;
-- les océans ;
-- les variations de latitude et de saison ;
-- les échanges horizontaux ;
-- l'évolution temporelle des températures ;
-- un vrai profil vertical de pression, densité ou température.
-
-Le modèle est donc un noyau radiatif pédagogique :
-
-```text
-température -> émission de Planck -> absorption CO₂ -> transmission/réémission -> flux haut/bas
-```
-
-## 10. Sources utiles
+## 9. Sources utiles
 
 | Élément                    |                                       Valeur utilisée | Source                                                                        |
 | -------------------------- | ----------------------------------------------------: | ----------------------------------------------------------------------------- |
