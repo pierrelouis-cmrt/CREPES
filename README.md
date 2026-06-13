@@ -9,6 +9,7 @@ Dépôt de travail pour comparer et développer plusieurs modèles climat.
 | `modele0_maintenance/` | Ancien modèle combiné, conservé comme référence stable. |
 | `modele1/` | Emplacement réservé pour un nouveau modèle. |
 | `modele2/` | Colonne atmosphérique CO2 à 6 couches avec noyau radiatif infrarouge simplifié. |
+| `modele2_5/` | Itération autonome du modèle 2 : 10 couches en pression, profil standard, bandes CO2 découpées et tests. |
 | `plan d'attaque/` | Plan de travail CO2 multicouche simplifié. |
 
 Chaque nouveau modèle peut maintenant avoir son propre dossier à la racine,
@@ -42,7 +43,30 @@ Lancer le noyau radiatif du modèle 2 :
 Régénérer le profil vertical de pression et de CO2 :
 
 ```bash
-./.venv/bin/python modele2/profil_vertical_atmosphere_co2.py --max-altitude-km 50 --surface-co2-ppm 420 --output modele2/profil_vertical_atmosphere_co2.png --csv modele2/profil_vertical_atmosphere_co2.csv --no-plot
+./.venv/bin/python modele2/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 50 --surface-co2-ppm 420 --output modele2/ressources/profil_vertical_atmosphere_co2.png --csv modele2/ressources/profil_vertical_atmosphere_co2.csv --no-plot
 ```
 
 La documentation détaillée du modèle 2 est dans `modele2/README.md`.
+
+## Modèle 2.5
+
+Lancer le noyau radiatif du modèle 2.5 :
+
+```bash
+./.venv/bin/python modele2_5/modele2_5.py
+```
+
+Lancer les tests numériques séparés :
+
+```bash
+./.venv/bin/python modele2_5/ressources/tester_modele2_5.py
+```
+
+Régénérer les profils standard et CO2 :
+
+```bash
+./.venv/bin/python modele2_5/ressources/profil_temperature_standard.py --max-altitude-km 84 --step-m 100 --output modele2_5/ressources/profil_temperature_standard.png --csv modele2_5/ressources/profil_temperature_standard.csv --no-plot
+./.venv/bin/python modele2_5/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 84 --step-m 100 --surface-co2-ppm 420 --output modele2_5/ressources/profil_vertical_atmosphere_co2.png --csv modele2_5/ressources/profil_vertical_atmosphere_co2.csv --no-plot
+```
+
+La documentation détaillée du modèle 2.5 est dans `modele2_5/README.md`.

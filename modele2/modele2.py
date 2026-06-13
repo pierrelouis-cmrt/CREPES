@@ -18,15 +18,21 @@ Formule d'opacité utilisée dans chaque bande spectrale :
 
 où ``a_bande`` est un coefficient effectif à calibrer, et non une constante
 fondamentale. Le profil de pression et la moyenne de CO2 par couche viennent du
-script ``profil_vertical_atmosphere_co2.py``.
+script ``ressources/profil_vertical_atmosphere_co2.py``.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from math import exp, pi
+from pathlib import Path
+import sys
 
 import numpy as np
+
+RESSOURCES_DIR = Path(__file__).resolve().parent / "ressources"
+if str(RESSOURCES_DIR) not in sys.path:
+    sys.path.insert(0, str(RESSOURCES_DIR))
 
 from profil_vertical_atmosphere_co2 import atmosphere_standard, calculer_profil
 

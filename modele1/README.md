@@ -1,5 +1,7 @@
 # Modèle 1 CO₂ - colonne radiative simplifiée
 
+Mini-glossaire : OLR = flux infrarouge sortant vers l'espace ; LW = infrarouge thermique à grande longueur d'onde.
+
 `modele1.py` repars de 0 et ne se base pas pour l'instant sur le modèle 0 (provenant de l'année dernière). Le script calcule uniquement deux flux infrarouges :
 
 - le flux ascendant sortant en haut de l'atmosphère ;

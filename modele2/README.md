@@ -1,5 +1,7 @@
 # Modèle 2 - colonne CO2 à 6 couches
 
+Mini-glossaire : OLR = flux infrarouge sortant vers l'espace ; LW = infrarouge thermique à grande longueur d'onde.
+
 Faire Ctrl + shift + V pour visualiser le REAME en LATEX
 
 Le modèle 2 est un prototype de colonne atmosphérique verticale. Il sert à
@@ -22,9 +24,9 @@ que le noyau radiatif est compréhensible avant d'ajouter une dynamique thermiqu
 | Fichier | Rôle |
 | --- | --- |
 | `modele2.py` | Point d'entrée du modèle 2. Calcule les opacités des couches, les transmissions, les émissivités, le flux infrarouge sortant au sommet et le flux infrarouge descendant à la surface. |
-| `profil_vertical_atmosphere_co2.py` | Outil de profil vertical. Calcule pression, température standard, CO2, pression partielle du CO2 et concentration moléculaire en fonction de l'altitude. |
-| `profil_vertical_atmosphere_co2.csv` | Export numérique du profil vertical de référence. |
-| `profil_vertical_atmosphere_co2.png` | Graphique de diagnostic du profil vertical de référence. |
+| `ressources/profil_vertical_atmosphere_co2.py` | Outil de profil vertical. Calcule pression, température standard, CO2, pression partielle du CO2 et concentration moléculaire en fonction de l'altitude. |
+| `ressources/profil_vertical_atmosphere_co2.csv` | Export numérique du profil vertical de référence. |
+| `ressources/profil_vertical_atmosphere_co2.png` | Graphique de diagnostic du profil vertical de référence. |
 | `requirements.txt` | Dépendances Python nécessaires aux scripts du modèle 2. |
 
 Les fichiers `evolution_co2.py` et `spectre_absorbance_co2.py` ne font plus
@@ -69,7 +71,7 @@ Le script affiche trois blocs :
 Pour régénérer le CSV et le graphique du profil vertical :
 
 ```bash
-./.venv/bin/python modele2/profil_vertical_atmosphere_co2.py --max-altitude-km 50 --surface-co2-ppm 420 --output modele2/profil_vertical_atmosphere_co2.png --csv modele2/profil_vertical_atmosphere_co2.csv --no-plot
+./.venv/bin/python modele2/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 50 --surface-co2-ppm 420 --output modele2/ressources/profil_vertical_atmosphere_co2.png --csv modele2/ressources/profil_vertical_atmosphere_co2.csv --no-plot
 ```
 
 Options utiles :
@@ -124,7 +126,7 @@ quand on affine la grille verticale.
 
 ## Moyenne de CO2 par couche
 
-Le script `profil_vertical_atmosphere_co2.py` produit un profil :
+Le script `ressources/profil_vertical_atmosphere_co2.py` produit un profil :
 
 ```text
 altitude -> pression, température, CO2
