@@ -108,7 +108,7 @@ La maintenance est regroupée dans le dossier \code{modele0\_maintenance}. Sa st
     \item \code{ressources/} : données utilisées par le moteur ;
     \item \code{outils\_generation\_donnees/} : scripts de régénération des données ;
     \item \code{documents\_sources/} : PDF de synthèse récupérés des groupes précédents ;
-    \item \code{PROVENANCE.md} et \code{THEORIE.md} : traçabilité et rappels théoriques.
+    \item \code{PROVENANCE.md} et \code{THEORIE.md} : récapitualif de ce qui à été recupéré de quel groupe et rappels théoriques.
 \end{itemize}
 
 Le lancement de base se fait depuis \code{modele0\_maintenance/} avec :
@@ -123,15 +123,17 @@ python3 codes_python/modele_courbe.py --lat 48.5 --lon 2.3 --days 730
 Deux formes de convection sont conservées dans le modèle maintenu :
 
 \begin{itemize}
-    \item la \motcle{convection forcée} issue du travail des Chevreaux ;
-    \item la \motcle{convection naturelle} issue du travail des Ornithorynquietant.
+    \item la \motcle{convection forcée} provenant des Chevreaux ;
+    \item la \motcle{convection naturelle} provenant des Ornithorynquietant.
 \end{itemize}
 
-Par défaut, les deux sont actives avec un vent constant de $2.5\ \mathrm{m\,s^{-1}}$, sans appel réseau. Elles peuvent être coupées avec :
+Par défaut, les deux sont activées avec un vent constant de $2.5\ \mathrm{m\,s^{-1}}$. Elles peuvent être supprimées avec :
 
 \begin{verbatim}
 python3 codes_python/modele_courbe.py --sans-convection --no-plot
 \end{verbatim}
+
+\textcolor{green!50!black}{A faire: bien comprendre les 2 type de convection, quelle est leur distinction ? est qu'il y en à une des deux qui est négligeable ? moins pertinante ? Est ce que modéliser les 2 convection est juste physiquement ?}
 
 \partietitre{4/Génération des données}
 \addcontentsline{toc}{subsection}{Génération des données}
@@ -144,14 +146,12 @@ python3 outils_generation_donnees/generer_donnees.py
 
 Il permet de vérifier l'état des ressources, de régénérer les grilles rapides, les grilles annuelles, les CSV \code{12\_mois} et certaines données d'albédo. Les grilles rapides produites par défaut couvrent $7$ jours avec les deux convections actives.
 
-Les données qui ne sont pas générées par code restent des \motcle{sources locales} à fournir ou remplacer manuellement, par exemple certains fichiers CERES, RZSM ou shapefiles.
+Les données qui ne sont pas générées par code sont definies localement et restent à fournir ou remplacer manuellement.
 
 \partietitre{5/Modules conservés}
 \addcontentsline{toc}{subsection}{Modules conservés}
 
-Certains modules sont gardés sans être totalement intégrés au moteur principal. C'est notamment le cas de \code{codes\_python/physique/diffusion.py}, conservé pour une reprise future, mais non branché car le flux de surface reste ambigu.
-
-Les gaz à effet de serre du modèle 0 ne sont pas intégrés dans cette maintenance. La nouvelle modélisation du \COtwo{} est traitée séparément dans la partie II.
+Certains modules sont gardés sans être totalement intégrés au moteur principal. C'est le cas de \code{codes\_python/physique/diffusion.py}, conservé pour une potentielle reprise future, mais pas active pour l'instant car mal comprise.
 
 \partietitre{6/ Visualisation}
 \addcontentsline{toc}{subsection}{Visualisation}
@@ -181,6 +181,8 @@ Les options de grilles disponibles sont \code{auto}, \code{rapide}, \code{1an} e
 \end{table}
 \renewcommand{\arraystretch}{1}
 
+\textcolor{green!50!black}{A faire: Inserer le tableau de Pierre Louis}
+
 \newpage
 
 \titreprincipal{II -- Modélisation de l'atmosphère}
@@ -189,17 +191,13 @@ Les options de grilles disponibles sont \code{auto}, \code{rapide}, \code{1an} e
 \partietitre{1/ Objectif et consigne}
 \addcontentsline{toc}{subsection}{1/ Objectif et consigne}
 
-L'objectif général est de modéliser l'effet du \COtwo{} présent dans l'atmosphère sur les flux radiatifs reçus et émis par la Terre.
+L'objectif général est de modéliser l'effet du \COtwo{} présent dans l'atmosphère sur la puissance reçus et émis par la Terre.
 
 À terme, ces flux pourront servir à calculer l'évolution de la température terrestre. Pour l'instant, on cherche surtout à comprendre comment le \COtwo{} modifie la puissance reçue et émise par la Terre.
 
 Ce travail est mené en parallèle de la maintenance des modèles des années précédentes. L'objectif est d'intégrer progressivement cette modélisation de l'atmosphère au reste du projet CREPES.
 
-\begin{tcolorbox}
-\motcle{Point important}
 
-On ne cherche pas à imposer directement une relation du type $T=f(\COtwo)$. Le \COtwo{} agit d'abord sur \motcle{l'opacité infrarouge}. Cette opacité modifie les flux radiatifs. La température vient ensuite, via un bilan d'énergie.
-\end{tcolorbox}
 
 \partietitre{2/ Modèle générale}
 \addcontentsline{toc}{subsection}{2/ Modèle générale}
@@ -211,12 +209,12 @@ L'atmosphère est découpée suivant l'altitude en plusieurs couches. On suit en
 Pour simplifier, on considère que chaque couche possède :
 
 \begin{itemize}
-    \item une température uniforme, unique, indépendante du temps dans les premiers modèles ;
+    \item une température uniforme, unique, indépendante du temps (dans les premiers modèles);
     \item une concentration en \COtwo{} uniforme et unique ;
     \item des propriétés radiatives moyennes à l'échelle de la couche.
 \end{itemize}
 
-On distingue les \motcle{couches} A, B, C etc, qui contiennent la matière atmosphérique, et les \motcle{interfaces}, où l'on suit les flux.
+On distingue les \motcle{couches} A, B, C etc, qui contiennent la matière atmosphérique, et les \motcle{interfaces}, où l'on suit les echanges de flux.
 
 \begin{itemize}
     \item k=0 : surface, interface entre la Terre et la couche 1
@@ -232,16 +230,18 @@ On distingue les \motcle{couches} A, B, C etc, qui contiennent la matière atmos
     \label{fig:schema-atmosphere}
 \end{figure}
 
+\textcolor{green!50!black}{A faire : Insérer le schéma réalisé par Melvin et Maud après avoir fais quelque modifs}
+
 \bloc{Rayonnement visible et rayonnement infrarouge}
 
-Le modèle sépare deux types de rayonnement :
+On distingue deux types de rayonnement :
 
 \begin{itemize}
-    \item le rayonnement solaire visible, qui vient du Soleil ;
-    \item le rayonnement infrarouge, qui est émis par la Terre et par les couches atmosphériques.
+    \item le rayonnement solaire visible : emis par le Soleil ;
+    \item le rayonnement infrarouge : emis par la Terre et les couches atmosphériques (car ce sont des corps noir cad des corps de température non nulle) rayonnement émis de manière isotrope(cad dans toutes les directions).
 \end{itemize}
 
-Dans cette première modélisation, les couches atmosphériques sont supposées \motcle{transparentes au visible}. Le rayonnement solaire traverse donc l'atmosphère. Dans l'infrarouge, en revanche, les couches peuvent absorber, transmettre et réémettre une partie du flux.
+Les couches atmosphériques sont supposées \motcle{transparentes au visible}. Le rayonnement solaire traverse donc l'atmosphère. Dans l'infrarouge, en revanche, les couches peuvent absorber, transmettre et réémettre une partie du flux.
 
 \renewcommand{\arraystretch}{1.35}
 \begin{table}[H]
@@ -263,6 +263,8 @@ Terre
 \end{table}
 \renewcommand{\arraystretch}{1}
 
+\textcolor{green!50!black}{A faire : revoir le tableau récapitualitif (un peut redodant avec les explication du dessus), faire en sorte qu'il soit plus lisible (supprimer les longues phrase), ajouter des couleur pour rayonnement IR / visible en suivant le schéma du dessus}
+
 \bloc{Flux solaire moyen absorbé par la surface}
 
 La surface terrestre reçoit un flux solaire moyen. Une partie est réfléchie vers l'espace à cause de l'albédo, et le reste est absorbé.
@@ -270,7 +272,7 @@ La surface terrestre reçoit un flux solaire moyen. Une partie est réfléchie v
 On note :
 
 \begin{itemize}
-    \item $S_0$ l'irradiance solaire, en $\fluxunit$ ;
+    \item $S_0$ le flux solaire total reçu par la Terre, en $\fluxunit$ ;
     \item $A$ l'albédo moyen ;
     \item $F_{\mathrm{SW}}$ le flux solaire moyen absorbé.
 \end{itemize}
@@ -296,10 +298,10 @@ F_s = \sigma T_s^4
 où $\sigma$ est la constante de Stefan-Boltzmann :
 
 \[
-\sigma = 5.670374419\times10^{-8}\ \mathrm{W\,m^{-2}\,K^{-4}}
+\sigma = 5.67\times10^{-8}\ \mathrm{W\,m^{-2}\,K^{-4}}
 \]
 
-Cette loi donne un \motcle{flux total}. Pour connaître la part de ce flux dans une bande absorbante du \COtwo{}, il faut utiliser la loi de Planck.
+Cette loi donne un \motcle{flux total} émis. Pour connaître la part de ce flux dans une bande absorbante du \COtwo{}, il faut utiliser la loi de Planck.
 
 \bloc{Répartition spectrale : loi de Planck}
 
@@ -331,162 +333,30 @@ E_b(T)
 \pi B_\lambda(T)\,d\lambda
 \]
 
-Le facteur $\pi$ vient de l'intégration sur l'hémisphère d'émission. Il permet de passer d'une luminance spectrale à un flux hémisphérique.
+\textcolor{green!50!black}{Remarque : comprendre d'ou viens le pi et l'expliquer}
 
-\bloc{Absorbance, transmission et émissivité}
-
-Le \COtwo{} n'absorbe pas uniformément tout l'infrarouge. Il absorbe surtout dans certaines bandes spectrales. Pour une bande $b$, on associe une absorbance moyenne $A_b$.
-
-Cette absorbance est traitée comme une épaisseur optique effective. La transmission de la couche dans la bande $b$ est alors :
-
-\[
-\mathcal{T}_b = \exp(-A_b)
-\]
-
-Cette relation correspond à une forme de loi de Beer-Lambert : plus l'absorbance est grande, plus la transmission est faible.
-
-L'émissivité effective de la couche dans la même bande est :
-
-\[
-\varepsilon_b = 1-\mathcal{T}_b
-\]
-
-Ce choix traduit la loi de Kirchhoff : à l'équilibre thermique local, une couche qui absorbe bien dans une bande émet aussi efficacement dans cette même bande.
-
-Il ne faut pas confondre \motcle{absorbance} et \motcle{émissivité}. L'absorbance peut être supérieure à $1$. L'émissivité, elle, reste entre $0$ et $1$.
-
-\bloc{Propagation du flux montant}
-
-On note $F^\uparrow_{k,b}$ le flux infrarouge montant à l'interface $k$ dans la bande $b$.
-
-À la surface, le flux montant est l'émission de la surface dans cette bande :
-
-\[
-F^\uparrow_{0,b} = E_b(T_s)
-\]
-
-Lorsqu'il traverse une couche, une partie du flux venant d'en bas est transmise, et la couche ajoute sa propre émission vers le haut :
-
-\[
-F^\uparrow_{k+1,b}
-=
-\mathcal{T}_{k,b} F^\uparrow_{k,b}
-+
-\left(1-\mathcal{T}_{k,b}\right)E_b(T_k)
-\]
-
-Le premier terme correspond au flux transmis. Le second correspond à l'émission de la couche $k$, pondérée par son émissivité dans la bande étudiée.
-
-\bloc{Propagation du flux descendant}
-
-On note $F^\downarrow_{k,b}$ le flux infrarouge descendant à l'interface $k$ dans la bande $b$.
-
-Au sommet de l'atmosphère, l'espace n'apporte pas de flux infrarouge descendant dans ce modèle :
-
-\[
-F^\downarrow_{N,b} = 0
-\]
-
-En descendant vers la surface, chaque couche transmet une partie du flux venant d'en haut et ajoute sa propre émission vers le bas :
-
-\[
-F^\downarrow_{k,b}
-=
-\mathcal{T}_{k,b} F^\downarrow_{k+1,b}
-+
-\left(1-\mathcal{T}_{k,b}\right)E_b(T_k)
-\]
-
-Cette écriture est symétrique de celle du flux montant, mais appliquée dans le sens opposé.
-
-\bloc{Flux transparent}
-
-Toutes les longueurs d'onde qui ne sont pas traitées comme absorbantes sont regroupées dans un flux transparent. Ce flux est supposé traverser directement l'atmosphère.
-
-Si $\mathcal{B}$ est l'ensemble des bandes absorbantes retenues, alors :
-
-\[
-F_{\mathrm{transparent}}
-=
-\sigma T_s^4
--
-\sum_{b\in\mathcal{B}} E_b(T_s)
-\]
-
-Le flux montant total à une interface $k$ s'écrit donc :
-
-\[
-F^\uparrow_{k,\mathrm{total}}
-=
-F_{\mathrm{transparent}}
-+
-\sum_{b\in\mathcal{B}}F^\uparrow_{k,b}
-\]
-
-Le flux descendant total s'écrit :
-
-\[
-F^\downarrow_{k,\mathrm{total}}
-=
-\sum_{b\in\mathcal{B}}F^\downarrow_{k,b}
-\]
-
-Il n'y a pas de terme descendant transparent, car le modèle ne considère pas de source infrarouge venant de l'espace.
-
-\bloc{Bilan radiatif}
-
-À une interface, le flux net infrarouge est la différence entre le flux montant et le flux descendant :
-
-\[
-F_{k,\mathrm{net}}
-=
-F^\uparrow_{k,\mathrm{total}}
--
-F^\downarrow_{k,\mathrm{total}}
-\]
-
-Pour une couche atmosphérique, le bilan énergétique complet comparerait ce qui entre dans la couche et ce qui en sort :
-
-\[
-C_k\frac{dT_k}{dt}
-=
-\sum_b
-\left[
-\left(F^\uparrow_{k,b}-F^\uparrow_{k+1,b}\right)
-+
-\left(F^\downarrow_{k+1,b}-F^\downarrow_{k,b}\right)
-\right]
-\]
-
-Dans les premiers modèles, les températures restent imposées. Ce bilan sert donc surtout à préparer la suite : lorsque les températures ne seront plus fixées, il permettra de calculer leur évolution.
+\textcolor{green!50!black}{A finir : finir de mettre au propre les calcul physique généraux valide pour tout les modèles}
 
 \partietitre{3/ Modèle 1}
 \addcontentsline{toc}{subsection}{3/ Modèle 1}
 
-Le modèle 1 est une première version simple du modèle général. Il vérifie la chaîne de calcul : émission de la surface, absorption par le \COtwo{}, transmission, réémission, flux montant et flux descendant.
+Le modèle 1 est une première version simple du modèle général. Il sert a vérifie que nos calcul sont juste en cherchant à retomber sur une valeur connue au préalable.
 
-Le script correspondant est :
-
-\begin{verbatim}
-modele1/modele1.py
-\end{verbatim}
+Le script correspondant est : $modele1/modele1.py$
 
 \bloc{Simplifications spécifiques au modèle 1}
 
 En plus des hypothèses du modèle général, le modèle 1 ajoute les simplifications suivantes :
 
 \begin{itemize}
-    \item il utilise exactement trois couches atmosphériques ;
-    \item les trois couches ont la même température ;
-    \item les trois couches ont la même concentration en \COtwo{} ;
-    \item seules deux bandes infrarouges du \COtwo{} sont traitées explicitement ;
-    \item les absorbances des bandes sont fixées à l'avance et ne sont pas recalculées pendant l'exécution ;
-    \item les températures restent constantes : le modèle calcule des flux, pas une évolution thermique.
+    \item découpage en  trois couches atmosphériques ;
+    \item les trois couches ont la même température et la même concentration en \COtwo{};
+    \item seules deux bandes infrarouges du \COtwo{} sont traitées ;
+    \item les absorbances des bandes sont fixées;
 \end{itemize}
 
 \bloc{Valeurs numériques utilisées}
 
-Les valeurs sont regroupées ici pour éviter d'étaler les constantes sur plusieurs pages :
 
 \[
 \begin{gathered}
@@ -533,13 +403,11 @@ F_{\mathrm{transparent}}
 363.1027\ \fluxunit
 \]
 
+\textcolor{green!50!black}{A faire : bien comprendre les valeur numerique utilisées, sourcer et peut etre revoir la mise en page}
+
 \bloc{Résultat du modèle 1}
 
-La commande d'exécution est :
-
-\begin{verbatim}
-python modele1/modele1.py
-\end{verbatim}
+La commande d'exécution est : $python modele1/modele1.py$
 
 La sortie actuelle est :
 
@@ -548,32 +416,12 @@ flux_infrarouge_sortant_sommet_atmosphere_W_m2 = 380.782258
 flux_infrarouge_descendant_surface_W_m2 = 16.311241
 \end{verbatim}
 
-Le premier résultat est le \motcle{flux infrarouge sortant} au sommet de l'atmosphère. Le second est le \motcle{flux infrarouge descendant} reçu par la surface à cause de la réémission des couches.
+Le premier résultat est le \motcle{flux infrarouge sortant} au sommet de l'atmosphère. Le second est le \motcle{flux infrarouge descendant} reçu par la surface.
 
-\bloc{Vérification limite}
-
-On vérifie le comportement du modèle en annulant les absorbances. Si $A_b=0$, alors $\mathcal{T}_b=1$ et $\varepsilon_b=0$ : les couches deviennent transparentes et n'émettent plus dans les bandes étudiées.
-
-Le résultat attendu est donc :
-
-\[
-F^\downarrow_{\mathrm{surface}} = 0,
-\qquad
-F^\uparrow_{\mathrm{sommet}} = \sigma T_s^4
-\]
-
-Le test donne :
-
-\begin{verbatim}
-flux_infrarouge_sortant_sommet_atmosphere = 390.918507769 W m^-2
-flux_infrarouge_descendant_surface = 0 W m^-2
-\end{verbatim}
-
-Le test est cohérent : sans absorption, il n'y a pas de réémission atmosphérique.
 
 \partietitre{4/ Modèle 2}
 \addcontentsline{toc}{subsection}{4/ Modèle 2}
 
-Modèle en cours de réalisation.
+\textcolor{green!50!black}{A faire}
 
 \end{document}
