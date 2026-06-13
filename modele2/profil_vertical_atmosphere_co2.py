@@ -22,23 +22,24 @@ import numpy as np
 SCRIPT_DIR = Path(__file__).resolve().parent
 CACHE_DIR = SCRIPT_DIR / ".cache"
 MPL_CACHE_DIR = CACHE_DIR / "matplotlib"
-G0 = 9.80665
-R_AIR = 287.05287
-K_B = 1.380649e-23
+G0 = 9.80665  # m s-2, acceleration de la pesanteur standard au niveau de la mer
+R_AIR = 287.05287  # J kg-1 K-1, constante de gaz pour l'air sec avec R=8.314 J mol-1 K-1 et Mair=28.9647 g mol-1
+K_B = 1.380649e-23 # J K-1, constante de Boltzmann
+
 
 # Atmosphère standard 1976, jusqu'à 84,852 km géopotentiels.
+# Ce tableau contient les altitudes (en mètres) des bases des couches atmosphériques défénies dans notre modèle.
 BASES_COUCHES_M = np.array(
     [0.0, 11_000.0, 20_000.0, 32_000.0, 47_000.0, 51_000.0, 71_000.0, 84_852.0]
 )
+
+#Ce tableau contient les gradients thermiques (en kelvins par mètre, K/m) pour chaque couche atmosphérique définie par BASES_COUCHES_M.
 GRADIENTS_THERMIQUES_K_M = np.array(
     [-0.0065, 0.0, 0.0010, 0.0028, 0.0, -0.0028, -0.0020]
 )
 
-
-def _calculer_bases_couches_standard(
-    pression_surface_pa: float,
-    temperature_surface_k: float,
-) -> tuple[np.ndarray, np.ndarray]:
+#renvoie des tableaux numpy contenant les températures et pressions aux bases des couches, calculées à partir de la pression et de la température de surface.
+def _calculer_bases_couches_standard(pression_surface_pa: float,temperature_surface_k: float) -> tuple[np.ndarray, np.ndarray]:
     """Calcule température et pression aux bases des couches standard."""
 
     temperatures = [temperature_surface_k]
@@ -67,11 +68,7 @@ def _calculer_bases_couches_standard(
     return np.asarray(temperatures), np.asarray(pressions)
 
 
-def atmosphere_standard(
-    altitude_m: np.ndarray,
-    pression_surface_pa: float = 101_325.0,
-    temperature_surface_k: float = 288.15,
-) -> tuple[np.ndarray, np.ndarray]:
+def atmosphere_standard(altitude_m: np.ndarray,pression_surface_pa: float = 101_325.0,temperature_surface_k: float = 288.15) -> tuple[np.ndarray, np.ndarray]:
     """Retourne température (K) et pression (Pa) de l'atmosphère standard."""
 
     altitude_m = np.asarray(altitude_m, dtype=float)
