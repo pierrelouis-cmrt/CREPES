@@ -44,13 +44,15 @@ définies par pressions d'interface :
 1013.25, 850, 700, 500, 300, 200, 100, 50, 20, 10, 1 hPa
 ```
 
-Ce n'est pas un découpage régulier en hPa, car pression diminue presque exponentiellement
-avec l'altitude. Les écarts de pression deviennent donc plus petits en altitude,
-ce qui donne des couches plus comparables en épaisseur verticale et garde une
-résolution minimale dans la stratosphère. Ce choix est acceptable ici car le
-CO2 est bien mélangé ; pour ajouter, par exemple, la vapeur d'eau plus tard, il faudra
-préciser la basse troposphère avec davantage d'interfaces entre environ
-$1000$ et $700\ \mathrm{hPa}$.
+Ce n'est pas un découpage régulier en hPa : les pressions choisies sont un
+sous-ensemble de la liste de niveaux de pression ERA5/ECMWF citée dans les
+sources. Comme la pression diminue presque exponentiellement avec l'altitude,
+les écarts de pression deviennent plus petits en altitude, ce qui donne des
+couches plus comparables en épaisseur verticale et garde une résolution minimale
+dans la stratosphère. Ce choix est acceptable ici car le CO2 est bien mélangé ;
+pour ajouter, par exemple, la vapeur d'eau plus tard, il faudra raffiner la
+basse troposphère avec davantage d'interfaces entre environ $1000$ et
+$700\ \mathrm{hPa}$.
 
 La température de la couche $k$ est alors la moyenne du profil $T(z)$ entre ces
 deux altitudes :
@@ -258,3 +260,5 @@ nuages, ozone et convection restent absents comme dans le modèle 2.
   https://doi.org/10.1016/j.jqsrt.2021.107949
 - Amundsen et al. (2014), approximation two-stream/correlated-k avec $D=1.66$ :
   https://arxiv.org/abs/1402.0814
+- ECMWF/Copernicus ERA5, liste des niveaux de pression disponibles :
+  https://confluence.ecmwf.int/display/CKB/ERA5%3A+data+documentation#ERA5:datadocumentation-Levellistings
