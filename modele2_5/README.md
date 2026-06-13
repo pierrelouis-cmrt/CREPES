@@ -9,14 +9,14 @@ découpage spectral CO2 et calibration optique.
 
 ## Fichiers
 
-| Fichier | Rôle |
-| --- | --- |
-| `modele2_5.py` | Noyau radiatif CO2 autonome. |
-| `ressources/profil_temperature_standard.py` | Profil $T(z)$ de l'atmosphère standard 1976 + CSV + graphique. |
-| `ressources/profil_vertical_atmosphere_co2.py` | Profil pression-température-CO2 + CSV + graphique. |
-| `ressources/calibrer_coefficients_optiques.py` | Recalibre l'échelle des opacités sur le doublement CO2. |
-| `ressources/tester_modele2_5.py` | Tests numériques séparés du modèle principal. |
-| `requirements.txt` | Dépendances locales du modèle 2.5. |
+| Fichier                                        | Rôle                                                           |
+| ---------------------------------------------- | -------------------------------------------------------------- |
+| `modele2_5.py`                                 | Noyau radiatif CO2 autonome.                                   |
+| `ressources/profil_temperature_standard.py`    | Profil $T(z)$ de l'atmosphère standard 1976 + CSV + graphique. |
+| `ressources/profil_vertical_atmosphere_co2.py` | Profil pression-température-CO2 + CSV + graphique.             |
+| `ressources/calibrer_coefficients_optiques.py` | Recalibre l'échelle des opacités sur le doublement CO2.        |
+| `ressources/tester_modele2_5.py`               | Tests numériques séparés du modèle principal.                  |
+| `requirements.txt`                             | Dépendances locales du modèle 2.5.                             |
 
 ## Lancer
 
@@ -44,8 +44,16 @@ définies par pressions d'interface :
 1013.25, 850, 700, 500, 300, 200, 100, 50, 20, 10, 1 hPa
 ```
 
-Les altitudes sont déduites par inversion du profil standard. Pour chaque couche
-$k$, on calcule ensuite la température moyenne sur l'intervalle d'altitude :
+Ce n'est pas un découpage régulier en hPa, car pression diminue presque exponentiellement
+avec l'altitude. Les écarts de pression deviennent donc plus petits en altitude,
+ce qui donne des couches plus comparables en épaisseur verticale et garde une
+résolution minimale dans la stratosphère. Ce choix est acceptable ici car le
+CO2 est bien mélangé ; pour ajouter, par exemple, la vapeur d'eau plus tard, il faudra
+préciser la basse troposphère avec davantage d'interfaces entre environ
+$1000$ et $700\ \mathrm{hPa}$.
+
+La température de la couche $k$ est alors la moyenne du profil $T(z)$ entre ces
+deux altitudes :
 
 $$
 \overline{T}_k =
@@ -55,18 +63,18 @@ $$
 
 Sortie actuelle :
 
-| Couche | Pression hPa | Altitude km | $\overline{T}$ K |
-| --- | ---: | ---: | ---: |
-| 1 | 1013.25-850 | 0.000-1.458 | 283.413 |
-| 2 | 850-700 | 1.458-3.014 | 273.624 |
-| 3 | 700-500 | 3.014-5.579 | 260.242 |
-| 4 | 500-300 | 5.579-9.177 | 240.248 |
-| 5 | 300-200 | 9.177-11.806 | 220.831 |
-| 6 | 200-100 | 11.806-16.221 | 216.650 |
-| 7 | 100-50 | 16.221-20.643 | 216.688 |
-| 8 | 50-20 | 20.643-26.592 | 220.180 |
-| 9 | 20-10 | 26.592-31.207 | 225.418 |
-| 10 | 10-1 | 31.207-48.183 | 249.487 |
+| Couche | Pression hPa |   Altitude km | $\overline{T}$ K |
+| ------ | -----------: | ------------: | ---------------: |
+| 1      |  1013.25-850 |   0.000-1.458 |          283.413 |
+| 2      |      850-700 |   1.458-3.014 |          273.624 |
+| 3      |      700-500 |   3.014-5.579 |          260.242 |
+| 4      |      500-300 |   5.579-9.177 |          240.248 |
+| 5      |      300-200 |  9.177-11.806 |          220.831 |
+| 6      |      200-100 | 11.806-16.221 |          216.650 |
+| 7      |       100-50 | 16.221-20.643 |          216.688 |
+| 8      |        50-20 | 20.643-26.592 |          220.180 |
+| 9      |        20-10 | 26.592-31.207 |          225.418 |
+| 10     |         10-1 | 31.207-48.183 |          249.487 |
 
 ## Profil standard
 
@@ -126,16 +134,16 @@ Le découpage coeur/ailes est conservé : le diagnostic montre qu'il change la
 réponse marginale au doublement CO2. Coefficients effectifs utilisés dans
 $\Delta\tau$, après calibration :
 
-| Sous-bande | $\lambda$ µm | Rôle | $a_b$ |
-| --- | ---: | --- | ---: |
-| CO2_15um_aile_gauche_externe | 13.00-14.00 | aile | 0.010471 |
-| CO2_15um_aile_gauche_interne | 14.00-14.60 | aile | 0.114530 |
-| CO2_15um_coeur_sature | 14.60-15.40 | coeur | 1.308912 |
-| CO2_15um_aile_droite_interne | 15.40-16.20 | aile | 0.130891 |
-| CO2_15um_aile_droite_externe | 16.20-18.00 | aile | 0.015707 |
-| CO2_4_3um_aile_gauche | 4.00-4.20 | aile | 0.006545 |
-| CO2_4_3um_coeur_sature | 4.20-4.40 | coeur | 0.490842 |
-| CO2_4_3um_aile_droite | 4.40-4.60 | aile | 0.006545 |
+| Sous-bande                   | $\lambda$ µm | Rôle  |    $a_b$ |
+| ---------------------------- | -----------: | ----- | -------: |
+| CO2_15um_aile_gauche_externe |  13.00-14.00 | aile  | 0.010471 |
+| CO2_15um_aile_gauche_interne |  14.00-14.60 | aile  | 0.114530 |
+| CO2_15um_coeur_sature        |  14.60-15.40 | coeur | 1.308912 |
+| CO2_15um_aile_droite_interne |  15.40-16.20 | aile  | 0.130891 |
+| CO2_15um_aile_droite_externe |  16.20-18.00 | aile  | 0.015707 |
+| CO2_4_3um_aile_gauche        |    4.00-4.20 | aile  | 0.006545 |
+| CO2_4_3um_coeur_sature       |    4.20-4.40 | coeur | 0.490842 |
+| CO2_4_3um_aile_droite        |    4.40-4.60 | aile  | 0.006545 |
 
 ## Opacité et flux
 
@@ -204,24 +212,24 @@ forcage_280_560_ppm_W_m2 = 3.930000
 
 Diagnostic de contribution :
 
-| Sélection | Forçage 280->560 ppm W/m² |
-| --- | ---: |
-| Toutes sous-bandes | 3.930000 |
-| 15 µm total | 3.816900 |
-| 15 µm coeur | 1.818766 |
-| 15 µm ailes | 1.998134 |
-| 4.3 µm total | 0.113100 |
+| Sélection          | Forçage 280->560 ppm W/m² |
+| ------------------ | ------------------------: |
+| Toutes sous-bandes |                  3.930000 |
+| 15 µm total        |                  3.816900 |
+| 15 µm coeur        |                  1.818766 |
+| 15 µm ailes        |                  1.998134 |
+| 4.3 µm total       |                  0.113100 |
 
 ## Résultats de référence
 
 Sortie du test séparé :
 
-| CO2 ppm | OLR W/m² | LW descendant surface W/m² |
-| ---: | ---: | ---: |
-| 280 | 381.901210 | 13.322620 |
-| 420 | 379.639619 | 16.503798 |
-| 560 | 377.971210 | 18.900362 |
-| 1120 | 373.687516 | 25.437590 |
+| CO2 ppm |   OLR W/m² | LW descendant surface W/m² |
+| ------: | ---------: | -------------------------: |
+|     280 | 381.901210 |                  13.322620 |
+|     420 | 379.639619 |                  16.503798 |
+|     560 | 377.971210 |                  18.900362 |
+|    1120 | 373.687516 |                  25.437590 |
 
 Ces flux ne sont pas le budget infrarouge terrestre complet : vapeur d'eau,
 nuages, ozone et convection restent absents comme dans le modèle 2.
