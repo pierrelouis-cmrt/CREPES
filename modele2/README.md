@@ -1,5 +1,7 @@
 # Modèle 2 - colonne CO2 à 6 couches
 
+Faire Ctrl + shift + V pour visualiser le REAME en LATEX
+
 Le modèle 2 est un prototype de colonne atmosphérique verticale. Il sert à
 remplacer une correction atmosphérique globale par un calcul explicite de
 l'absorption et de la réémission infrarouge par couches.
@@ -58,7 +60,7 @@ Le script affiche trois blocs :
 - `opacites_par_couche` : profondeur optique, transmission et émissivité pour
   chaque couple couche/bande infrarouge ;
 - les deux flux globaux calculés :
-  - `flux_infrarouge_sortant_sommet_W_m2`, c'est-à-dire l'OLR ;
+  - `flux_infrarouge_sortant_sommet_W_m2`, c'est-à-dire le flux IR sortant de la couche limite avec le vide;
   - `flux_infrarouge_descendant_surface_W_m2`, c'est-à-dire le flux IR
     atmosphérique reçu par la surface.
 
@@ -104,7 +106,7 @@ obtenir un noyau radiatif lisible, testable et améliorable.
 
 ## Couches utilisées
 
-Les températures viennent de l'image fournie. Les pressions sont calculées avec
+Les températures sont des moyennes calculée au préalable à la main. Les pressions sont calculées avec
 le profil d'atmosphère standard.
 
 | Couche | Altitude | Zone | Température |
@@ -190,7 +192,7 @@ $$
 \chi_{\mathrm{CO}_2}=C_{\mathrm{CO}_2}\times10^{-6}
 $$
 
-si \(C_{\mathrm{CO}_2}\) est exprimé en ppm.
+si la concentration de CO2 est exprimée en ppm.
 
 L'équilibre hydrostatique donne :
 
@@ -311,6 +313,7 @@ F^\downarrow_{k,b}
 $$
 
 Les sorties principales sont :
+OLR est le flux d'énergie IR sortant de la dernière couche d'atmosphère vers le vide 
 
 $$
 OLR=\sum_b F^\uparrow_{N,b}
