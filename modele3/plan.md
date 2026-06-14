@@ -1,176 +1,169 @@
-# Consignes modèle 3 CREPES
+# Plan modèle 3 - colonne radiative locale
 
 ## Objectif
 
-Créer un `modele3` qui simule **une seule colonne atmosphère-surface** pour une position `(latitude, longitude)` donnée.
+Le modèle 3 doit être une **colonne radiative locale** pour un point
+`(latitude, longitude)` donné.
 
-Cette colonne doit représenter une future cellule du maillage terrestre. Le modèle complet en grille viendra plus tard et pourra appeler ce modèle colonne en boucle.
+Il représente une seule future cellule du maillage terrestre, mais il ne gère
+pas encore la grille globale et ne fait pas évoluer la température de surface
+dans le temps.
 
-Pour le premier cas de test, utiliser un point arbitraire :
+Pour le premier cas de référence, on va utiliser :
 
 ```text
 Paris : lat = 48.8566, lon = 2.3522
 ```
 
-Le modèle 3 doit prédire l’évolution de la température de surface :
+Le modèle 3 répond à la question :
 
 ```text
-T_surface(t)
+Pour cette colonne locale et pour une température de surface imposée,
+quels sont les flux radiatifs montants et descendants ?
 ```
 
-sur les jours de l’année, en utilisant :
+Il doit donc rester une évolution directe du modèle 2.5 :
 
-- le cycle solaire local ;
-- les données atmosphériques mensuelles disponibles ;
-- un bilan énergétique de surface simple ;
-- le noyau radiatif du modèle 2.5 adapté à une colonne locale.
+- modèle 2.5 : colonne CO2 globale moyenne, atmosphère standard, flux IR ;
+- modèle 3 : colonne locale, atmosphère issue de données, CO2 + H2O simple,
+  nuages simples, émissivité de surface, flux radiatifs.
 
-## Philosophie
+/!\ L'évolution de `T_surface(t)` sera réservée au modèle 4.
 
-Rester simple et cohérent. Ne pas essayer de faire un vrai modèle climatique couplé.
+## Principe physique
 
-Le modèle 3 est un modèle de surface forcé par une atmosphère prescrite :
+Le modèle 3 ne résout pas de bilan énergétique de surface. Il prend
+`T_surface` comme une entrée.
 
-- la surface évolue ;
-- l’atmosphère ne réagit pas encore à la surface ;
-- les profils atmosphériques viennent des données disponibles ;
-- ERA5 `skin temperature` peut servir à initialiser ou valider, mais ne doit pas être imposée comme sortie.
+Entrées principales :
 
-## Données disponibles à exploiter
+```text
+lat, lon
+jour ou mois
+T_surface
+p_surface
+profil T(p)
+profil q(p)
+CO2_ppm
+nébulosité simple
+albedo_surface
+emissivite_surface
+```
 
-Le modèle doit pouvoir exploiter, quand les fichiers sont présents :
+Sorties principales :
+
+```text
+SW_incident_surface
+SW_absorbe_surface
+LW_up_surface
+LW_down_surface
+OLR
+flux_net_radiatif_surface
+diagnostics par couche et par bande
+```
+
+Le flux net radiatif de surface peut être défini comme :
+
+```text
+flux_net_radiatif_surface =
+    SW_absorbe_surface
+  + epsilon_surface * LW_down_surface
+  - LW_up_surface
+```
+
+avec :
+
+```text
+LW_up_surface = epsilon_surface * sigma * T_surface^4
+```
+
+## Données disponibles
+
+Le modèle doit être écrit pour exploiter les données disponibles quand elles
+sont présentes, avec des valeurs de secours simples quand elles manquent.
 
 ### Données atmosphériques verticales
 
-Variables disponibles par mois, latitude, longitude et niveau de pression :
+Variables attendues par mois, latitude, longitude et niveau de pression :
 
 - température atmosphérique `T(p)` ;
 - humidité spécifique `q(p)` ;
-- fraction nuageuse verticale éventuelle ;
-- géopotentiel éventuel.
+- fraction nuageuse verticale si disponible ;
+- géopotentiel si nécessaire pour diagnostic.
 
 Usage :
 
-- remplacer l’atmosphère standard 1976 du modèle 2.5 ;
-- construire les couches locales de la colonne ;
-- calculer l’opacité H2O simple.
+- remplacer l'atmosphère standard 1976 du modèle 2.5 ;
+- construire des températures moyennes par couche ;
+- construire une humidité moyenne par couche ;
+- estimer une opacité H2O simple.
 
-### Données de surface et validation
+### Données de surface
 
-Variables disponibles par mois, latitude, longitude :
+Variables attendues par mois, latitude et longitude :
 
 - pression de surface ;
-- température à 2 m ;
-- température de peau/skin temperature ;
-- température de surface mer ;
+- albédo ou albédo prévisionnel ;
 - couverture nuageuse totale, basse, moyenne, haute ;
 - masque terre-mer ;
-- albédo ;
-- neige/glace ;
-- flux radiatifs ERA5 pour validation.
+- neige/glace si disponible ;
+- température de peau ou température à 2 m pour initialisation/validation
+  seulement.
 
-Usage :
+Important : `skin temperature` ne doit pas être utilisée comme température
+imposée obligatoire. Elle sert à tester et comparer le modèle.
 
-- pression de surface : déterminer la masse de colonne ;
-- skin temperature : initialisation ou comparaison seulement ;
-- cloud cover : approximation nuageuse simple ;
-- albédo : solaire absorbé ;
-- flux ERA5 : validation.
-
-### Données MODIS émissivité
+### Émissivité MODIS
 
 Variables utiles :
 
-- `Emis_31`
-- `Emis_32`
+- `Emis_31` ;
+- `Emis_32`.
 
-Usage simple :
+Approximation initiale :
 
 ```text
-epsilon_surface_land = mean(Emis_31, Emis_32)
+epsilon_surface_land = moyenne(Emis_31, Emis_32)
 epsilon_ocean = 0.985
-epsilon_snow_ice ≈ 0.98
+epsilon_snow_ice = 0.98
 ```
 
-Si MODIS n’est pas encore disponible, utiliser une constante :
+Si les fichiers MODIS ne sont pas disponibles, on prend une valeur de backup :
 
 ```text
 epsilon_surface = 0.98
 ```
 
-## Bilan de surface
+## Construction de la colonne
 
-Le modèle doit intégrer :
+La colonne doit dépendre de la pression de surface locale. Faut pas garder
+`1013.25 hPa` fixe comme base.
 
-```text
-C_surface dT_surface/dt =
-    SW_absorbé_surface
-  + LW_descendant_surface
-  - LW_émis_surface
-  - flux_latent
-  - flux_sensible
-```
-
-Pour commencer :
-
-- `C_surface` peut reprendre la capacité thermique du modèle 0 si disponible ;
-- sinon utiliser une valeur constante raisonnable ;
-- `flux_latent` peut reprendre le modèle 0 ou une approximation simple ;
-- `flux_sensible` peut reprendre la convection du modèle 0 avec `T_air` local approximé par température 2 m ou première couche atmosphérique.
-
-## Cycle solaire
-
-Réutiliser la logique du modèle 0 :
-
-- jour de l’année ;
-- heure solaire locale ;
-- latitude ;
-- longitude ;
-- cosinus d’incidence solaire.
-
-Flux solaire incident :
+Niveaux de référence :
 
 ```text
-SW_in = S0 * max(cos_incidence, 0)
+p_edges_ref_hpa = [850, 700, 500, 300, 200, 100, 50, 20, 10, 1]
 ```
 
-Flux absorbé :
+Pour une colonne donnée :
 
 ```text
-SW_absorbé = SW_in * (1 - albedo_surface) * (1 - albedo_cloud)
+p_edges_hpa = [p_surface_hpa] + niveaux de référence strictement inférieurs à p_surface_hpa
 ```
 
-Rester simple : ne pas encore modéliser la diffusion atmosphérique détaillée.
-
-## Colonne verticale
-
-La colonne doit être construite à partir de la pression de surface locale.
-
-Utiliser une grille proche du modèle 2.5 :
+Exemple basse altitude :
 
 ```text
-p_edges_ref = [850, 700, 500, 300, 200, 100, 50, 20, 10, 1] hPa
+[1010, 850, 700, 500, 300, 200, 100, 50, 20, 10, 1]
 ```
 
-Puis :
+Exemple montagne :
 
 ```text
-p_edges = [p_surface_hPa] + tous les niveaux ref strictement inférieurs à p_surface_hPa
+[750, 700, 500, 300, 200, 100, 50, 20, 10, 1]
 ```
 
-Exemple à basse altitude :
-
-```text
-[1010, 850, 700, 500, ..., 1]
-```
-
-Exemple en montagne :
-
-```text
-[750, 700, 500, ..., 1]
-```
-
-Chaque couche a :
+Chaque couche doit contenir :
 
 ```text
 p_bas
@@ -178,27 +171,37 @@ p_haut
 delta_p = p_bas - p_haut
 T_moyen
 q_moyen
-CO2_moyen
+CO2_ppm
 cloud_fraction éventuelle
 ```
 
-Les moyennes `T` et `q` doivent être interpolées/moyennées depuis les données pression disponibles.
+Si `delta_p <= 0`, la couche est ignorée.
+
+Les moyennes `T_moyen` et `q_moyen` doivent être obtenues par interpolation ou
+moyenne pondérée en pression depuis les niveaux disponibles.
 
 ## CO2
 
-Pour l’instant, garder simple :
+Pour la première version :
 
 ```text
 CO2_ppm = 420
 ```
 
-ou une valeur configurable.
+La valeur doit être configurable, mais le profil vertical peut rester uniforme.
 
-Même valeur dans toutes les couches.
+Opacité CO2 :
 
-## Vapeur d’eau
+```text
+tau_CO2_bande = a_CO2_bande * (CO2_ppm / 280) * (delta_p / 101325)
+```
 
-Utiliser l’humidité spécifique `q`.
+Les coefficients `a_CO2_bande` restent ceux du modèle 2.5 pour l'instant. Ne
+pas faire RADIS/HITRAN dans cette version.
+
+## Vapeur d'eau
+
+Utiliser l'humidité spécifique `q`, en `kg/kg`.
 
 Pour chaque couche :
 
@@ -209,7 +212,16 @@ masse_H2O = q_moyen * masse_air
 
 Ajouter une opacité H2O effective simple.
 
-Forme attendue :
+Forme minimale :
+
+```text
+tau_H2O_bande = a_H2O_bande * facteur_humidite
+```
+
+Le choix exact de `facteur_humidite` peut être simple au départ, par exemple
+proportionnel à `masse_H2O` normalisée par une masse de référence (à justifier proprement avec des sources claires).
+
+Règle importante :
 
 ```text
 tau_total_bande = tau_CO2_bande + tau_H2O_bande
@@ -217,41 +229,21 @@ transmission = exp(-D * tau_total_bande)
 emissivite = 1 - transmission
 ```
 
-Important :
-
-- ne pas additionner les effets radiatifs CO2 et H2O après calcul ;
-- additionner les opacités avant l’exponentielle.
-
-## Coefficients optiques
-
-Ne pas faire RADIS pour l’instant.
-
-Garder la logique du modèle 2.5 :
-
-```text
-tau_CO2 = a_CO2_bande * (CO2_ppm / 280) * (delta_p / 101325)
-```
-
-Ajouter une version simple pour H2O :
-
-```text
-tau_H2O = a_H2O_bande * facteur_humidite
-```
-
-Les coefficients H2O peuvent être calibrés grossièrement plus tard. Pour l’instant l’objectif est architecture + ordre de grandeur.
+Ne pas additionner des flux CO2 et H2O calculés séparément. Les opacités doivent
+être additionnées avant le calcul de transmission.
 
 ## Nuages
 
 Rester minimal.
 
-Utiliser :
+Utiliser selon disponibilité :
 
-- couverture nuageuse basse ;
-- moyenne ;
-- haute ;
-- ou couverture totale si les trois niveaux ne sont pas disponibles.
+- `low_cloud_cover` ;
+- `medium_cloud_cover` ;
+- `high_cloud_cover` ;
+- sinon `total_cloud_cover`.
 
-Placement simple :
+Placement initial :
 
 ```text
 low cloud    -> couche basse
@@ -259,122 +251,124 @@ medium cloud -> couche moyenne
 high cloud   -> couche haute
 ```
 
-Effet court-onde :
+Effet court-onde simple :
 
 ```text
-albedo_cloud = coefficient_simple * cloud_fraction
+albedo_cloud = coefficient_cloud_sw * cloud_fraction
+SW_absorbe_surface = SW_incident_surface * (1 - albedo_surface) * (1 - albedo_cloud)
 ```
 
-Effet long-onde :
+Effet long-onde simple :
 
-- traiter le nuage comme une couche IR supplémentaire ou comme une augmentation d’émissivité dans la couche correspondante ;
-- commencer avec une approximation simple ;
-- ne pas chercher une microphysique détaillée.
+- augmenter l'émissivité effective de la couche correspondante ;
+- utiliser la température de cette couche pour l'émission du nuage ;
+- ne pas modéliser la microphysique.
+
+## Solaire
+
+Reprendre la géométrie solaire du modèle 0 :
+
+- jour de l'année ;
+- heure solaire locale ;
+- latitude ;
+- longitude ;
+- déclinaison ;
+- cosinus positif de l'incidence solaire.
+
+Flux incident simplifié :
+
+```text
+SW_incident_surface = S0 * max(cos_incidence, 0)
+```
+
+Le modèle 3 peut ensuite appliquer l'albédo de surface et l'albédo des nuages
+pour produire `SW_absorbe_surface`.
 
 ## Surface
+
+La surface n'est pas intégrée thermiquement dans le modèle 3. Elle fournit
+seulement :
+
+```text
+T_surface
+epsilon_surface
+albedo_surface
+```
 
 Flux thermique émis :
 
 ```text
-LW_émis_surface = epsilon_surface * sigma * T_surface^4
+LW_up_surface = epsilon_surface * sigma * T_surface^4
 ```
 
-Flux descendant absorbé :
+Dans les bandes spectrales, appliquer aussi `epsilon_surface` au flux de Planck
+émis par la surface.
+
+Absorption du long-onde descendant par la surface :
 
 ```text
-LW_absorbé_surface = epsilon_surface * LW_down_surface
-```
-
-Si émissivité indisponible :
-
-```text
-epsilon_surface = 0.98
+LW_down_absorbe_surface = epsilon_surface * LW_down_surface
 ```
 
 ## Temporalité
 
-Le modèle doit fonctionner avec des données mensuelles.
+Le modèle doit pouvoir être appelé pour :
 
-Pour simuler jour par jour :
+- un mois donné ;
+- ou un jour donné avec interpolation mensuelle simple.
 
-- interpoler les données mensuelles vers le jour courant ;
-- ou utiliser la valeur du mois courant pour une première version.
+Dans la première version, une interpolation linéaire ou l'utilisation directe de
+la valeur mensuelle suffit.
 
-Pas besoin d’une météo journalière réelle maintenant.
-
-Le pas de temps peut reprendre le modèle 0 :
-
-```text
-dt = 1800 s
-```
-
-## Sorties attendues
-
-Pour un point `(lat, lon)`, le modèle doit produire au minimum :
-
-- série temporelle `T_surface_K` ;
-- `SW_absorbé_surface` ;
-- `LW_down_surface` ;
-- `LW_up_surface` ;
-- flux latent ;
-- flux sensible ;
-- éventuellement bilan net.
-
-Il doit afficher ou sauvegarder un résumé clair :
-
-```text
-lat, lon
-date/jour
-T_surface finale
-T_surface min/max
-flux moyens
-```
-
-Un graphique simple est utile :
-
-- température de surface en °C ;
-- flux principaux.
+Le modèle 3 ne boucle pas nécessairement sur toute l'année. Il doit surtout
+exposer une fonction colonne réutilisable.
 
 ## Validation minimale
 
-Pour Paris, comparer qualitativement :
+Pour Paris, avec une température de surface imposée raisonnable, comparer les
+ordres de grandeur avec les données de validation disponibles :
 
-- la température simulée à ERA5 `skin temperature` ou `2m temperature` ;
-- le LW descendant simulé à ERA5 `surface downward long-wave radiation`;
-- le SW net simulé à ERA5 `surface net short-wave radiation`.
+- `LW_down_surface` contre le flux long-onde descendant ERA5 ;
+- `SW_absorbe_surface` contre le flux court-onde net ERA5 ;
+- `OLR` contre le flux long-onde au sommet ERA5 si disponible.
 
-La validation n’a pas besoin d’être parfaite. L’objectif est que les ordres de grandeur soient cohérents et que le modèle réagisse correctement aux saisons, à l’humidité, aux nuages et à la pression locale.
+La validation attendue est qualitative et en ordre de grandeur. Le but est
+d'obtenir une colonne locale propre et explicable, pas une réanalyse parfaite.
 
-## Hors périmètre pour la première version
+## Hors périmètre
 
-Ne pas faire maintenant :
+Ne pas faire dans le modèle 3 :
 
-- modèle global multi-cellules ;
-- échanges horizontaux entre colonnes ;
+- évolution de `T_surface(t)` ;
+- grille mondiale ;
+- échanges horizontaux ;
+- bilan thermique complet de surface ;
 - dynamique atmosphérique ;
-- rétroaction de `T_surface` sur `T_atm(p)` ;
+- rétroaction de la surface sur `T(p)` ;
 - RADIS/HITRAN ;
 - correlated-k ;
 - ozone, CH4, N2O ;
 - microphysique détaillée des nuages.
 
-## Priorité d’implémentation
+## Priorité d'implémentation
 
-Ordre recommandé :
+1. Reprendre le noyau radiatif du modèle 2.5.
+2. Permettre un appel pour un point `(lat, lon)`.
+3. Construire les couches depuis `p_surface`.
+4. Remplacer le profil standard par `T(p)` local.
+5. Ajouter `q(p)` et une opacité H2O simple.
+6. Ajouter l'émissivité de surface.
+7. Ajouter les nuages simples.
+8. Sortir des flux clairs et des diagnostics.
+9. Comparer quelques flux à ERA5.
 
-1. créer une colonne locale `(lat, lon)` ;
-2. charger/interpoler les données mensuelles disponibles ;
-3. construire les couches pression locales ;
-4. remplacer `T_atm` standard par `T(p)` local ;
-5. intégrer `T_surface(t)` avec bilan énergétique ;
-6. ajouter H2O simple ;
-7. ajouter pression de surface ;
-8. ajouter émissivité de surface ;
-9. ajouter nuages simples ;
-10. comparer aux flux ERA5.
+## Lien avec le modèle 4
 
-Le modèle 3 doit rester un module colonne propre, réutilisable plus tard par une grille terrestre.
+Le modèle 4 utilisera le modèle 3 comme module radiatif. Il appellera la colonne
+avec une température de surface courante, récupérera les flux, puis intégrera le
+bilan de surface sur une grille terrestre.
 
-```
+## Peut être un futur modèle 3.1
 
-```
+- améliorer la temporalité, jour par jour
+- améliorer la calibration des coef optiques pour CO2 et H2O
