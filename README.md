@@ -1,19 +1,47 @@
 # CREPES
 
-Dépôt de travail pour comparer et développer plusieurs modèles climat.
+Projet Climat, Groupe D, 2026
 
 ## Organisation
 
-| Dossier | Rôle |
-| --- | --- |
-| `modele0_maintenance/` | Ancien modèle combiné, conservé comme référence stable. |
-| `modele1/` | Emplacement réservé pour un nouveau modèle. |
-| `modele2/` | Colonne atmosphérique CO2 à 6 couches avec noyau radiatif infrarouge simplifié. |
-| `modele2_5/` | Itération autonome du modèle 2 : 10 couches en pression, profil standard, bandes CO2 découpées et tests. |
-| `plan d'attaque/` | Plan de travail CO2 multicouche simplifié. |
+| Dossier                | Rôle                                                                                            |
+| ---------------------- | ----------------------------------------------------------------------------------------------- |
+| `modele0_maintenance/` | Ancien modèle combiné, conservé comme référence stable.                                         |
+| `modele1/`             | Colonne radiative CO2 simplifiée à 3 couches.                                                   |
+| `modele2/`             | Colonne atmosphérique CO2 à 6 couches avec noyau radiatif infrarouge simplifié.                 |
+| `modele2_5/`           | Itération du modèle 2 : 10 couches en pression, profil standard, bandes CO2 découpées et tests. |
 
-Chaque nouveau modèle peut maintenant avoir son propre dossier à la racine,
-avec son code, ses ressources, sa documentation et ses dépendances locales.
+## Résumé rapide des modèles
+
+### Modèle 1
+
+- Colonne atmosphérique moyenne à 3 couches.
+- Flux solaire moyen et albédo.
+- Émission infrarouge par Stefan-Boltzmann et Planck par bande.
+- Bandes CO2 à 15 µm et 4,3 µm.
+- Transmission, absorption et émissivité par Beer-Lambert.
+- Flux infrarouge sortant au sommet et descendant à la surface.
+
+### Modèle 2
+
+Ajouts par rapport au modèle 1 :
+
+- 6 couches verticales jusqu'à 80 km.
+- Profil pression-température-CO2 issu de l'atmosphère standard.
+- CO2 moyen par couche pondéré par la masse d'air.
+- Opacité par couche via pression et concentration en CO2.
+- Génération CSV/PNG du profil vertical.
+
+### Modèle 2.5
+
+Ajouts par rapport au modèle 2 :
+
+- 10 couches en niveaux de pression.
+- Profil de température standard 1976.
+- Découpage CO2 en sous-bandes coeur/ailes.
+- Facteur diffusif `D = 1,66`.
+- Calibration sur le forçage `280 -> 560 ppm`.
+- Tests numériques séparés.
 
 ## Modèle 0
 
