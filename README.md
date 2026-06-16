@@ -10,6 +10,7 @@ Projet Climat, Groupe D, 2026
 | `modele1/`             | Colonne radiative CO2 simplifiée à 3 couches.                                                   |
 | `modele2/`             | Colonne atmosphérique CO2 à 6 couches avec noyau radiatif infrarouge simplifié.                 |
 | `modele2_5/`           | Itération du modèle 2 : 10 couches en pression, profil standard, bandes CO2 découpées et tests. |
+| `modele3/`             | Colonne radiative locale : ERA5, CO2 + H2O simple, nuages, émissivité et diagnostics.           |
 
 ## Résumé rapide des modèles
 
@@ -42,6 +43,17 @@ Ajouts par rapport au modèle 2 :
 - Facteur diffusif `D = 1,66`.
 - Calibration sur le forçage `280 -> 560 ppm`.
 - Tests numériques séparés.
+
+### Modèle 3
+
+Ajouts par rapport au modèle 2.5 :
+
+- Appel local par latitude/longitude et mois ou jour.
+- Pression de surface locale au lieu de `1013.25 hPa` fixe.
+- Profils ERA5 locaux `T(p)` et `q(p)` quand `ressources/` est présent.
+- Opacité H2O effective additionnée à l'opacité CO2 avant transmission.
+- Nuages simples, albédo de surface, émissivité de surface.
+- Extrait JSON versionnable pour exécuter Paris sans les gros fichiers locaux.
 
 ## Modèle 0
 
@@ -98,3 +110,26 @@ Régénérer les profils standard et CO2 :
 ```
 
 La documentation détaillée du modèle 2.5 est dans `modele2_5/README.md`.
+
+## Modèle 3
+
+Lancer le cas Paris avec l'extrait versionné :
+
+```bash
+./.venv/bin/python -m modele3.modele3 --donnees-extraites modele3/donnees_exemple/paris_2024_m07.json --temperature-surface 293.0 --moyenne-journaliere-sw
+```
+
+Créer un extrait compact depuis les gros fichiers locaux de `ressources/` :
+
+```bash
+./.venv/bin/python -m modele3.preparer_point --lat 48.8566 --lon 2.3522 --mois 7 --output modele3/donnees_exemple/paris_2024_m07.json
+```
+
+Lancer les tests :
+
+```bash
+./.venv/bin/python modele3/tests/tester_modele3.py
+```
+
+La documentation détaillée du modèle 3 est dans `modele3/README.md` et
+`modele3/THEORIE.md`.
