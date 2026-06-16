@@ -1,0 +1,213 @@
+{
+  "nom": "modele3_1_grille_5deg_2024",
+  "annee": 2024,
+  "resolution_deg": 5,
+  "shape": {
+    "mois": 12,
+    "lat": 36,
+    "lon": 72,
+    "couches": 10
+  },
+  "fichier_npz": "donnees_colonnes_5deg_2024.npz",
+  "emissivite_surface": {
+    "valeur": 0.98,
+    "source": "constante_modele3_1"
+  },
+  "sources_fichiers": {
+    "era5_profil": "ressources/db7d35d0a9c6110c5f6d54212de24b21.nc",
+    "era5_surface": "ressources/4d43b9edb397c8d4595fc350432d5ac4/data_stream-moda_stepType-avgua.nc",
+    "era5_flux": "ressources/4d43b9edb397c8d4595fc350432d5ac4/data_stream-moda_stepType-avgad.nc",
+    "albedo_dir": "ressources/albedo",
+    "ceres": "ressources/albedo/CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc"
+  },
+  "references_externes": {
+    "era5_pressure_levels_monthly": "https://cds.climate.copernicus.eu/datasets/reanalysis-era5-pressure-levels-monthly-means",
+    "era5_single_levels_monthly": "https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels-monthly-means",
+    "nasa_power_parameters": "https://power.larc.nasa.gov/docs/tutorials/parameters/",
+    "nasa_power_methodology": "https://power.larc.nasa.gov/docs/methodology/",
+    "ceres_ebaf_toa_ed4_2_1": "https://asdc.larc.nasa.gov/project/CERES/CERES_EBAF-TOA_Edition4.2.1"
+  },
+  "variables": {
+    "pression_surface_hpa": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "hPa",
+      "scale_factor": 0.1,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "ERA5 sp"
+    },
+    "pression_bas_couche_hpa": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "hPa",
+      "scale_factor": 0.1,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "pretraitement ERA5 pression_surface + bords 3.1"
+    },
+    "pression_haut_couche_hpa": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "hPa",
+      "scale_factor": 0.1,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "bords 3.1"
+    },
+    "temperature_couche_k": {
+      "dtype_stocke": "int16",
+      "unite_physique": "K",
+      "scale_factor": 0.01,
+      "offset": 250.0,
+      "valeur_manquante": -32768,
+      "source": "ERA5 t moyenne par couche"
+    },
+    "temperature_2m_k": {
+      "dtype_stocke": "int16",
+      "unite_physique": "K",
+      "scale_factor": 0.01,
+      "offset": 250.0,
+      "valeur_manquante": -32768,
+      "source": "ERA5 t2m"
+    },
+    "skin_temperature_k": {
+      "dtype_stocke": "int16",
+      "unite_physique": "K",
+      "scale_factor": 0.01,
+      "offset": 250.0,
+      "valeur_manquante": -32768,
+      "source": "ERA5 skt"
+    },
+    "masse_air_couche_kg_m2": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "kg m-2",
+      "scale_factor": 0.1,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "delta_p / g"
+    },
+    "humidite_specifique_couche_kgkg": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "kg kg-1",
+      "scale_factor": 5e-07,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "ERA5 q moyenne par couche"
+    },
+    "masse_h2o_couche_kg_m2": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "kg m-2",
+      "scale_factor": 0.001,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "q * delta_p / g"
+    },
+    "fraction_nuageuse_couche": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "1",
+      "scale_factor": 0.0001,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "ERA5 cc moyenne par couche"
+    },
+    "albedo_surface": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "1",
+      "scale_factor": 0.0001,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "ressources/albedo/albedo01.csv..albedo12.csv"
+    },
+    "albedo_nuages_effectif": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "1",
+      "scale_factor": 0.0001,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "CERES EBAF-TOA, (toa_sw_all - toa_sw_clr_c) / solar"
+    },
+    "land_fraction": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "1",
+      "scale_factor": 0.0001,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "ERA5 lsm"
+    },
+    "snow_ice_fraction": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "1",
+      "scale_factor": 0.0001,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "ERA5 siconc ou sd > 0.01 m"
+    },
+    "cloud_total": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "1",
+      "scale_factor": 0.0001,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "ERA5 tcc"
+    },
+    "low_cloud": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "1",
+      "scale_factor": 0.0001,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "ERA5 lcc"
+    },
+    "medium_cloud": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "1",
+      "scale_factor": 0.0001,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "ERA5 mcc"
+    },
+    "high_cloud": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "1",
+      "scale_factor": 0.0001,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "ERA5 hcc"
+    },
+    "era5_lw_down_surface_w_m2": {
+      "dtype_stocke": "int16",
+      "unite_physique": "W m-2",
+      "scale_factor": 0.1,
+      "offset": 0.0,
+      "valeur_manquante": -32768,
+      "source": "ERA5 avg_sdlwrf"
+    },
+    "era5_sw_net_surface_w_m2": {
+      "dtype_stocke": "int16",
+      "unite_physique": "W m-2",
+      "scale_factor": 0.1,
+      "offset": 0.0,
+      "valeur_manquante": -32768,
+      "source": "ERA5 avg_snswrf"
+    },
+    "era5_olr_w_m2": {
+      "dtype_stocke": "int16",
+      "unite_physique": "W m-2",
+      "scale_factor": 0.1,
+      "offset": 0.0,
+      "valeur_manquante": -32768,
+      "source": "abs(ERA5 avg_tnlwrf)"
+    },
+    "era5_sw_down_surface_w_m2": {
+      "dtype_stocke": "int16",
+      "unite_physique": "W m-2",
+      "scale_factor": 0.1,
+      "offset": 0.0,
+      "valeur_manquante": -32768,
+      "source": "ERA5 avg_sdswrf"
+    }
+  },
+  "notes": [
+    "Les fichiers albedo/CERES sont lus depuis ressources/albedo, copie racine des donnees utiles du modele 0.",
+    "Le modele 3.1 n'utilise pas de coefficient nuageux court-onde ou long-onde cache.",
+    "Les poids_surface sont normalises pour sommer a 1 sur la grille."
+  ]
+}

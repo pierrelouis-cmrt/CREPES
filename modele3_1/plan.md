@@ -584,12 +584,14 @@ Sources locales :
   actuelles ;
 - `modele3/physique/calculs.py` : coefficients nuageux actuels a supprimer ;
 - `modele3/README.md` : validation Paris et limites actuelles ;
-- `modele0_maintenance/codes_python/physique/albedo.py` : albedo surface
-  mensuel et albedo nuageux CERES ;
-- `modele0_maintenance/outils_generation_donnees/albedo/generer_albedo_surface.py`
-  : generation NASA POWER des CSV mensuels ;
-- `modele0_maintenance/ressources/albedo/README.md` : provenance pratique des
-  CSV d'albedo.
+- `ressources/albedo/albedo01.csv` a `albedo12.csv` : albedo surface mensuel,
+  copie racine des CSV historiques du modele 0 ;
+- `ressources/albedo/CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc` :
+  albedo nuageux effectif CERES, copie racine du fichier historique du modele 0.
+
+Note d'implementation : le modele 0 reste intact et sert seulement a tracer la
+provenance historique de ces fichiers. Le code 3.1 ne lit pas directement
+`modele0_maintenance/` et n'importe aucun module depuis ce dossier.
 
 Sources externes :
 

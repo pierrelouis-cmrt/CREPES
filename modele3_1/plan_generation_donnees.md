@@ -46,24 +46,28 @@ restent dans `ressources/`, qui est ignore par Git.
 
 ## Entrees
 
-Sources locales attendues :
+Sources locales attendues pour l'implementation 3.1 :
 
 ```text
 ressources/
   *.nc ERA5 mensuels surface/flux/profils
   MOD11C3.A2024/*.hdf eventuel, non obligatoire en 3.1
-
-modele0_maintenance/ressources/albedo/
+  albedo/
   albedo01.csv ... albedo12.csv
   CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc
 ```
 
-Constat actuel du depot : `ressources/` contient surtout des NetCDF ERA5 et des
-HDF MODIS, pas les CSV d'albedo. Les CSV d'albedo suivis par Git sont dans le
-modele 0. Le generateur doit donc accepter les deux chemins :
+Les CSV d'albedo et le fichier CERES existaient historiquement dans
+`modele0_maintenance/ressources/albedo/`. Pour 3.1, les fichiers utiles ont ete
+copies dans `ressources/albedo/`. C'est cette copie racine qui est la source
+active du generateur. Le modele 3.1 ne lit pas et n'importe pas directement le
+dossier `modele0_maintenance/`.
+
+Le generateur utilise donc par defaut :
 
 - `--ressources-dir ressources` pour les donnees lourdes ignorees ;
-- `--albedo-dir modele0_maintenance/ressources/albedo` pour les CSV existants.
+- `--albedo-dir ressources/albedo` pour les CSV d'albedo et CERES copies a la
+  racine.
 
 Le script ne doit pas telecharger de donnees. Il lit seulement ce qui est deja
 present localement.
@@ -247,7 +251,7 @@ Commande normale :
   --resolution 5 \
   --annee 2024 \
   --ressources-dir ressources \
-  --albedo-dir modele0_maintenance/ressources/albedo \
+  --albedo-dir ressources/albedo \
   --output modele3_1/donnees_precalculees/grille_5deg_2024
 ```
 

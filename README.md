@@ -11,6 +11,7 @@ Projet Climat, Groupe D, 2026
 | `modele2/`             | Colonne atmosphérique CO2 à 6 couches avec noyau radiatif infrarouge simplifié.                 |
 | `modele2_5/`           | Itération du modèle 2 : 10 couches en pression, profil standard, bandes CO2 découpées et tests. |
 | `modele3/`             | Colonne radiative locale : ERA5, CO2 + H2O simple, nuages, émissivité et diagnostics.           |
+| `modele3_1/`           | Colonne radiative nettoyée pour le modèle 4, avec paquet `.npz` compact et provenances explicites. |
 
 ## Résumé rapide des modèles
 
@@ -54,6 +55,21 @@ Ajouts par rapport au modèle 2.5 :
 - Opacité H2O effective additionnée à l'opacité CO2 avant transmission.
 - Nuages simples, albédo de surface, émissivité de surface.
 - Extrait JSON versionnable pour exécuter Paris sans les gros fichiers locaux.
+
+### Modèle 3.1
+
+Ajouts/corrections par rapport au modèle 3 :
+
+- Paquet compact `modele3_1/donnees_precalculees/grille_5deg_2024/`.
+- Grille globale `5 degrés` prête pour le modèle 4.
+- Émissivité constante `0.98`.
+- Albédo de surface lu depuis `ressources/albedo/albedo01.csv` à `albedo12.csv`.
+- Albédo nuageux effectif CERES :
+  `(toa_sw_all_mon - toa_sw_clr_c_mon) / solar_mon`.
+- Suppression des coefficients cachés `0.50 * cloud_total` et
+  `tau_nuage = 0.10 * fraction_nuageuse`.
+- Le code 3.1 lit les copies racine dans `ressources/albedo/`, pas
+  `modele0_maintenance/`.
 
 ## Modèle 0
 
@@ -133,3 +149,30 @@ Lancer les tests :
 
 La documentation détaillée du modèle 3 est dans `modele3/README.md` et
 `modele3/THEORIE.md`.
+
+## Modèle 3.1
+
+Régénérer le paquet compact :
+
+```bash
+./.venv/bin/python -m modele3_1.generer_donnees --overwrite
+```
+
+Lancer Paris depuis le paquet global :
+
+```bash
+./.venv/bin/python -m modele3_1.modele3_1 --lat 48.8566 --lon 2.3522 --mois 7 --temperature-surface 293.0 --moyenne-journaliere-sw
+```
+
+Lancer les tests :
+
+```bash
+./.venv/bin/python modele3_1/tests/tester_modele3_1.py
+```
+
+Documentation détaillée :
+
+- `modele3_1/README.md`
+- `modele3_1/THEORIE.md`
+- `modele3_1/PROVENANCE_DONNEES.md`
+- `modele3_1/RECAP_MODIFICATIONS_MODELE_3_1.md`
