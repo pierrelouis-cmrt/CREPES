@@ -27,7 +27,7 @@ lat, lon -> colonne locale -> flux radiatifs -> bilan de surface -> T_surface
 
 ```text
 C_surface dT_surface/dt =
-    SW_absorbe_surface
+    SW_absorbe_surface_corrige
   + LW_down_absorbe_surface
   - LW_up_surface
   - termes de surface repris du modèle 0
@@ -36,6 +36,56 @@ C_surface dT_surface/dt =
 Le modèle 4 reprend la logique du modèle 0 pour les bilans de surface, mais en
 remplaçant le long-onde atmosphérique constant par les flux calculés par le
 modèle 3.1.
+
+## Décision court-onde pour la première version
+
+Le court-onde renvoyé par le modèle 3.1 reste un diagnostic pédagogique de
+géométrie solaire simplifiée. Pour faire évoluer `T_surface` dans le modèle 4,
+il ne doit pas être utilisé tel quel, car il surestime fortement le flux net de
+surface.
+
+Le mode par défaut du modèle 4 doit conserver le calcul solaire historique du
+projet :
+
+```text
+SW_TOA_local(t) = S0 * max(cos(i(t)), 0)
+```
+
+avec `S0 = 1361 W/m2`, la constante solaire deja utilisee dans le modele 0 et
+le modele 3. La correction consiste a ajouter une transmissivite atmospherique
+mensuelle derivee d'ERA5 :
+
+```text
+tau_SW_mensuel =
+    era5_sw_down_surface_w_m2
+  / moyenne_mensuelle(S0 * max(cos(i), 0))
+
+SW_down_surface(t) =
+    tau_SW_mensuel * S0 * max(cos(i(t)), 0)
+
+SW_absorbe_surface_corrige =
+    SW_down_surface(t) * (1 - albedo_surface)
+```
+
+Ce choix suit la forme standard du bilan court-onde net de surface
+`R_ns = (1 - alpha) R_s`, conserve l'albédo explicite du projet, garde le
+cycle jour/nuit et saisonnier calcule par le modele, et utilise ERA5 seulement
+pour representer l'effet atmospherique moyen que le projet ne modelise pas
+encore.
+
+Deux modes de comparaison peuvent être gardes :
+
+```text
+mode_forcage_mensuel = era5_sw_down_surface_w_m2 * (1 - albedo_surface)
+mode_validation      = era5_sw_net_surface_w_m2
+```
+
+Le champ `albedo_nuages_effectif` issu de CERES EBAF-TOA reste utile comme
+diagnostic et provenance du modèle 3.1, mais il ne doit pas être appliqué
+directement comme transmission solaire de surface dans le modèle 4.
+
+La justification détaillée et les sources sont dans
+`modele4/RECHERCHE_COURT_ONDE_ET_OPTIMISATION.md`.
 
 ## Entrées attendues
 
@@ -156,10 +206,13 @@ dt = 1800 s
 
 1. déterminer le jour, le mois et l'heure solaire locale ;
 2. lire/interpoler les données mensuelles de la cellule ;
-3. appeler le modèle 3.1 avec la température de surface courante ;
-4. récupérer les flux radiatifs ;
-5. calculer les autres termes de surface repris du modèle 0 ;
-6. mettre à jour `T_surface`.
+3. calculer `SW_TOA_local(t) = S0 * max(cos(i(t)), 0)` ;
+4. appliquer la transmissivité mensuelle `tau_SW_mensuel` issue d'ERA5 ;
+5. appeler le modèle 3.1 avec la température de surface courante ;
+6. récupérer les flux long-onde du modèle 3.1 ;
+7. utiliser `SW_absorbe_surface_corrige` dans le bilan de surface ;
+8. calculer les autres termes de surface repris du modèle 0 ;
+9. mettre à jour `T_surface`.
 
 ## Grille
 
@@ -195,7 +248,8 @@ Diagnostics utiles :
 Comparer progressivement :
 
 - cartes de température simulée contre `skin temperature` ou `2m temperature` ;
-- flux court-onde et long-onde contre ERA5 ;
+- flux court-onde corrigé contre `era5_sw_net_surface_w_m2` ;
+- flux long-onde du modèle 3.1 contre ERA5 ;
 - comportement saisonnier entre hémisphères ;
 - différence terre/océan ;
 - différence altitude basse / montagne.

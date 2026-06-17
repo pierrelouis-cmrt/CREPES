@@ -226,6 +226,12 @@ transmission atmospherique solaire generique, ozone, aerosols ou absorption
 spectrale shortwave dans la version 3.1, sauf si une source tres solide donne
 un coefficient directement applicable aux hypotheses du modele.
 
+Mise a jour retenue pour preparer le modele 4 : ne pas remplacer la geometrie
+solaire du projet par ERA5 directement. Garder `S0 * max(cos(i), 0)` et utiliser
+`era5_sw_down_surface_w_m2` seulement pour construire une transmissivite
+atmospherique mensuelle documentee. Le plan detaille est dans
+`modele3_1/PLAN_MISE_A_JOUR.md`.
+
 Formule cible 3.1 :
 
 ```text
