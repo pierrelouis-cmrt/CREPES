@@ -1,12 +1,4 @@
-"""Chargement simple des donnees du modele 3.
-
-Le coeur physique du modele est dans modele3.py. Ici on prepare seulement un
-dictionnaire avec trois blocs :
-
-- surface
-- profil
-- validation_flux
-"""
+"""Chargement du paquet compact du modele 3.1."""
 
 from __future__ import annotations
 
@@ -14,36 +6,25 @@ import json
 import math
 from pathlib import Path
 
-try:
-    import xarray as xr
-except ImportError:  # Le modele fonctionne quand meme avec le JSON ou le secours.
-    xr = None
+import numpy as np
+
+from . import physique
 
 
-RACINE_DEPOT = Path(__file__).resolve().parents[1]
-RESSOURCES_RACINE = RACINE_DEPOT / "ressources"
-EXTRAIT_PARIS_DEFAUT = Path(__file__).resolve().parent / "donnees_exemple" / "paris_2024_m07.json"
-
-PRESSION_SURFACE_DEFAUT_PA = 101_325.0
-ALBEDO_SURFACE_DEFAUT = 0.30
-EMISSIVITE_SURFACE_DEFAUT = 0.98
-EMISSIVITE_OCEAN = 0.985
-EMISSIVITE_NEIGE_GLACE = 0.98
-
-JOURS_CUMULES_MOIS = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
-
-
-def mois_depuis_jour_annee(jour_annee):
-    if not 1 <= jour_annee <= 365:
-        raise ValueError("jour_annee doit etre entre 1 et 365.")
-    mois = 1
-    for seuil in JOURS_CUMULES_MOIS[1:]:
-        if jour_annee > seuil:
-            mois += 1
-    return min(mois, 12)
+DOSSIER_PAQUET_DEFAUT = (
+    Path(__file__).resolve().parent
+    / "ressources"
+    / "donnees_precalculees"
+    / "grille_5deg_2024"
+)
+FICHIER_NPZ_DEFAUT = "donnees_colonnes_5deg_2024.npz"
+EMISSIVITE_SURFACE = physique.EMISSIVITE_SURFACE_CONSTANTE
+ALBEDO_SURFACE_SECOURS = 0.30
 
 
 def _float_ou_none(valeur):
+    if valeur is None:
+        return None
     if hasattr(valeur, "item"):
         try:
             valeur = valeur.item()
@@ -58,228 +39,195 @@ def _float_ou_none(valeur):
     return flottant
 
 
-def _fraction(valeur):
-    flottant = _float_ou_none(valeur)
-    if flottant is None:
-        return None
-    return max(0.0, min(1.0, flottant))
+def _dequantifier(nom, tableau, metadata):
+    variable = metadata.get("variables", {}).get(nom)
+    if not variable or "scale_factor" not in variable:
+        return np.array(tableau)
+
+    scale = float(variable["scale_factor"])
+    offset = float(variable.get("offset", 0.0))
+    missing = variable.get("valeur_manquante")
+    valeurs = np.array(tableau, dtype=np.float64)
+    if missing is not None:
+        valeurs[valeurs == float(missing)] = np.nan
+    return valeurs * scale + offset
 
 
-def _liste_float(valeurs):
-    if hasattr(valeurs, "tolist"):
-        valeurs = valeurs.tolist()
-
-    sortie = []
-
-    def ajouter(valeur):
-        if isinstance(valeur, list):
-            for element in valeur:
-                ajouter(element)
-        else:
-            flottant = _float_ou_none(valeur)
-            if flottant is not None:
-                sortie.append(flottant)
-
-    ajouter(valeurs)
-    return sortie
+def _chemins_paquet(chemin):
+    chemin = Path(chemin)
+    if chemin.is_dir():
+        metadata_path = chemin / "metadata.json"
+        if metadata_path.exists():
+            with metadata_path.open(encoding="utf-8") as fichier:
+                metadata = json.load(fichier)
+            npz_name = metadata.get("fichier_npz", FICHIER_NPZ_DEFAUT)
+            return chemin, metadata_path, chemin / npz_name
+        return chemin, metadata_path, chemin / FICHIER_NPZ_DEFAUT
+    return chemin.parent, chemin.parent / "metadata.json", chemin
 
 
-def _normaliser_longitude_era5(longitude_deg):
-    return longitude_deg % 360.0
+def charger_paquet_grille(chemin=DOSSIER_PAQUET_DEFAUT):
+    dossier, metadata_path, npz_path = _chemins_paquet(chemin)
+    if not metadata_path.exists():
+        raise FileNotFoundError(f"metadata introuvable: {metadata_path}")
+    if not npz_path.exists():
+        raise FileNotFoundError(f"paquet NPZ introuvable: {npz_path}")
+
+    with metadata_path.open(encoding="utf-8") as fichier:
+        metadata = json.load(fichier)
+
+    donnees = {}
+    with np.load(npz_path) as npz:
+        for nom in npz.files:
+            donnees[nom] = _dequantifier(nom, npz[nom], metadata)
+
+    return {
+        "dossier": dossier,
+        "metadata_path": metadata_path,
+        "npz_path": npz_path,
+        "metadata": metadata,
+        "donnees": donnees,
+    }
 
 
-def _selection_mois(ds, mois):
+def _indice_plus_proche(valeurs, cible):
+    valeurs = np.asarray(valeurs, dtype=float)
+    return int(np.nanargmin(np.abs(valeurs - cible)))
+
+
+def _extraire_mensuel(tableau, indice_lat, indice_lon, mois=None, jour_annee=None):
+    tableau = np.asarray(tableau)
+    if tableau.ndim == 2:
+        valeurs = tableau[:, indice_lat]
+    elif tableau.ndim == 3:
+        valeurs = tableau[:, indice_lat, indice_lon]
+    elif tableau.ndim == 4:
+        valeurs = tableau[:, :, indice_lat, indice_lon]
+    else:
+        raise ValueError(f"Tableau mensuel de dimension inattendue: {tableau.shape}")
+
+    if jour_annee is not None:
+        mois_a, mois_b, poids_b = physique.poids_interpolation_mensuelle(jour_annee)
+        return (1.0 - poids_b) * valeurs[mois_a] + poids_b * valeurs[mois_b]
+
+    if mois is None:
+        raise ValueError("mois ou jour_annee doit etre fourni.")
     if not 1 <= mois <= 12:
         raise ValueError("mois doit etre entre 1 et 12.")
-    if "valid_time" in ds.coords:
-        return {"valid_time": ds.valid_time.values[mois - 1]}
-    if "time" in ds.coords:
-        return {"time": ds.time.values[mois - 1]}
-    return {}
+    return valeurs[mois - 1]
 
 
-def _extraire_point(ds, variable, lat, lon, mois):
-    selection = _selection_mois(ds, mois)
-    selection["latitude"] = lat
-    selection["longitude"] = _normaliser_longitude_era5(lon)
-    return ds[variable].sel(selection, method="nearest").values
+def _source_variable(paquet, nom, defaut="inconnue"):
+    return paquet["metadata"].get("variables", {}).get(nom, {}).get("source", defaut)
 
 
-def _profil_de_secours():
-    pressions = [1000, 925, 850, 700, 500, 300, 200, 100, 50, 20, 10, 1]
-    temperatures = []
-    humidites = []
+def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
+    donnees = paquet["donnees"]
+    latitudes = donnees["lat_deg"]
+    longitudes = donnees["lon_deg"]
+    indice_lat = _indice_plus_proche(latitudes, lat)
+    indice_lon = _indice_plus_proche(longitudes, lon)
+    latitude = float(latitudes[indice_lat])
+    longitude = float(longitudes[indice_lon])
 
-    for pression in pressions:
-        altitude_m = 44330.0 * (1.0 - (pression / 1013.25) ** (1.0 / 5.255))
-        temperatures.append(max(216.65, 288.15 - 0.0065 * altitude_m))
-        humidites.append(max(2e-6, 0.0075 * (pression / 1000.0) ** 4))
+    if jour_annee is not None:
+        mois_sortie = physique.mois_depuis_jour_annee(jour_annee)
+    elif mois is not None:
+        mois_sortie = int(mois)
+    else:
+        raise ValueError("mois ou jour_annee doit etre fourni.")
 
-    return {
-        "pressions_hpa": pressions,
-        "temperatures_k": temperatures,
-        "humidites_specifiques_kgkg": humidites,
-        "fractions_nuageuses": None,
+    def mensuel(nom):
+        return _extraire_mensuel(donnees[nom], indice_lat, indice_lon, mois, jour_annee)
+
+    pression_surface_hpa = float(mensuel("pression_surface_hpa"))
+    albedo_surface = physique.fraction(mensuel("albedo_surface"), defaut=ALBEDO_SURFACE_SECOURS)
+    transmissivite_sw = physique.fraction(mensuel("transmissivite_sw_mensuelle"), defaut=0.0)
+    sw_toa_moyen = _float_ou_none(mensuel("sw_toa_moyen_mensuel_w_m2"))
+
+    surface = {
+        "latitude_deg": latitude,
+        "longitude_deg": longitude,
+        "mois": mois_sortie,
+        "jour_annee": jour_annee,
+        "pression_surface_pa": pression_surface_hpa * 100.0,
+        "pression_surface_hpa": pression_surface_hpa,
+        "albedo_surface": albedo_surface,
+        "sw_toa_moyen_mensuel_w_m2": sw_toa_moyen,
+        "transmissivite_sw_mensuelle": transmissivite_sw,
+        "emissivite_surface": EMISSIVITE_SURFACE,
+        "source_albedo_surface": _source_variable(paquet, "albedo_surface"),
+        "source_transmissivite_sw_mensuelle": _source_variable(
+            paquet,
+            "transmissivite_sw_mensuelle",
+        ),
+        "source_emissivite_surface": "constante_0.98",
     }
 
+    for nom in (
+        "land_fraction",
+        "snow_ice_fraction",
+        "temperature_2m_k",
+        "skin_temperature_k",
+    ):
+        if nom in donnees:
+            valeur = _float_ou_none(mensuel(nom))
+            if nom.endswith("fraction"):
+                valeur = None if valeur is None else physique.fraction(valeur)
+            surface[nom] = valeur
 
-def _surface_de_secours(lat, lon, mois):
-    return {
-        "latitude_deg": lat,
-        "longitude_deg": lon,
-        "mois": mois,
-        "pression_surface_pa": PRESSION_SURFACE_DEFAUT_PA,
-        "albedo_surface": ALBEDO_SURFACE_DEFAUT,
-        "emissivite_surface": EMISSIVITE_SURFACE_DEFAUT,
-        "cloud_total": 0.0,
-        "low_cloud": None,
-        "medium_cloud": None,
-        "high_cloud": None,
-        "land_fraction": None,
-        "snow_ice_fraction": None,
-        "temperature_2m_k": None,
-        "skin_temperature_k": None,
-    }
+    couches = []
+    pression_bas = mensuel("pression_bas_couche_hpa")
+    pression_haut = mensuel("pression_haut_couche_hpa")
+    temperature = mensuel("temperature_couche_k")
+    humidite = mensuel("humidite_specifique_couche_kgkg")
+    masse_air = mensuel("masse_air_couche_kg_m2")
+    masse_h2o = mensuel("masse_h2o_couche_kg_m2")
 
-
-def _trouver_fichiers_era5(ressources_dir):
-    if xr is None or not ressources_dir.exists():
-        return None, None, None
-
-    fichier_profil = None
-    fichier_surface = None
-    fichier_flux = None
-
-    for chemin in sorted(ressources_dir.glob("**/*.nc")):
-        try:
-            with xr.open_dataset(chemin, decode_times=False) as ds:
-                variables = set(ds.data_vars)
-                if {"t", "q"}.issubset(variables) and "pressure_level" in ds.coords:
-                    fichier_profil = chemin
-                if {"sp", "fal"}.issubset(variables):
-                    fichier_surface = chemin
-                if {"avg_sdlwrf", "avg_snswrf", "avg_tnlwrf"}.issubset(variables):
-                    fichier_flux = chemin
-        except Exception:
+    for indice in range(len(pression_haut)):
+        p_bas = _float_ou_none(pression_bas[indice])
+        p_haut = _float_ou_none(pression_haut[indice])
+        if p_bas is None or p_haut is None or p_bas <= p_haut:
             continue
-
-    return fichier_profil, fichier_surface, fichier_flux
-
-
-def _emissivite_simple(land_fraction, snow_ice_fraction):
-    if snow_ice_fraction is not None and snow_ice_fraction > 0.5:
-        return EMISSIVITE_NEIGE_GLACE
-    if land_fraction is not None and land_fraction < 0.5:
-        return EMISSIVITE_OCEAN
-    return EMISSIVITE_SURFACE_DEFAUT
-
-
-def _charger_depuis_era5(lat, lon, mois, ressources_dir):
-    if xr is None:
-        return None
-
-    fichier_profil, fichier_surface, fichier_flux = _trouver_fichiers_era5(ressources_dir)
-    if fichier_profil is None or fichier_surface is None:
-        return None
-
-    with xr.open_dataset(fichier_profil, decode_times=True) as ds:
-        pressions = _liste_float(ds["pressure_level"].values)
-        temperatures = _liste_float(_extraire_point(ds, "t", lat, lon, mois))
-        humidites = [max(0.0, valeur) for valeur in _liste_float(_extraire_point(ds, "q", lat, lon, mois))]
-        fractions_nuageuses = None
-        if "cc" in ds.data_vars:
-            fractions_nuageuses = [_fraction(v) or 0.0 for v in _liste_float(_extraire_point(ds, "cc", lat, lon, mois))]
-
-    surface_vars = {}
-    with xr.open_dataset(fichier_surface, decode_times=True) as ds:
-        for nom in ds.data_vars:
-            surface_vars[nom] = _float_ou_none(_extraire_point(ds, nom, lat, lon, mois))
-
-    land_fraction = _fraction(surface_vars.get("lsm"))
-    sea_ice = _fraction(surface_vars.get("siconc")) or 0.0
-    snow_depth = surface_vars.get("sd") or 0.0
-    snow_ice_fraction = max(sea_ice, 1.0 if snow_depth > 0.01 else 0.0)
-
-    albedo = _fraction(surface_vars.get("fal"))
-    snow_albedo = _fraction(surface_vars.get("asn"))
-    if snow_depth > 0.01 and snow_albedo is not None:
-        albedo = max(albedo or ALBEDO_SURFACE_DEFAUT, snow_albedo)
+        couches.append(
+            {
+                "nom": f"couche_{len(couches) + 1:02d}",
+                "pression_bas_hpa": p_bas,
+                "pression_haut_hpa": p_haut,
+                "pression_bas_pa": p_bas * 100.0,
+                "pression_haut_pa": p_haut * 100.0,
+                "temperature_k": float(temperature[indice]),
+                "humidite_specifique_kgkg": max(0.0, float(humidite[indice])),
+                "masse_air_kg_m2": max(0.0, float(masse_air[indice])),
+                "masse_h2o_kg_m2": max(0.0, float(masse_h2o[indice])),
+            }
+        )
 
     validation_flux = {}
-    if fichier_flux is not None:
-        with xr.open_dataset(fichier_flux, decode_times=True) as ds:
-            for nom in ("avg_sdlwrf", "avg_snswrf", "avg_tnlwrf", "avg_sdswrf"):
-                if nom in ds.data_vars:
-                    valeur = _float_ou_none(_extraire_point(ds, nom, lat, lon, mois))
-                    if valeur is not None:
-                        validation_flux[nom] = valeur
+    correspondance_flux = {
+        "era5_lw_down_surface_w_m2": "era5_lw_down_surface_w_m2",
+        "era5_sw_net_surface_w_m2": "era5_sw_net_surface_w_m2",
+        "era5_olr_w_m2": "era5_olr_w_m2",
+        "era5_sw_down_surface_w_m2": "era5_sw_down_surface_w_m2",
+    }
+    for nom_tableau, nom_sortie in correspondance_flux.items():
+        if nom_tableau in donnees:
+            valeur = _float_ou_none(mensuel(nom_tableau))
+            if valeur is not None:
+                validation_flux[nom_sortie] = valeur
 
     return {
-        "surface": {
-            "latitude_deg": lat,
-            "longitude_deg": lon,
-            "mois": mois,
-            "pression_surface_pa": surface_vars.get("sp") or PRESSION_SURFACE_DEFAUT_PA,
-            "albedo_surface": albedo or ALBEDO_SURFACE_DEFAUT,
-            "emissivite_surface": _emissivite_simple(land_fraction, snow_ice_fraction),
-            "cloud_total": _fraction(surface_vars.get("tcc")),
-            "low_cloud": _fraction(surface_vars.get("lcc")),
-            "medium_cloud": _fraction(surface_vars.get("mcc")),
-            "high_cloud": _fraction(surface_vars.get("hcc")),
-            "land_fraction": land_fraction,
-            "snow_ice_fraction": snow_ice_fraction,
-            "temperature_2m_k": _float_ou_none(surface_vars.get("t2m")),
-            "skin_temperature_k": _float_ou_none(surface_vars.get("skt")),
-        },
-        "profil": {
-            "pressions_hpa": pressions,
-            "temperatures_k": temperatures,
-            "humidites_specifiques_kgkg": humidites,
-            "fractions_nuageuses": fractions_nuageuses,
-        },
+        "surface": surface,
+        "couches": couches,
         "validation_flux": validation_flux,
-        "source": f"ERA5 local: {fichier_profil.name}, {fichier_surface.name}",
+        "source": f"paquet {paquet['npz_path'].name}",
+        "indices_grille": {"lat": indice_lat, "lon": indice_lon},
     }
 
 
-def charger_donnees_extraites(chemin):
-    with Path(chemin).open(encoding="utf-8") as fichier:
-        return json.load(fichier)
-
-
-def sauvegarder_donnees_extraites(donnees, chemin):
-    chemin = Path(chemin)
-    chemin.parent.mkdir(parents=True, exist_ok=True)
-    with chemin.open("w", encoding="utf-8") as fichier:
-        json.dump(donnees, fichier, indent=2, ensure_ascii=False)
-        fichier.write("\n")
-
-
-def charger_colonne_locale(
-    lat=48.8566,
-    lon=2.3522,
-    mois=7,
-    jour_annee=None,
-    ressources_dir=RESSOURCES_RACINE,
-    utiliser_extrait_defaut=True,
-):
-    if jour_annee is not None:
-        mois = mois_depuis_jour_annee(jour_annee)
-
-    donnees_era5 = _charger_depuis_era5(lat, lon, mois, Path(ressources_dir))
-    if donnees_era5 is not None:
-        return donnees_era5
-
-    if utiliser_extrait_defaut and EXTRAIT_PARIS_DEFAUT.exists():
-        extrait = charger_donnees_extraites(EXTRAIT_PARIS_DEFAUT)
-        surface = extrait["surface"]
-        meme_point = abs(surface["latitude_deg"] - lat) < 0.1 and abs(surface["longitude_deg"] - lon) < 0.1
-        if meme_point and surface["mois"] == mois:
-            return extrait
-
-    return {
-        "surface": _surface_de_secours(lat, lon, mois),
-        "profil": _profil_de_secours(),
-        "validation_flux": {},
-        "source": "secours analytique simple",
-    }
+def iterer_colonnes(paquet, mois=None, jour_annee=None):
+    latitudes = paquet["donnees"]["lat_deg"]
+    longitudes = paquet["donnees"]["lon_deg"]
+    for latitude in latitudes:
+        for longitude in longitudes:
+            yield extraire_colonne(paquet, float(latitude), float(longitude), mois, jour_annee)
