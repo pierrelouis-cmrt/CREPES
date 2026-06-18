@@ -98,7 +98,7 @@ def make_cross_section_co2_all_bands(regen_cache: bool = False):
                         isotope="1,2,3",
                         Tgas=255,
                         pressure=1.013,
-                        mole_fraction=400e-6,  # 400 ppm
+                        mole_fraction=425e-6,  # 425 ppm
                         path_length=100,  # 1 m = 100 cm
                         databank="hitran",
                         verbose=False,
@@ -147,7 +147,7 @@ def build_plot(absorption_co2, points: int, *, use_file_backend: bool):
     )
     ax.set_xlabel("Longueur d'onde (µm)")
     ax.set_ylabel("Absorbance")
-    ax.set_title("Absorption du CO₂ (400 ppm, 1 m)")
+    ax.set_title("Absorption du CO₂ (425 ppm, 1 m)")
     ax.grid(True, alpha=0.3)
     fig.tight_layout()
     return fig, plt
