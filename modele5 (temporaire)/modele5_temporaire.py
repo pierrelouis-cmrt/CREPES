@@ -1,6 +1,6 @@
 """Modele 5 temporaire : emission laterale sortante par couche.
 
-Ce module ne remplace pas le modele 3.1. Il l'utilise comme source de colonnes
+Ce module ne remplace pas le modele 3. Il l'utilise comme source de colonnes
 verticales puis ajoute un diagnostic d'emission laterale propre a chaque couche.
 """
 
@@ -15,9 +15,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from modele3_1 import physique
-from modele3_1.donnees import DOSSIER_PAQUET_DEFAUT, charger_paquet_grille, extraire_colonne
-from modele3_1.modele3_1 import calculer_colonne_radiative, construire_couches
+from modele3 import physique
+from modele3.donnees import DOSSIER_PAQUET_DEFAUT, charger_paquet_grille, extraire_colonne
+from modele3.modele3 import calculer_colonne_radiative, construire_couches
 
 
 def _arrondir(objet):
@@ -38,7 +38,7 @@ def calculer_emission_laterale_sortante_par_couche(
     """Calcule ce que chaque couche emet lateralement vers ses quatre cotes.
 
     Le calcul reutilise les memes opacites et les memes bandes infrarouges que
-    le modele 3.1. Pour une couche donnee, les quatre cotes sont identiques :
+    le modele 3. Pour une couche donnee, les quatre cotes sont identiques :
     on calcule l'emission propre de la couche, pas un echange avec un voisin.
     """
 
@@ -128,7 +128,7 @@ def calculer_colonne_avec_emission_laterale(
         co2_ppm=co2_ppm,
     )
     return {
-        "flux_radiatifs_3_1": radiatif,
+        "flux_radiatifs_modele3": radiatif,
         "emission_laterale_sortante": laterale,
     }
 
@@ -137,8 +137,8 @@ def construire_parseur():
     parseur = argparse.ArgumentParser(
         description="Modele 5 temporaire - emission laterale sortante par couche"
     )
-    parseur.add_argument("--lat", type=float, default=48.8566, help="Latitude en degres")
-    parseur.add_argument("--lon", type=float, default=2.3522, help="Longitude en degres")
+    parseur.add_argument("--lat", type=float, default=0.0, help="Latitude en degres")
+    parseur.add_argument("--lon", type=float, default=0.0, help="Longitude en degres")
     parseur.add_argument("--mois", type=int, default=7, help="Mois 1..12")
     parseur.add_argument("--jour-annee", type=int, default=None, help="Jour 1..365")
     parseur.add_argument("--temperature-surface", type=float, default=288.15)
@@ -149,14 +149,14 @@ def construire_parseur():
         "--paquet",
         type=Path,
         default=DOSSIER_PAQUET_DEFAUT,
-        help="Dossier du paquet compact 3.1.",
+        help="Dossier du paquet compact du modele 3.",
     )
     parseur.add_argument("--json", action="store_true", help="Sortie JSON complete")
     return parseur
 
 
 def afficher_resume(resultat):
-    radiatif = resultat["flux_radiatifs_3_1"]
+    radiatif = resultat["flux_radiatifs_modele3"]
     laterale = resultat["emission_laterale_sortante"]
 
     print("modele5_temporaire_emission_laterale")
@@ -165,7 +165,7 @@ def afficher_resume(resultat):
     print(f"hypothese = {laterale['hypothese']}")
     print(f"unite_laterale = {laterale['unite']}")
     print()
-    print("flux_radiatifs_3_1_W_m2")
+    print("flux_radiatifs_modele3_W_m2")
     print(f"SW_absorbe_surface = {radiatif['SW_absorbe_surface']:.6f}")
     print(f"LW_up_surface = {radiatif['LW_up_surface']:.6f}")
     print(f"LW_down_surface = {radiatif['LW_down_surface']:.6f}")

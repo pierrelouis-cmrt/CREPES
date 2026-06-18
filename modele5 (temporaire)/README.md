@@ -1,6 +1,6 @@
 # Modele 5 temporaire - emission laterale par couche
 
-Le modele 5 temporaire reprend le modele 3.1 et ajoute une sortie : ce que
+Le modele 5 temporaire reprend le modele 3 et ajoute une sortie : ce que
 chaque couche atmospherique emet lateralement vers les cotes.
 
 Il garde donc le fonctionnement habituel :
@@ -19,12 +19,12 @@ couche k -> emission laterale sortante nord/sud/est/ouest
 
 | Fichier | Role |
 | --- | --- |
-| `modele5_temporaire.py` | Appelle le modele 3.1 et ajoute l'emission laterale sortante par couche. |
+| `modele5_temporaire.py` | Appelle le modele 3 et ajoute l'emission laterale sortante par couche. |
 | `README.md` | Explique la formule, les sorties et les limites. |
 
 ## Principe
 
-Le modele 3.1 calcule deja les flux radiatifs verticaux :
+Le modele 3 calcule deja les flux radiatifs verticaux :
 
 ```text
 flux montant   : surface/couches -> espace
@@ -34,7 +34,7 @@ flux descendant: couches -> surface
 Ici, on ne regarde pas les voisins. On calcule seulement ce que la couche locale
 emettrait vers ses faces laterales.
 
-Pour chaque couche et chaque bande infrarouge du modele 3.1 :
+Pour chaque couche et chaque bande infrarouge du modele 3 :
 
 ```text
 flux_lateral_bande = emissivite_couche_bande * flux_corps_noir_bande(T_couche)
@@ -77,8 +77,8 @@ Depuis la racine du depot :
 
 ```bash
 ./.venv/bin/python "modele5 (temporaire)/modele5_temporaire.py" \
-  --lat 48.8566 \
-  --lon 2.3522 \
+  --lat 0 \
+  --lon 0 \
   --mois 7 \
   --temperature-surface 293.0 \
   --moyenne-journaliere-sw
@@ -88,8 +88,8 @@ Sortie JSON complete :
 
 ```bash
 ./.venv/bin/python "modele5 (temporaire)/modele5_temporaire.py" \
-  --lat 48.8566 \
-  --lon 2.3522 \
+  --lat 0 \
+  --lon 0 \
   --mois 7 \
   --json
 ```
@@ -99,11 +99,11 @@ Sortie JSON complete :
 Le resultat contient deux blocs :
 
 ```text
-flux_radiatifs_3_1
+flux_radiatifs_modele3
 emission_laterale_sortante
 ```
 
-`flux_radiatifs_3_1` reprend les sorties du modele 3.1 :
+`flux_radiatifs_modele3` reprend les sorties du modele 3 :
 
 - `SW_absorbe_surface` : solaire absorbe par la surface ;
 - `LW_up_surface` : infrarouge emis par la surface ;
@@ -146,7 +146,7 @@ effet sur la temperature de la colonne voisine
 ## Limites assumees
 
 - Les temperatures des couches atmospheriques restent imposees par le paquet
-  3.1.
+  du modele 3.
 - Les flux lateraux ne sont pas encore propages vers les cellules voisines.
 - Les quatre cotes sont identiques par hypothese isotrope.
 - L'unite est `W m-2` de face laterale, pas encore convertie en contribution

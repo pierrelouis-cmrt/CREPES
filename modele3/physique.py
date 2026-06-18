@@ -1,18 +1,15 @@
-"""Calculs physiques elementaires du modele 3.
+"""Formules physiques elementaires du modele 3.
 
-Ce module ne lit pas de fichiers et ne pilote pas la colonne complete. Il
-contient seulement des formules reutilisables : solaire, Planck, masses colonne,
-opacites, albedo nuage et flux radiatifs simples.
+Ce module ne lit aucun fichier. Il contient les constantes, la geometrie
+solaire, Planck, les masses colonne et les opacites infrarouges CO2 + H2O.
+Les nuages ne creent pas d'opacite long-onde implicite.
 """
 
 from __future__ import annotations
 
+from functools import lru_cache
 from math import cos, exp, isfinite, pi, radians, sin
 
-
-# =============================================================================
-# Constantes physiques et reglages effectifs
-# =============================================================================
 
 SIGMA = 5.670374419e-8  # W m-2 K-4
 PLANCK = 6.62607015e-34  # J s
@@ -22,15 +19,13 @@ GRAVITE = 9.80665  # m s-2
 
 CONSTANTE_SOLAIRE = 1361.0  # W m-2
 TEMPERATURE_SURFACE_DEFAUT_K = 288.15
+EMISSIVITE_SURFACE_CONSTANTE = 0.98
 CO2_REFERENCE_PPM = 280.0
 CO2_DEFAUT_PPM = 420.0
 
 FACTEUR_DIFFUSIF = 1.66
 ECHELLE_OPACITE_CO2 = 0.0327228010
 MASSE_H2O_REFERENCE_KG_M2 = 10.0
-
-COEFFICIENT_NUAGE_SW = 0.50
-COEFFICIENT_NUAGE_LW = 0.10
 
 PRESSION_BORDS_REFERENCE_HPA = [
     850.0,
@@ -139,16 +134,11 @@ BANDES_INFRAROUGES = [
 ]
 
 
-# =============================================================================
-# Outils scalaires simples
-# =============================================================================
-
-
 def borner(valeur, minimum, maximum):
     return max(minimum, min(maximum, valeur))
 
 
-def fraction(valeur, defaut=0.0):
+def valeur_finie(valeur, defaut=None):
     if valeur is None:
         return defaut
     try:
@@ -157,7 +147,14 @@ def fraction(valeur, defaut=0.0):
         return defaut
     if not isfinite(valeur):
         return defaut
-    return borner(valeur, 0.0, 1.0)
+    return valeur
+
+
+def fraction(valeur, defaut=0.0, maximum=1.0):
+    valeur = valeur_finie(valeur, defaut)
+    if valeur is None:
+        valeur = defaut
+    return borner(valeur, 0.0, maximum)
 
 
 def mois_depuis_jour_annee(jour_annee):
@@ -176,9 +173,28 @@ def jour_milieu_mois(mois):
     return JOURS_MILIEU_MOIS[mois - 1]
 
 
-# =============================================================================
-# Solaire
-# =============================================================================
+def poids_interpolation_mensuelle(jour_annee):
+    """Retourne deux mois voisins et le poids du second mois.
+
+    Les mois sont donnes en indices 0..11. L'interpolation est cyclique autour
+    des milieux de mois pour eviter une rupture au 1er janvier.
+    """
+
+    if not 1 <= jour_annee <= 365:
+        raise ValueError("jour_annee doit etre entre 1 et 365.")
+
+    jours = JOURS_MILIEU_MOIS
+    if jour_annee < jours[0]:
+        jour_precedent = jours[-1] - 365
+        poids = (jour_annee - jour_precedent) / (jours[0] - jour_precedent)
+        return 11, 0, poids
+    for indice in range(11):
+        if jours[indice] <= jour_annee <= jours[indice + 1]:
+            poids = (jour_annee - jours[indice]) / (jours[indice + 1] - jours[indice])
+            return indice, indice + 1, poids
+    jour_suivant = jours[0] + 365
+    poids = (jour_annee - jours[-1]) / (jour_suivant - jours[-1])
+    return 11, 0, poids
 
 
 def declinaison_solaire_rad(jour_annee):
@@ -213,62 +229,6 @@ def flux_solaire_moyen_journalier(latitude_deg, jour_annee):
     return total / nombre_pas
 
 
-# =============================================================================
-# Moyennes verticales et masses colonne
-# =============================================================================
-
-
-def _points_valides(pressions_hpa, valeurs):
-    points = []
-    for pression, valeur in zip(pressions_hpa, valeurs):
-        pression = float(pression)
-        valeur = float(valeur)
-        if isfinite(pression) and isfinite(valeur):
-            points.append((pression, valeur))
-    if not points:
-        raise ValueError("Profil vertical vide.")
-    return sorted(points)
-
-
-def interpoler_pression(pression_hpa, pressions_hpa, valeurs):
-    points = _points_valides(pressions_hpa, valeurs)
-    pressions = [point[0] for point in points]
-    valeurs = [point[1] for point in points]
-
-    if pression_hpa <= pressions[0]:
-        return valeurs[0]
-    if pression_hpa >= pressions[-1]:
-        return valeurs[-1]
-
-    for indice in range(len(pressions) - 1):
-        p0 = pressions[indice]
-        p1 = pressions[indice + 1]
-        if p0 <= pression_hpa <= p1:
-            poids = (pression_hpa - p0) / (p1 - p0)
-            return valeurs[indice] + poids * (valeurs[indice + 1] - valeurs[indice])
-
-    return valeurs[-1]
-
-
-def moyenne_pression(pressions_hpa, valeurs, pression_bas_hpa, pression_haut_hpa):
-    if pression_bas_hpa <= pression_haut_hpa:
-        raise ValueError("pression_bas_hpa doit etre plus grande que pression_haut_hpa.")
-
-    points = [pression_haut_hpa, pression_bas_hpa]
-    for pression, _valeur in _points_valides(pressions_hpa, valeurs):
-        if pression_haut_hpa < pression < pression_bas_hpa:
-            points.append(pression)
-    points = sorted(set(points))
-
-    integrale = 0.0
-    for p0, p1 in zip(points[:-1], points[1:]):
-        v0 = interpoler_pression(p0, pressions_hpa, valeurs)
-        v1 = interpoler_pression(p1, pressions_hpa, valeurs)
-        integrale += 0.5 * (v0 + v1) * (p1 - p0)
-
-    return integrale / (pression_bas_hpa - pression_haut_hpa)
-
-
 def masse_air_depuis_delta_p(delta_p_pa):
     return delta_p_pa / GRAVITE
 
@@ -277,13 +237,10 @@ def masse_h2o_colonne(humidite_specifique_kgkg, masse_air_kg_m2):
     return max(0.0, humidite_specifique_kgkg) * masse_air_kg_m2
 
 
-# =============================================================================
-# Long-onde, opacites et court-onde simple
-# =============================================================================
-
-
 def luminance_spectrale_planck(longueur_onde_m, temperature_k):
     exposant = PLANCK * VITESSE_LUMIERE / (longueur_onde_m * BOLTZMANN * temperature_k)
+    if exposant > 700.0:
+        return 0.0
     return (
         2.0
         * PLANCK
@@ -293,20 +250,47 @@ def luminance_spectrale_planck(longueur_onde_m, temperature_k):
     )
 
 
-def flux_corps_noir_dans_bande(temperature_k, lambda_min_um, lambda_max_um, nombre_pas=2000):
+def flux_corps_noir_dans_bande_direct(
+    temperature_k,
+    lambda_min_um,
+    lambda_max_um,
+    nombre_pas=2000,
+):
     lambda_min_m = lambda_min_um * 1e-6
     lambda_max_m = lambda_max_um * 1e-6
     pas = (lambda_max_m - lambda_min_m) / nombre_pas
     total = 0.0
-
     for indice in range(nombre_pas):
         longueur_onde_m = lambda_min_m + (indice + 0.5) * pas
         total += pi * luminance_spectrale_planck(longueur_onde_m, temperature_k) * pas
-
     return total
 
 
-def flux_lw_surface(temperature_surface_k, emissivite_surface):
+@lru_cache(maxsize=50000)
+def _flux_corps_noir_dans_bande_cache(temperature_k, lambda_min_um, lambda_max_um):
+    return flux_corps_noir_dans_bande_direct(
+        temperature_k,
+        lambda_min_um,
+        lambda_max_um,
+    )
+
+
+def flux_corps_noir_dans_bande(temperature_k, lambda_min_um, lambda_max_um, nombre_pas=2000):
+    if nombre_pas != 2000:
+        return flux_corps_noir_dans_bande_direct(
+            temperature_k,
+            lambda_min_um,
+            lambda_max_um,
+            nombre_pas=nombre_pas,
+        )
+    return _flux_corps_noir_dans_bande_cache(
+        round(float(temperature_k), 3),
+        float(lambda_min_um),
+        float(lambda_max_um),
+    )
+
+
+def flux_lw_surface(temperature_surface_k, emissivite_surface=EMISSIVITE_SURFACE_CONSTANTE):
     return emissivite_surface * SIGMA * temperature_surface_k**4
 
 
@@ -322,10 +306,6 @@ def tau_h2o(couche, bande):
     return bande["a_h2o"] * (couche["masse_h2o_kg_m2"] / MASSE_H2O_REFERENCE_KG_M2)
 
 
-def tau_nuage(couche):
-    return COEFFICIENT_NUAGE_LW * couche["fraction_nuageuse"]
-
-
 def transmission_depuis_tau(tau_total):
     return exp(-FACTEUR_DIFFUSIF * max(tau_total, 0.0))
 
@@ -333,25 +313,14 @@ def transmission_depuis_tau(tau_total):
 def opacites_couche_bande(couche, bande):
     opacite_co2 = tau_co2(couche, bande)
     opacite_h2o = tau_h2o(couche, bande)
-    opacite_nuage = tau_nuage(couche)
-    tau_total = opacite_co2 + opacite_h2o + opacite_nuage
+    tau_total = opacite_co2 + opacite_h2o
     transmission = transmission_depuis_tau(tau_total)
-
     return {
         "couche": couche["nom"],
         "bande": bande["nom"],
         "tau_co2": opacite_co2,
         "tau_h2o": opacite_h2o,
-        "tau_nuage": opacite_nuage,
         "tau_total": tau_total,
         "transmission": transmission,
         "emissivite": 1.0 - transmission,
     }
-
-
-def albedo_nuage_effectif(cloud_total):
-    return borner(COEFFICIENT_NUAGE_SW * fraction(cloud_total), 0.0, 0.95)
-
-
-def flux_sw_absorbe_surface(sw_incident_surface, albedo_surface, albedo_cloud):
-    return sw_incident_surface * (1.0 - albedo_surface) * (1.0 - albedo_cloud)

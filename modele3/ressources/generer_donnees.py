@@ -1,4 +1,4 @@
-"""Genere le paquet compact du modele 3.1."""
+"""Genere le paquet compact du modele 3."""
 
 from __future__ import annotations
 
@@ -14,13 +14,13 @@ import numpy as np
 try:
     import xarray as xr
 except ImportError as exc:  # pragma: no cover - message CLI
-    raise SystemExit("xarray est requis pour generer les donnees 3.1.") from exc
+    raise SystemExit("xarray est requis pour generer les donnees 3.") from exc
 
 try:
     from .. import physique
-except ImportError:  # Permet aussi : python modele3_1/ressources/generer_donnees.py
+except ImportError:  # Permet aussi : python modele3/ressources/generer_donnees.py
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from modele3_1 import physique
+    from modele3 import physique
 
 
 RACINE_DEPOT = Path(__file__).resolve().parents[2]
@@ -379,25 +379,25 @@ def ecrire_paquet(sortie_dir, tableaux, metadata, overwrite):
         json.dump(metadata, fichier, indent=2, ensure_ascii=False)
         fichier.write("\n")
     readme_path.write_text(
-        "# Donnees precalculees 3.1\n\n"
+        "# Donnees precalculees 3\n\n"
         "Paquet compact genere depuis les ressources racine du depot. Ce dossier\n"
-        "est la source normale du calcul 3.1 et l'entree grille du modele 4.\n\n"
+        "est la source normale du calcul 3 et l'entree grille du modele 4.\n\n"
         f"- Fichier: `{FICHIER_NPZ}`\n"
         f"- Resolution: {metadata['resolution_deg']} degres\n"
         f"- Annee: {metadata['annee']}\n"
         "- Grille: 36 latitudes x 72 longitudes x 12 mois\n"
-        "- Usage normal: `modele3_1.donnees.charger_paquet_grille`.\n\n"
+        "- Usage normal: `modele3.donnees.charger_paquet_grille`.\n\n"
         "## Provenance\n\n"
         "| Champ | Source active | Transformation |\n"
         "| --- | --- | --- |\n"
-        "| Profils `T`, `q` | ERA5 pression, `ressources/*.nc` | Moyennes par couche de pression 3.1. |\n"
+        "| Profils `T`, `q` | ERA5 pression, `ressources/*.nc` | Moyennes par couche de pression 3. |\n"
         "| Surface | ERA5 single levels, `ressources/**/*.nc` | Selection au plus proche sur grille 5 degres. |\n"
         "| Flux de validation | ERA5 flux moyens | Stockes pour comparaison, jamais pour recalibrer. |\n"
-        "| Transmissivite SW | Geometrie solaire 3.1 + ERA5 `avg_sdswrf` | `ERA5 SW_down / moyenne_mensuelle(S0*cos(i))`, borne `[0, 1]`. |\n"
+        "| Transmissivite SW | Geometrie solaire 3 + ERA5 `avg_sdswrf` | `ERA5 SW_down / moyenne_mensuelle(S0*cos(i))`, borne `[0, 1]`. |\n"
         "| Albedo surface | `ressources/albedo/albedo01.csv` ... `albedo12.csv` | Selection mensuelle au plus proche. |\n"
         "\n"
         "Les fichiers `ressources/albedo/*` sont des copies racine des donnees utiles\n"
-        "historiquement presentes dans le modele 0. Le code 3.1 ne lit pas le dossier\n"
+        "historiquement presentes dans le modele 0. Le code 3 ne lit pas le dossier\n"
         "`modele0_maintenance/`.\n\n"
         "## Contenu\n\n"
         "Le `.npz` contient seulement les champs necessaires au calcul normal :\n"
@@ -463,7 +463,7 @@ def generer(args):
     }
 
     metadata = {
-        "nom": "modele3_1_grille_5deg_2024",
+        "nom": "modele3_grille_5deg_2024",
         "annee": args.annee,
         "resolution_deg": args.resolution,
         "shape": {
@@ -475,7 +475,7 @@ def generer(args):
         "fichier_npz": FICHIER_NPZ,
         "emissivite_surface": {
             "valeur": physique.EMISSIVITE_SURFACE_CONSTANTE,
-            "source": "constante_modele3_1",
+            "source": "constante_modele3",
         },
         "diagnostics_generation": {
             "transmissivite_sw": diagnostics_transmissivite,
@@ -496,8 +496,8 @@ def generer(args):
             nom: _metadata_variable(nom, source)
             for nom, source in {
                 "pression_surface_hpa": "ERA5 sp",
-                "pression_bas_couche_hpa": "pretraitement ERA5 pression_surface + bords 3.1",
-                "pression_haut_couche_hpa": "bords 3.1",
+                "pression_bas_couche_hpa": "pretraitement ERA5 pression_surface + bords 3",
+                "pression_haut_couche_hpa": "bords 3",
                 "temperature_couche_k": "ERA5 t moyenne par couche",
                 "temperature_2m_k": "ERA5 t2m",
                 "skin_temperature_k": "ERA5 skt",
@@ -505,7 +505,7 @@ def generer(args):
                 "humidite_specifique_couche_kgkg": "ERA5 q moyenne par couche",
                 "masse_h2o_couche_kg_m2": "q * delta_p / g",
                 "albedo_surface": "ressources/albedo/albedo01.csv..albedo12.csv",
-                "sw_toa_moyen_mensuel_w_m2": "geometrie solaire modele 3.1, S0=1361 W m-2",
+                "sw_toa_moyen_mensuel_w_m2": "geometrie solaire modele 3, S0=1361 W m-2",
                 "transmissivite_sw_mensuelle": "ERA5 avg_sdswrf / sw_toa_moyen_mensuel_w_m2",
                 "land_fraction": "ERA5 lsm",
                 "snow_ice_fraction": "ERA5 siconc ou sd > 0.01 m",
@@ -517,7 +517,7 @@ def generer(args):
         },
         "notes": [
             "Les CSV d'albedo sont lus depuis ressources/albedo, copie racine des donnees utiles du modele 0.",
-            "Le modele 3.1 n'utilise pas de coefficient nuageux court-onde ou long-onde.",
+            "Le modele 3 n'utilise pas de coefficient nuageux court-onde ou long-onde.",
             "transmissivite_sw_mensuelle corrige le court-onde surface avec ERA5, sans remplacer S0*cos(i).",
             "Les poids_surface sont normalises pour sommer a 1 sur la grille.",
         ],
@@ -530,7 +530,7 @@ def generer(args):
 
 
 def construire_parseur():
-    parseur = argparse.ArgumentParser(description="Genere le paquet compact modele 3.1.")
+    parseur = argparse.ArgumentParser(description="Genere le paquet compact modele 3.")
     parseur.add_argument("--resolution", type=int, default=5)
     parseur.add_argument("--annee", type=int, default=2024)
     parseur.add_argument("--ressources-dir", type=Path, default=RESSOURCES_DEFAUT)
