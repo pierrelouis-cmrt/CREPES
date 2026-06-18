@@ -1,5 +1,5 @@
 {
-  "nom": "modele3_1_grille_5deg_2024",
+  "nom": "modele3_grille_5deg_2024",
   "annee": 2024,
   "resolution_deg": 5,
   "shape": {
@@ -11,7 +11,7 @@
   "fichier_npz": "donnees_colonnes_5deg_2024.npz",
   "emissivite_surface": {
     "valeur": 0.98,
-    "source": "constante_modele3_1"
+    "source": "constante_modele3"
   },
   "diagnostics_generation": {
     "transmissivite_sw": {
@@ -47,7 +47,7 @@
       "scale_factor": 0.1,
       "offset": 0.0,
       "valeur_manquante": 65535,
-      "source": "pretraitement ERA5 pression_surface + bords 3.1"
+      "source": "pretraitement ERA5 pression_surface + bords 3"
     },
     "pression_haut_couche_hpa": {
       "dtype_stocke": "uint16",
@@ -55,7 +55,7 @@
       "scale_factor": 0.1,
       "offset": 0.0,
       "valeur_manquante": 65535,
-      "source": "bords 3.1"
+      "source": "bords 3"
     },
     "temperature_couche_k": {
       "dtype_stocke": "int16",
@@ -119,7 +119,7 @@
       "scale_factor": 0.1,
       "offset": 0.0,
       "valeur_manquante": 65535,
-      "source": "geometrie solaire modele 3.1, S0=1361 W m-2"
+      "source": "geometrie solaire modele 3, S0=1361 W m-2"
     },
     "transmissivite_sw_mensuelle": {
       "dtype_stocke": "uint16",
@@ -180,7 +180,7 @@
   },
   "notes": [
     "Les CSV d'albedo sont lus depuis ressources/albedo, copie racine des donnees utiles du modele 0.",
-    "Le modele 3.1 n'utilise pas de coefficient nuageux court-onde ou long-onde.",
+    "Le modele 3 n'utilise pas de coefficient nuageux court-onde ou long-onde.",
     "transmissivite_sw_mensuelle corrige le court-onde surface avec ERA5, sans remplacer S0*cos(i).",
     "Les poids_surface sont normalises pour sommer a 1 sur la grille."
   ]

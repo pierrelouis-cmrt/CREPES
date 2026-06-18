@@ -1,25 +1,24 @@
-# Theorie du modele 3.1
+# Theorie du modele 3
 
-Le modele 3.1 est une colonne radiative locale :
+Le modele 3 est une colonne radiative locale :
 
 ```text
 (colonne, T_surface, CO2_ppm) -> flux radiatifs
 ```
 
-La temperature de surface est imposee. Le modele 3.1 ne resout pas le bilan
+La temperature de surface est imposee. Le modele 3 ne resout pas le bilan
 thermique de surface ; il calcule seulement les flux radiatifs pour une colonne
 donnee. Le modele 4 utilisera ces flux pour faire evoluer `T_surface(t)`.
 
-Le calcul 3.1 garde le noyau radiatif utile du modele 3, mais il remplace les
-parties qui avaient ete corrigees ensuite : le court-onde utilise une
-transmissivite ERA5 mensuelle, l'emissivite de surface est constante, et les
-nuages ne sont plus une opacite radiative explicite.
+Le modele 3 est la version finale de la colonne radiative locale : il garde le
+noyau radiatif utile des iterations precedentes, avec un court-onde corrige
+par transmissivite ERA5 mensuelle, une emissivite de surface constante et sans
+opacite radiative explicite des nuages.
 
 ## Heritage du modele 2.5
 
-Le noyau long-onde vient du modele 2.5. Le modele 3 l'a reutilise pour une
-colonne locale, et le modele 3.1 le conserve sous une forme plus stable pour le
-modele 4.
+Le noyau long-onde vient du modele 2.5. Il est conserve ici sous une forme plus
+stable pour le modele 4.
 
 Les elements repris sont :
 
@@ -44,8 +43,8 @@ transmission = exp(-D * tau_total_bande)
 emissivite_couche = 1 - transmission
 ```
 
-Dans 3.1, `tau_total_bande` ne reprend pas les nuages du modele 3. Il contient
-seulement les contributions CO2 et H2O :
+Dans le modele 3, `tau_total_bande` ne reprend pas les anciennes corrections
+nuageuses. Il contient seulement les contributions CO2 et H2O :
 
 ```text
 tau_total_bande = tau_CO2_bande + tau_H2O_bande
@@ -53,7 +52,7 @@ tau_total_bande = tau_CO2_bande + tau_H2O_bande
 
 Ainsi, l'heritage du 2.5 concerne le transfert long-onde spectral et la logique
 CO2 effective. Le court-onde, la surface, les donnees et les nuages suivent les
-choix propres au modele 3.1 decrits plus bas.
+choix propres au modele 3 decrits plus bas.
 
 ## Colonne locale
 
@@ -94,8 +93,8 @@ La masse de vapeur d'eau associee est :
 masse_H2O = q_couche * masse_air
 ```
 
-Dans 3.1, ces couches sont stockees dans un paquet compact. Le calcul radiatif
-normal ne relit pas les gros fichiers ERA5 bruts.
+Dans le modele 3, ces couches sont stockees dans un paquet compact. Le calcul
+radiatif normal ne relit pas les gros fichiers ERA5 bruts.
 
 ## Court-onde
 
@@ -124,9 +123,9 @@ SW_down_surface = transmissivite_sw_mensuelle * SW_TOA_local
 SW_absorbe_surface = SW_down_surface * (1 - albedo_surface)
 ```
 
-Cette partie remplace le court-onde du modele 3. Il n'y a plus de mode
-court-onde alternatif dans 3.1, et il n'y a plus d'albedo nuageux effectif
-multiplie explicitement dans la formule.
+Cette partie remplace l'ancien court-onde simplifie. Il n'y a plus de mode
+court-onde alternatif dans le modele 3, et il n'y a plus d'albedo nuageux
+effectif multiplie explicitement dans la formule.
 
 ## Long-onde
 
@@ -137,8 +136,8 @@ LW_up_surface = epsilon_surface * sigma * T_surface^4
 epsilon_surface = 0.98
 ```
 
-L'emissivite de surface est constante dans 3.1. Les distinctions du modele 3
-entre terre, ocean, neige ou glace ne sont pas reprises.
+L'emissivite de surface est constante dans le modele 3. Les distinctions entre
+terre, ocean, neige ou glace ne sont pas reprises.
 
 Le flux infrarouge est traite par bandes spectrales. Pour chaque bande, le flux
 de surface est obtenu par integration de Planck sur l'intervalle de longueurs
@@ -156,13 +155,13 @@ transmission = exp(-1.66 * tau_total)
 emissivite_couche = 1 - transmission
 ```
 
-Le facteur diffusif herite du modele 3 reste :
+Le facteur diffusif herite du noyau precedent reste :
 
 ```text
 D = 1.66
 ```
 
-Les bandes CO2 conservees de la logique du modele 3 couvrent la bande `15 um`
+Les bandes CO2 conservees du noyau precedent couvrent la bande `15 um`
 avec un decoupage coeur/ailes, et la bande `4.3 um` avec le meme principe. Les
 bandes H2O effectives sont :
 
@@ -205,8 +204,9 @@ transmission.
 
 ## Nuages
 
-Les nuages ne sont pas un terme radiatif explicite dans 3.1. Leur effet moyen
-sur le court-onde de surface est inclus dans la transmissivite ERA5 mensuelle :
+Les nuages ne sont pas un terme radiatif explicite dans le modele 3. Leur effet
+moyen sur le court-onde de surface est inclus dans la transmissivite ERA5
+mensuelle :
 
 ```text
 SW_down_surface = transmissivite_sw_mensuelle * SW_TOA_local
@@ -218,7 +218,7 @@ Dans le long-onde, il n'y a pas de `tau_nuage` :
 tau_total = tau_CO2 + tau_H2O
 ```
 
-Les mecanismes du modele 3 qui associaient `low_cloud_cover`,
+Les anciens mecanismes qui associaient `low_cloud_cover`,
 `medium_cloud_cover`, `high_cloud_cover` ou `total_cloud_cover` a un albedo
 nuageux court-onde ou a une opacite grise long-onde ne sont donc pas repris.
 
@@ -262,7 +262,7 @@ Le paquet compact versionne contient les champs necessaires au calcul normal :
 coordonnees, pression de surface, albedo de surface, transmissivite court-onde
 mensuelle, couches verticales pretraitees et flux ERA5 de validation.
 
-Ce qui est volontairement absent de 3.1 :
+Ce qui est volontairement absent du modele 3 :
 
 - pas d'evolution de `T_surface(t)` ;
 - pas de transport horizontal ;
@@ -273,25 +273,13 @@ Ce qui est volontairement absent de 3.1 :
 - pas d'opacite nuageuse long-onde explicite ;
 - pas d'ozone, aerosols, CH4, N2O ou microphysique nuageuse.
 
-Ces absences sont des choix du modele 3.1. Elles ne doivent pas etre corrigees
-en reutilisant les anciennes formules du modele 3 dans la theorie.
+Ces absences sont des choix du modele 3. Elles ne doivent pas etre corrigees
+en reutilisant les anciennes formules dans la theorie.
 
 ## Validation
 
 Le paquet conserve des flux ERA5 mensuels pour comparer les ordres de grandeur.
-Pour Paris, point de grille `47.5 N, 2.5 E`, juillet, `T_surface = 293 K`,
-moyenne journaliere SW :
-
-```text
-SW_absorbe_surface   = 190.45 W m-2
-ERA5 SW_net_surface  = 188.80 W m-2
-LW_down_surface      = 349.91 W m-2
-ERA5 LW_down_surface = 364.20 W m-2
-OLR modele           = 286.15 W m-2
-ERA5 OLR             = 252.90 W m-2
-```
-
 Le court-onde est volontairement cale sur une transmissivite mensuelle moyenne.
-Le long-onde reste un modele effectif CO2 + H2O. La validation du modele 3,
-notamment son ancien exces de court-onde sur Paris, est remplacee par cette
-validation 3.1.
+Le long-onde reste un modele effectif CO2 + H2O. La validation du modele 3
+s'appuie donc sur des comparaisons grille par grille avec ERA5, sans cas local
+nomme dans la theorie.

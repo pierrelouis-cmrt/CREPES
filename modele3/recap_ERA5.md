@@ -49,4 +49,4 @@ Flux moyens téléchargés :
 - `avg_tnlwrfcs` : same, clear-sky
 - `avg_tnswrfcs` : mean top net short-wave radiation flux, clear-sky
 
-Contexte vérifié : ce sont des moyennes mensuelles ERA5 pour 2024, 12 mois, grille `0.25°`. Le modèle 3.1 final n’utilise plus tout : il garde surtout `t/q`, `sp/t2m/skt/lsm/siconc/sd`, l’albédo CSV, et les flux `avg_sdlwrf`, `avg_snswrf`, `avg_tnlwrf`, `avg_sdswrf`.
+Contexte vérifié : ce sont des moyennes mensuelles ERA5 pour 2024, 12 mois, grille `0.25°`. Le modèle 3 final n’utilise plus tout : il garde surtout `t/q`, `sp/t2m/skt/lsm/siconc/sd`, l’albédo CSV, et les flux `avg_sdlwrf`, `avg_snswrf`, `avg_tnlwrf`, `avg_sdswrf`.
