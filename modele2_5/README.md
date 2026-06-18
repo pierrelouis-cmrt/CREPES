@@ -128,7 +128,7 @@ $$
 Les bandes retenues sont :
 
 - $15\ \mu m$, principale bande thermique terrestre ;
-- $4.3\ \mu m$, bande CO2 forte mais faible dans l'émission terrestre à 288 K.
+- $4.3\ \mu m$, bande CO2 forte sur le spectre d'absorption du CO2 mais faible dans les longueurs d'onde émise par la terre à 288 K.
 
 La bande $2.7\ \mu m$ est négligée : son diagnostic était proche de $0.001\ \mathrm{W\,m^{-2}}$ pour $280\to560\ ppm$.
 
