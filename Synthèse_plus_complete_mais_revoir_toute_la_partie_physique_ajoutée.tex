@@ -18,6 +18,7 @@
 
 \geometry{margin=2.5cm}
 \graphicspath{{../}{./}}
+
 \hypersetup{
     colorlinks=true,
     linkcolor=blue!45!black,
@@ -145,7 +146,7 @@ python3 outils_generation_donnees/generer_donnees.py
 
 Il permet de vérifier l'état des ressources, de régénérer les grilles rapides, les grilles annuelles, les CSV \code{12\_mois} et certaines données d'albédo. Les grilles rapides produites par défaut couvrent $7$ jours avec les deux convections actives.
 
-Les données qui ne sont pas générées par code sont définies localement et restent à fournir ou remplacer manuellement.
+Les données qui ne sont pas générées par code sont definies localement et restent à fournir ou remplacer manuellement.
 
 \partietitre{5/Modules conservés}
 \addcontentsline{toc}{subsection}{Modules conservés}
@@ -198,8 +199,8 @@ Ce travail est mené en parallèle de la maintenance des modèles des années pr
 
 
 
-\partietitre{2/ Modèle général}
-\addcontentsline{toc}{subsection}{2/ Modèle général}
+\partietitre{2/ Modèle générale}
+\addcontentsline{toc}{subsection}{2/ Modèle générale}
 
 \bloc{Principe de découpage de l'atmosphère}
 
@@ -213,7 +214,7 @@ Pour simplifier, on considère que chaque couche possède :
     \item des propriétés radiatives moyennes à l'échelle de la couche.
 \end{itemize}
 
-On distingue les \motcle{couches} A, B, C etc, qui contiennent la matière atmosphérique, et les \motcle{interfaces}, où l'on suit les échanges de flux.
+On distingue les \motcle{couches} A, B, C etc, qui contiennent la matière atmosphérique, et les \motcle{interfaces}, où l'on suit les echanges de flux.
 
 \begin{itemize}
     \item k=0 : surface, interface entre la Terre et la couche 1
@@ -236,11 +237,11 @@ On distingue les \motcle{couches} A, B, C etc, qui contiennent la matière atmos
 On distingue deux types de rayonnement :
 
 \begin{itemize}
-    \item le rayonnement solaire visible : émis par le Soleil ;
-    \item le rayonnement infrarouge : émis par la Terre et les couches atmosphériques (car ce sont des corps noirs cad des corps de température non nulle) rayonnement émis de manière isotrope(cad dans toutes les directions).
+    \item le rayonnement solaire visible : emis par le Soleil ;
+    \item le rayonnement infrarouge : emis par la Terre et les couches atmosphériques (car ce sont des corps noir cad des corps de température non nulle) rayonnement émis de manière isotrope(cad dans toutes les directions).
 \end{itemize}
 
-Les couches atmosphériques sont supposées \motcle{transparentes au visible}. Le rayonnement solaire traverse donc l'atmosphère sans être absorbé. Dans l'infrarouge, en revanche, les couches peuvent absorber, transmettre et réémettre une partie du flux.
+Les couches atmosphériques sont supposées \motcle{transparentes au visible}. Le rayonnement solaire traverse donc l'atmosphère. Dans l'infrarouge, en revanche, les couches peuvent absorber, transmettre et réémettre une partie du flux.
 
 \renewcommand{\arraystretch}{1.35}
 \begin{table}[H]
@@ -336,10 +337,138 @@ E_b(T)
 
 \textcolor{green!50!black}{A finir : finir de mettre au propre les calcul physique généraux valide pour tout les modèles}
 
+\bloc{Absorbance, transmission et émissivité}
+
+
+Le \COtwo{} n'absorbe pas uniformément tout l'infrarouge. Il absorbe surtout dans certaines bandes spectrales. Pour une bande $b$, on associe une absorbance moyenne $A_b$.
+
+Cette absorbance est traitée comme une épaisseur optique effective. La transmission de la couche dans la bande $b$ est alors :
+
+\[
+\mathcal{T}_b = \exp(-A_b)
+\]
+
+Cette relation correspond à une forme de loi de Beer-Lambert : plus l'absorbance est grande, plus la transmission est faible.
+
+L'émissivité effective de la couche dans la même bande est :
+
+\[
+\varepsilon_b = 1-\mathcal{T}_b
+\]
+
+Ce choix traduit la loi de Kirchhoff : à l'équilibre thermique local, une couche qui absorbe bien dans une bande émet aussi efficacement dans cette même bande.
+
+Il ne faut pas confondre \motcle{absorbance} et \motcle{émissivité}. L'absorbance peut être supérieure à $1$. L'émissivité, elle, reste entre $0$ et $1$.
+
+\bloc{Propagation du flux montant}
+
+On note $F^\uparrow_{k,b}$ le flux infrarouge montant à l'interface $k$ dans la bande $b$.
+
+À la surface, le flux montant est l'émission de la surface dans cette bande :
+
+\[
+F^\uparrow_{0,b} = E_b(T_s)
+\]
+
+Lorsqu'il traverse une couche, une partie du flux venant d'en bas est transmise, et la couche ajoute sa propre émission vers le haut :
+
+\[
+F^\uparrow_{k+1,b}
+=
+\mathcal{T}_{k,b} F^\uparrow_{k,b}
++
+\left(1-\mathcal{T}_{k,b}\right)E_b(T_k)
+\]
+
+Le premier terme correspond au flux transmis. Le second correspond à l'émission de la couche $k$, pondérée par son émissivité dans la bande étudiée.
+
+\bloc{Propagation du flux descendant}
+
+On note $F^\downarrow_{k,b}$ le flux infrarouge descendant à l'interface $k$ dans la bande $b$.
+
+Au sommet de l'atmosphère, l'espace n'apporte pas de flux infrarouge descendant dans ce modèle :
+
+\[
+F^\downarrow_{N,b} = 0
+\]
+
+En descendant vers la surface, chaque couche transmet une partie du flux venant d'en haut et ajoute sa propre émission vers le bas :
+
+\[
+F^\downarrow_{k,b}
+=
+\mathcal{T}_{k,b} F^\downarrow_{k+1,b}
++
+\left(1-\mathcal{T}_{k,b}\right)E_b(T_k)
+\]
+
+Cette écriture est symétrique de celle du flux montant, mais appliquée dans le sens opposé.
+
+\bloc{Flux transparent}
+
+Toutes les longueurs d'onde qui ne sont pas traitées comme absorbantes sont regroupées dans un flux transparent. Ce flux est supposé traverser directement l'atmosphère.
+
+Si $\mathcal{B}$ est l'ensemble des bandes absorbantes retenues, alors :
+
+\[
+F_{\mathrm{transparent}}
+=
+\sigma T_s^4
+-
+\sum_{b\in\mathcal{B}} E_b(T_s)
+\]
+
+Le flux montant total à une interface $k$ s'écrit donc :
+
+\[
+F^\uparrow_{k,\mathrm{total}}
+=
+F_{\mathrm{transparent}}
++
+\sum_{b\in\mathcal{B}}F^\uparrow_{k,b}
+\]
+
+Le flux descendant total s'écrit :
+
+\[
+F^\downarrow_{k,\mathrm{total}}
+=
+\sum_{b\in\mathcal{B}}F^\downarrow_{k,b}
+\]
+
+Il n'y a pas de terme descendant transparent, car le modèle ne considère pas de source infrarouge venant de l'espace.
+
+\bloc{Bilan radiatif}
+
+À une interface, le flux net infrarouge est la différence entre le flux montant et le flux descendant :
+
+\[
+F_{k,\mathrm{net}}
+=
+F^\uparrow_{k,\mathrm{total}}
+-
+F^\downarrow_{k,\mathrm{total}}
+\]
+
+Pour une couche atmosphérique, le bilan énergétique complet comparerait ce qui entre dans la couche et ce qui en sort :
+
+\[
+C_k\frac{dT_k}{dt}
+=
+\sum_b
+\left[
+\left(F^\uparrow_{k,b}-F^\uparrow_{k+1,b}\right)
++
+\left(F^\downarrow_{k+1,b}-F^\downarrow_{k,b}\right)
+\right]
+\]
+
+Dans les premiers modèles, les températures restent imposées. Ce bilan sert donc surtout à préparer la suite : lorsque les températures ne seront plus fixées, il permettra de calculer leur évolution.
+
 \partietitre{3/ Modèle 1}
 \addcontentsline{toc}{subsection}{3/ Modèle 1}
 
-Le modèle 1 est une première version simple du modèle général. Il sert a vérifier que nos calculs sont justes en cherchant à retomber sur une valeur connue au préalable.
+Le modèle 1 est une première version simple du modèle général. Il sert a vérifie que nos calcul sont juste en cherchant à retomber sur une valeur connue au préalable.
 
 Le script correspondant est : $modele1/modele1.py$
 
@@ -402,7 +531,7 @@ F_{\mathrm{transparent}}
 363.1027\ \fluxunit
 \]
 
-\textcolor{green!50!black}{A faire : bien comprendre les valeurs numeriques utilisées, sourcer et peut etre revoir la mise en page}
+\textcolor{green!50!black}{A faire : bien comprendre les valeur numerique utilisées, sourcer et peut etre revoir la mise en page}
 
 \bloc{Résultat du modèle 1}
 
@@ -417,6 +546,26 @@ flux_infrarouge_descendant_surface_W_m2 = 16.311241
 
 Le premier résultat est le \motcle{flux infrarouge sortant} au sommet de l'atmosphère. Le second est le \motcle{flux infrarouge descendant} reçu par la surface.
 
+\bloc{Vérification limite}
+
+On vérifie le comportement du modèle en annulant les absorbances. Si $A_b=0$, alors $\mathcal{T}_b=1$ et $\varepsilon_b=0$ : les couches deviennent transparentes et n'émettent plus dans les bandes étudiées.
+
+Le résultat attendu est donc :
+
+\[
+F^\downarrow_{\mathrm{surface}} = 0,
+\qquad
+F^\uparrow_{\mathrm{sommet}} = \sigma T_s^4
+\]
+
+Le test donne :
+
+\begin{verbatim}
+flux_infrarouge_sortant_sommet_atmosphere = 390.918507769 W m^-2
+flux_infrarouge_descendant_surface = 0 W m^-2
+\end{verbatim}
+
+Le test est cohérent : sans absorption, il n'y a pas de réémission atmosphérique.
 
 \partietitre{4/ Modèle 2}
 \addcontentsline{toc}{subsection}{4/ Modèle 2}
