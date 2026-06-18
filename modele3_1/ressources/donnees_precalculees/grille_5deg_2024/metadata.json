@@ -24,15 +24,13 @@
     "era5_profil": "ressources/db7d35d0a9c6110c5f6d54212de24b21.nc",
     "era5_surface": "ressources/4d43b9edb397c8d4595fc350432d5ac4/data_stream-moda_stepType-avgua.nc",
     "era5_flux": "ressources/4d43b9edb397c8d4595fc350432d5ac4/data_stream-moda_stepType-avgad.nc",
-    "albedo_dir": "ressources/albedo",
-    "ceres": "ressources/albedo/CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc"
+    "albedo_dir": "ressources/albedo"
   },
   "references_externes": {
     "era5_pressure_levels_monthly": "https://cds.climate.copernicus.eu/datasets/reanalysis-era5-pressure-levels-monthly-means",
     "era5_single_levels_monthly": "https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels-monthly-means",
     "nasa_power_parameters": "https://power.larc.nasa.gov/docs/tutorials/parameters/",
-    "nasa_power_methodology": "https://power.larc.nasa.gov/docs/methodology/",
-    "ceres_ebaf_toa_ed4_2_1": "https://asdc.larc.nasa.gov/project/CERES/CERES_EBAF-TOA_Edition4.2.1"
+    "nasa_power_methodology": "https://power.larc.nasa.gov/docs/methodology/"
   },
   "variables": {
     "pression_surface_hpa": {
@@ -107,14 +105,6 @@
       "valeur_manquante": 65535,
       "source": "q * delta_p / g"
     },
-    "fraction_nuageuse_couche": {
-      "dtype_stocke": "uint16",
-      "unite_physique": "1",
-      "scale_factor": 0.0001,
-      "offset": 0.0,
-      "valeur_manquante": 65535,
-      "source": "ERA5 cc moyenne par couche"
-    },
     "albedo_surface": {
       "dtype_stocke": "uint16",
       "unite_physique": "1",
@@ -122,14 +112,6 @@
       "offset": 0.0,
       "valeur_manquante": 65535,
       "source": "ressources/albedo/albedo01.csv..albedo12.csv"
-    },
-    "albedo_nuages_effectif": {
-      "dtype_stocke": "uint16",
-      "unite_physique": "1",
-      "scale_factor": 0.0001,
-      "offset": 0.0,
-      "valeur_manquante": 65535,
-      "source": "CERES EBAF-TOA, (toa_sw_all - toa_sw_clr_c) / solar"
     },
     "sw_toa_moyen_mensuel_w_m2": {
       "dtype_stocke": "uint16",
@@ -162,38 +144,6 @@
       "offset": 0.0,
       "valeur_manquante": 65535,
       "source": "ERA5 siconc ou sd > 0.01 m"
-    },
-    "cloud_total": {
-      "dtype_stocke": "uint16",
-      "unite_physique": "1",
-      "scale_factor": 0.0001,
-      "offset": 0.0,
-      "valeur_manquante": 65535,
-      "source": "ERA5 tcc"
-    },
-    "low_cloud": {
-      "dtype_stocke": "uint16",
-      "unite_physique": "1",
-      "scale_factor": 0.0001,
-      "offset": 0.0,
-      "valeur_manquante": 65535,
-      "source": "ERA5 lcc"
-    },
-    "medium_cloud": {
-      "dtype_stocke": "uint16",
-      "unite_physique": "1",
-      "scale_factor": 0.0001,
-      "offset": 0.0,
-      "valeur_manquante": 65535,
-      "source": "ERA5 mcc"
-    },
-    "high_cloud": {
-      "dtype_stocke": "uint16",
-      "unite_physique": "1",
-      "scale_factor": 0.0001,
-      "offset": 0.0,
-      "valeur_manquante": 65535,
-      "source": "ERA5 hcc"
     },
     "era5_lw_down_surface_w_m2": {
       "dtype_stocke": "int16",
@@ -229,8 +179,8 @@
     }
   },
   "notes": [
-    "Les fichiers albedo/CERES sont lus depuis ressources/albedo, copie racine des donnees utiles du modele 0.",
-    "Le modele 3.1 n'utilise pas de coefficient nuageux court-onde ou long-onde cache.",
+    "Les CSV d'albedo sont lus depuis ressources/albedo, copie racine des donnees utiles du modele 0.",
+    "Le modele 3.1 n'utilise pas de coefficient nuageux court-onde ou long-onde.",
     "transmissivite_sw_mensuelle corrige le court-onde surface avec ERA5, sans remplacer S0*cos(i).",
     "Les poids_surface sont normalises pour sommer a 1 sur la grille."
   ]

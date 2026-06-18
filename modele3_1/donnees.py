@@ -1,9 +1,4 @@
-"""Chargement des donnees compactes du modele 3.1.
-
-Le calcul normal lit un paquet `.npz` deja prepare. Les fichiers ERA5/CERES
-lourds sont lus seulement par `generer_donnees.py`, jamais par le calculateur
-de colonne ou le modele 4.
-"""
+"""Chargement du paquet compact du modele 3.1."""
 
 from __future__ import annotations
 
@@ -16,9 +11,11 @@ import numpy as np
 from . import physique
 
 
-RACINE_DEPOT = Path(__file__).resolve().parents[1]
 DOSSIER_PAQUET_DEFAUT = (
-    Path(__file__).resolve().parent / "donnees_precalculees" / "grille_5deg_2024"
+    Path(__file__).resolve().parent
+    / "ressources"
+    / "donnees_precalculees"
+    / "grille_5deg_2024"
 )
 FICHIER_NPZ_DEFAUT = "donnees_colonnes_5deg_2024.npz"
 EMISSIVITE_SURFACE = physique.EMISSIVITE_SURFACE_CONSTANTE
@@ -145,20 +142,8 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
 
     pression_surface_hpa = float(mensuel("pression_surface_hpa"))
     albedo_surface = physique.fraction(mensuel("albedo_surface"), defaut=ALBEDO_SURFACE_SECOURS)
-    albedo_nuages = physique.fraction(
-        mensuel("albedo_nuages_effectif"),
-        defaut=0.0,
-        maximum=0.95,
-    )
-    transmissivite_sw = None
-    if "transmissivite_sw_mensuelle" in donnees:
-        transmissivite_sw = physique.fraction(
-            mensuel("transmissivite_sw_mensuelle"),
-            defaut=0.0,
-        )
-    sw_toa_moyen = None
-    if "sw_toa_moyen_mensuel_w_m2" in donnees:
-        sw_toa_moyen = _float_ou_none(mensuel("sw_toa_moyen_mensuel_w_m2"))
+    transmissivite_sw = physique.fraction(mensuel("transmissivite_sw_mensuelle"), defaut=0.0)
+    sw_toa_moyen = _float_ou_none(mensuel("sw_toa_moyen_mensuel_w_m2"))
 
     surface = {
         "latitude_deg": latitude,
@@ -168,12 +153,10 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
         "pression_surface_pa": pression_surface_hpa * 100.0,
         "pression_surface_hpa": pression_surface_hpa,
         "albedo_surface": albedo_surface,
-        "albedo_nuages_effectif": albedo_nuages,
         "sw_toa_moyen_mensuel_w_m2": sw_toa_moyen,
         "transmissivite_sw_mensuelle": transmissivite_sw,
         "emissivite_surface": EMISSIVITE_SURFACE,
         "source_albedo_surface": _source_variable(paquet, "albedo_surface"),
-        "source_albedo_nuages_effectif": _source_variable(paquet, "albedo_nuages_effectif"),
         "source_transmissivite_sw_mensuelle": _source_variable(
             paquet,
             "transmissivite_sw_mensuelle",
@@ -186,14 +169,10 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
         "snow_ice_fraction",
         "temperature_2m_k",
         "skin_temperature_k",
-        "cloud_total",
-        "low_cloud",
-        "medium_cloud",
-        "high_cloud",
     ):
         if nom in donnees:
             valeur = _float_ou_none(mensuel(nom))
-            if nom.endswith("cloud") or nom.endswith("fraction") or nom in {"cloud_total"}:
+            if nom.endswith("fraction"):
                 valeur = None if valeur is None else physique.fraction(valeur)
             surface[nom] = valeur
 
@@ -202,7 +181,6 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
     pression_haut = mensuel("pression_haut_couche_hpa")
     temperature = mensuel("temperature_couche_k")
     humidite = mensuel("humidite_specifique_couche_kgkg")
-    fraction_nuageuse = mensuel("fraction_nuageuse_couche")
     masse_air = mensuel("masse_air_couche_kg_m2")
     masse_h2o = mensuel("masse_h2o_couche_kg_m2")
 
@@ -220,7 +198,6 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
                 "pression_haut_pa": p_haut * 100.0,
                 "temperature_k": float(temperature[indice]),
                 "humidite_specifique_kgkg": max(0.0, float(humidite[indice])),
-                "fraction_nuageuse": physique.fraction(fraction_nuageuse[indice]),
                 "masse_air_kg_m2": max(0.0, float(masse_air[indice])),
                 "masse_h2o_kg_m2": max(0.0, float(masse_h2o[indice])),
             }
@@ -254,27 +231,3 @@ def iterer_colonnes(paquet, mois=None, jour_annee=None):
     for latitude in latitudes:
         for longitude in longitudes:
             yield extraire_colonne(paquet, float(latitude), float(longitude), mois, jour_annee)
-
-
-def charger_donnees_extraites(chemin):
-    with Path(chemin).open(encoding="utf-8") as fichier:
-        donnees = json.load(fichier)
-    return normaliser_colonne_legacy(donnees)
-
-
-def normaliser_colonne_legacy(donnees):
-    """Adapte un JSON modele 3 sans recreer les coefficients supprimes."""
-
-    surface = donnees.setdefault("surface", {})
-    surface["emissivite_surface"] = EMISSIVITE_SURFACE
-    surface["source_emissivite_surface"] = "constante_0.98"
-    if "albedo_surface" not in surface:
-        surface["albedo_surface"] = ALBEDO_SURFACE_SECOURS
-        surface["source_albedo_surface"] = "secours_0.30"
-    else:
-        surface.setdefault("source_albedo_surface", "json_fourni")
-    if "albedo_nuages_effectif" not in surface:
-        surface["albedo_nuages_effectif"] = 0.0
-        surface["source_albedo_nuages_effectif"] = "absent_json_0.0"
-    donnees.setdefault("validation_flux", {})
-    return donnees

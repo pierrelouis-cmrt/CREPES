@@ -2,8 +2,7 @@
 
 Ce module ne lit aucun fichier. Il contient les constantes, la geometrie
 solaire, Planck, les masses colonne et les opacites infrarouges CO2 + H2O.
-Les nuages ne creent plus d'opacite long-onde implicite et l'albedo nuageux
-court-onde est fourni par les donnees d'entree.
+Les nuages ne creent pas d'opacite long-onde implicite.
 """
 
 from __future__ import annotations
@@ -230,78 +229,6 @@ def flux_solaire_moyen_journalier(latitude_deg, jour_annee):
     return total / nombre_pas
 
 
-def flux_sw_surface_transmis(
-    latitude_deg,
-    jour_annee,
-    heure_solaire,
-    transmissivite_sw,
-    albedo_surface,
-):
-    sw_toa = flux_solaire_incident(latitude_deg, jour_annee, heure_solaire)
-    sw_down = sw_toa * fraction(transmissivite_sw, defaut=0.0)
-    return sw_down * (1.0 - fraction(albedo_surface, defaut=0.30))
-
-
-def flux_sw_surface_transmis_moyenne_journaliere(
-    latitude_deg,
-    jour_annee,
-    transmissivite_sw,
-    albedo_surface,
-):
-    sw_toa = flux_solaire_moyen_journalier(latitude_deg, jour_annee)
-    sw_down = sw_toa * fraction(transmissivite_sw, defaut=0.0)
-    return sw_down * (1.0 - fraction(albedo_surface, defaut=0.30))
-
-
-def _points_valides(pressions_hpa, valeurs):
-    points = []
-    for pression, valeur in zip(pressions_hpa, valeurs):
-        pression = valeur_finie(pression)
-        valeur = valeur_finie(valeur)
-        if pression is not None and valeur is not None:
-            points.append((pression, valeur))
-    if not points:
-        raise ValueError("Profil vertical vide.")
-    return sorted(points)
-
-
-def interpoler_pression(pression_hpa, pressions_hpa, valeurs):
-    points = _points_valides(pressions_hpa, valeurs)
-    pressions = [point[0] for point in points]
-    valeurs = [point[1] for point in points]
-
-    if pression_hpa <= pressions[0]:
-        return valeurs[0]
-    if pression_hpa >= pressions[-1]:
-        return valeurs[-1]
-
-    for indice in range(len(pressions) - 1):
-        p0 = pressions[indice]
-        p1 = pressions[indice + 1]
-        if p0 <= pression_hpa <= p1:
-            poids = (pression_hpa - p0) / (p1 - p0)
-            return valeurs[indice] + poids * (valeurs[indice + 1] - valeurs[indice])
-    return valeurs[-1]
-
-
-def moyenne_pression(pressions_hpa, valeurs, pression_bas_hpa, pression_haut_hpa):
-    if pression_bas_hpa <= pression_haut_hpa:
-        raise ValueError("pression_bas_hpa doit etre plus grande que pression_haut_hpa.")
-
-    points = [pression_haut_hpa, pression_bas_hpa]
-    for pression, _valeur in _points_valides(pressions_hpa, valeurs):
-        if pression_haut_hpa < pression < pression_bas_hpa:
-            points.append(pression)
-    points = sorted(set(points))
-
-    integrale = 0.0
-    for p0, p1 in zip(points[:-1], points[1:]):
-        v0 = interpoler_pression(p0, pressions_hpa, valeurs)
-        v1 = interpoler_pression(p1, pressions_hpa, valeurs)
-        integrale += 0.5 * (v0 + v1) * (p1 - p0)
-    return integrale / (pression_bas_hpa - pression_haut_hpa)
-
-
 def masse_air_depuis_delta_p(delta_p_pa):
     return delta_p_pa / GRAVITE
 
@@ -397,9 +324,3 @@ def opacites_couche_bande(couche, bande):
         "transmission": transmission,
         "emissivite": 1.0 - transmission,
     }
-
-
-def flux_sw_absorbe_surface(sw_incident_surface, albedo_surface, albedo_nuages_effectif):
-    albedo_surface = fraction(albedo_surface, defaut=0.30)
-    albedo_nuages_effectif = fraction(albedo_nuages_effectif, defaut=0.0, maximum=0.95)
-    return sw_incident_surface * (1.0 - albedo_nuages_effectif) * (1.0 - albedo_surface)

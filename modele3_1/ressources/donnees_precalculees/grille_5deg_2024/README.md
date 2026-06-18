@@ -1,7 +1,7 @@
 # Donnees precalculees 3.1
 
 Paquet compact genere depuis les ressources racine du depot. Ce dossier
-est la source normale du calcul 3.1 et la future entree grille du modele 4.
+est la source normale du calcul 3.1 et l'entree grille du modele 4.
 
 - Fichier: `donnees_colonnes_5deg_2024.npz`
 - Resolution: 5 degres
@@ -13,12 +13,11 @@ est la source normale du calcul 3.1 et la future entree grille du modele 4.
 
 | Champ | Source active | Transformation |
 | --- | --- | --- |
-| Profils `T`, `q`, `cc` | ERA5 pression, `ressources/*.nc` | Moyennes par couche de pression 3.1. |
-| Surface et nuages | ERA5 single levels, `ressources/**/*.nc` | Selection au plus proche sur grille 5 degres. |
+| Profils `T`, `q` | ERA5 pression, `ressources/*.nc` | Moyennes par couche de pression 3.1. |
+| Surface | ERA5 single levels, `ressources/**/*.nc` | Selection au plus proche sur grille 5 degres. |
 | Flux de validation | ERA5 flux moyens | Stockes pour comparaison, jamais pour recalibrer. |
 | Transmissivite SW | Geometrie solaire 3.1 + ERA5 `avg_sdswrf` | `ERA5 SW_down / moyenne_mensuelle(S0*cos(i))`, borne `[0, 1]`. |
 | Albedo surface | `ressources/albedo/albedo01.csv` ... `albedo12.csv` | Selection mensuelle au plus proche. |
-| Albedo nuages | `ressources/albedo/CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc` | `(toa_sw_all_mon - toa_sw_clr_c_mon) / solar_mon`. |
 
 Les fichiers `ressources/albedo/*` sont des copies racine des donnees utiles
 historiquement presentes dans le modele 0. Le code 3.1 ne lit pas le dossier
@@ -27,7 +26,7 @@ historiquement presentes dans le modele 0. Le code 3.1 ne lit pas le dossier
 ## Contenu
 
 Le `.npz` contient seulement les champs necessaires au calcul normal :
-coordonnees, poids de surface, pression de surface, albedos, transmissivite
-court-onde mensuelle, diagnostics surface, flux ERA5 de validation et
+coordonnees, poids de surface, pression de surface, albedo, transmissivite
+court-onde mensuelle, champs surface utiles, flux ERA5 de validation et
 couches pretraitees. Les facteurs de quantification, unites et sources
 sont dans `metadata.json`.

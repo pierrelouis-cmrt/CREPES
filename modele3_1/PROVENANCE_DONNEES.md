@@ -1,174 +1,53 @@
 # Provenance des donnees du modele 3.1
 
-Ce fichier documente toutes les donnees utilisees par 3.1. Le principe est
-simple : les fichiers lourds et les ressources albedo sont lus depuis
-`ressources/`, puis transformes une fois en paquet compact dans
-`modele3_1/donnees_precalculees/grille_5deg_2024/`.
-
-## Regle de dependance
-
-Le modele 3.1 ne lit pas directement `modele0_maintenance/` et n'importe aucun
-module depuis ce dossier. Les fichiers d'albedo utiles qui existaient dans le
-modele 0 ont ete copies dans `ressources/albedo/`. Cette copie racine est la
-source active.
-
-## Inventaire des sources actives
-
-| Chemin actif | Nature | Variables lues | Transformation | Sortie paquet |
-| --- | --- | --- | --- | --- |
-| `ressources/db7d35d0a9c6110c5f6d54212de24b21.nc` | ERA5 mensuel sur niveaux de pression. | `t`, `q`, `cc`, `pressure_level`. | Selection grille 5 degres, puis moyenne en pression dans les couches 3.1. | `temperature_couche_k`, `humidite_specifique_couche_kgkg`, `fraction_nuageuse_couche`, `masse_air_couche_kg_m2`, `masse_h2o_couche_kg_m2`. |
-| `ressources/4d43b9edb397c8d4595fc350432d5ac4/data_stream-moda_stepType-avgua.nc` | ERA5 mensuel single levels. | `sp`, `t2m`, `skt`, `lsm`, `siconc`, `sd`, `tcc`, `lcc`, `mcc`, `hcc`. | Selection grille 5 degres. `sp` est converti en hPa ; neige/glace = max(`siconc`, `sd > 0.01 m`). | `pression_surface_hpa`, `temperature_2m_k`, `skin_temperature_k`, `land_fraction`, `snow_ice_fraction`, nuages diagnostiques. |
-| `ressources/4d43b9edb397c8d4595fc350432d5ac4/data_stream-moda_stepType-avgad.nc` | ERA5 flux moyens mensuels. | `avg_sdlwrf`, `avg_snswrf`, `avg_tnlwrf`, `avg_sdswrf`. | Selection grille 5 degres. `avg_tnlwrf` est stocke en valeur absolue pour l'OLR positif. | Flux ERA5 de validation. |
-| Geometrie solaire 3.1 + ERA5 flux | Grandeur derivee. | `avg_sdswrf` et `S0 * max(cos(i), 0)`. | Moyenne mensuelle TOA par latitude, puis `avg_sdswrf / SW_TOA_moyen`, bornage `[0, 1]`. | `sw_toa_moyen_mensuel_w_m2`, `transmissivite_sw_mensuelle`. |
-| `ressources/albedo/albedo01.csv` ... `albedo12.csv` | Albedo de surface mensuel. | Valeurs grille CSV. | Selection au plus proche sur la grille 5 degres, bornage `[0, 1]`. | `albedo_surface`. |
-| `ressources/albedo/CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc` | CERES EBAF-TOA mensuel. | `toa_sw_all_mon`, `toa_sw_clr_c_mon`, `solar_mon`. | Formule effective nuageuse, selection au plus proche, bornage `[0, 0.95]`. | `albedo_nuages_effectif`. |
-
-## Detail CERES
-
-Fichier actif :
+Le calcul 3.1 lit uniquement le paquet compact :
 
 ```text
-ressources/albedo/CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc
+modele3_1/ressources/donnees_precalculees/grille_5deg_2024/
 ```
 
-Produit externe :
+Les fichiers bruts locaux sont lus seulement par :
 
 ```text
-NASA CERES EBAF-TOA Edition 4.2.1
+modele3_1/ressources/generer_donnees.py
 ```
 
-Variables utilisees :
+## Sources actives
+
+| Source | Variables | Transformation | Sortie paquet |
+| --- | --- | --- | --- |
+| ERA5 niveaux de pression, `ressources/*.nc` | `t`, `q`, `pressure_level` | Selection grille 5 degres, moyennes par couche de pression. | `temperature_couche_k`, `humidite_specifique_couche_kgkg`, `masse_air_couche_kg_m2`, `masse_h2o_couche_kg_m2` |
+| ERA5 single levels, `ressources/**/*.nc` | `sp`, `t2m`, `skt`, `lsm`, `siconc`, `sd` | Selection grille 5 degres, pression en hPa, neige/glace = max(`siconc`, `sd > 0.01 m`). | `pression_surface_hpa`, temperatures surface, fractions terre/neige-glace |
+| ERA5 flux mensuels, `ressources/**/*.nc` | `avg_sdlwrf`, `avg_snswrf`, `avg_tnlwrf`, `avg_sdswrf` | Selection grille 5 degres, OLR stocke positif. | Flux ERA5 de validation |
+| Geometrie solaire 3.1 + ERA5 SW down | `avg_sdswrf`, `S0 * max(cos(i), 0)` | Moyenne mensuelle TOA par latitude, puis rapport ERA5/TOA borne `[0, 1]`. | `sw_toa_moyen_mensuel_w_m2`, `transmissivite_sw_mensuelle` |
+| CSV albedo, `ressources/albedo/albedo01.csv` ... `albedo12.csv` | albedo mensuel | Selection au plus proche, bornage `[0, 1]`. | `albedo_surface` |
+
+Les CSV d'albedo sont des copies racine de ressources historiquement produites
+pour le modele 0. Le code 3.1 ne lit pas `modele0_maintenance/`.
+
+## Transmissivite court-onde
 
 ```text
-toa_sw_all_mon    flux court-onde reflechi TOA tout temps
-toa_sw_clr_c_mon  flux court-onde reflechi TOA ciel clair
-solar_mon         flux solaire incident TOA
-```
+SW_TOA_moyen_mensuel =
+    moyenne_mensuelle(1361 * max(cos(i), 0))
 
-Formule :
-
-```text
-albedo_nuages_effectif =
-    (toa_sw_all_mon - toa_sw_clr_c_mon) / solar_mon
-```
-
-Interpretation exacte : ce champ mesure l'effet radiatif court-onde
-supplementaire des nuages dans CERES, vu au sommet de l'atmosphere et normalise
-par le solaire entrant. Ce n'est pas un albedo local de gouttelettes, ni une
-fraction nuageuse, ni une propriete optique spectrale.
-
-Pourquoi l'utiliser : il remplace une constante cachee du modele 3
-(`0.50 * cloud_total`) par une grandeur observationnelle directement reliee au
-bilan radiatif court-onde.
-
-Limite : appliquer un effet TOA directement dans une formule de surface reste
-une approximation. Elle est explicite et documentee ; elle ne doit pas etre lue
-comme un transfert solaire atmospherique complet.
-
-Reference :
-
-```text
-https://asdc.larc.nasa.gov/project/CERES/CERES_EBAF-TOA_Edition4.2.1
-```
-
-## Detail albedo surface
-
-Fichiers actifs :
-
-```text
-ressources/albedo/albedo01.csv ... ressources/albedo/albedo12.csv
-```
-
-Origine externe historique :
-
-```text
-NASA POWER
-ALLSKY_SFC_SW_UP / ALLSKY_SFC_SW_DWN
-```
-
-Interpretation : rapport mensuel du flux solaire court-onde montant a la surface
-sur le flux solaire court-onde descendant a la surface. Le resultat est une
-estimation d'albedo de surface mensuel.
-
-Usage 3.1 :
-
-```text
-mode recommande:
-SW_absorbe_surface =
-    transmissivite_sw_mensuelle
-  * SW_incident_TOA_local
-  * (1 - albedo_surface)
-
-mode diagnostic toa_nuages_ceres:
-SW_absorbe_surface =
-    SW_incident_TOA_local
-  * (1 - albedo_nuages_effectif)
-  * (1 - albedo_surface)
-```
-
-## Detail transmissivite court-onde
-
-Le modele garde la geometrie solaire historique :
-
-```text
-SW_incident_TOA_local = S0 * max(cos(i), 0)
-S0 = 1361 W m-2
-```
-
-Pendant la generation du paquet, cette grandeur est moyennee pour chaque mois
-et latitude sur tous les jours du mois et 96 pas horaires solaires. La
-transmissivite stockee est ensuite :
-
-```text
 transmissivite_sw_mensuelle =
-    era5_sw_down_surface_w_m2 / sw_toa_moyen_mensuel_w_m2
+    era5_sw_down_surface_w_m2 / SW_TOA_moyen_mensuel
 ```
 
-La valeur est bornee dans `[0, 1]`. ERA5 sert donc a corriger la transmission
-atmospherique moyenne vers la surface, sans remplacer le cycle solaire local du
-modele.
+La transmissivite est bornee dans `[0, 1]`. Les valeurs bornees sont comptees
+dans `metadata.json`.
 
-References :
+## Donnees non utilisees
 
-```text
-https://power.larc.nasa.gov/docs/tutorials/parameters/
-https://power.larc.nasa.gov/docs/methodology/
-```
+| Donnee disponible | Statut |
+| --- | --- |
+| MODIS HDF | Non utilise ; emissivite constante `0.98`. |
+| ERA5 `z`, `cbh` | Non stockes ; les couches sont en pression. |
+| 37 niveaux ERA5 bruts | Non stockes ; seules les couches pretraitees sont versionnees. |
 
-## Detail ERA5
+## References externes
 
-ERA5 fournit les profils atmospheriques, la pression de surface, des diagnostics
-surface et des flux de validation. Le modele 3.1 ne calibre pas ses coefficients
-sur les flux ERA5 pendant la generation ; il les conserve pour comparer les
-ordres de grandeur.
-
-References :
-
-```text
-https://cds.climate.copernicus.eu/datasets/reanalysis-era5-pressure-levels-monthly-means
-https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels-monthly-means
-```
-
-## Donnees explicitement non utilisees
-
-| Donnee disponible | Statut 3.1 | Raison |
-| --- | --- | --- |
-| MODIS HDF `MOD11C3.A2024/*.hdf` | Non lu. | L'emissivite est fixee a `0.98` pour eviter une complexite inutile a ce stade. |
-| `cbh` ERA5 | Non stocke. | Pas de microphysique nuageuse ni de hauteur de base de nuage dans le calcul. |
-| `z` ERA5 geopotentiel | Non stocke. | Les couches sont construites en pression ; pas de diagnostic altitude necessaire. |
-| Flux ERA5 clear-sky | Non stockes dans le paquet actuel. | Non necessaires aux tests/calculeur 3.1. |
-| 37 niveaux ERA5 bruts | Non stockes. | Moyennes de couches pretraitees suffisent au calcul. |
-
-## Quantification
-
-Les tableaux physiques sont quantifies avant ecriture dans le `.npz`. Les
-facteurs sont dans `metadata.json` :
-
-```text
-valeur = valeur_stockee * scale_factor + offset
-```
-
-Les valeurs manquantes utilisent une sentinelle par type (`65535` pour
-`uint16`, `-32768` pour `int16`) et sont reconstruites en `NaN` au chargement.
-La quantification explique pourquoi le paquet complet tient dans environ
-`2.1 Mo`.
+- Copernicus ERA5 monthly averaged pressure levels.
+- Copernicus ERA5 monthly averaged single levels.
+- NASA POWER pour la provenance historique des CSV d'albedo de surface.

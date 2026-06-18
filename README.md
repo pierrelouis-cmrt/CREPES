@@ -60,16 +60,13 @@ Ajouts par rapport au modèle 2.5 :
 
 Ajouts/corrections par rapport au modèle 3 :
 
-- Paquet compact `modele3_1/donnees_precalculees/grille_5deg_2024/`.
+- Paquet compact `modele3_1/ressources/donnees_precalculees/grille_5deg_2024/`.
 - Grille globale `5 degrés` prête pour le modèle 4.
 - Émissivité constante `0.98`.
 - Albédo de surface lu depuis `ressources/albedo/albedo01.csv` à `albedo12.csv`.
-- Albédo nuageux effectif CERES :
-  `(toa_sw_all_mon - toa_sw_clr_c_mon) / solar_mon`.
 - Transmissivité court-onde mensuelle :
   `ERA5 SW_down / moyenne_mensuelle(S0 * max(cos(i), 0))`.
-- Suppression des coefficients cachés `0.50 * cloud_total` et
-  `tau_nuage = 0.10 * fraction_nuageuse`.
+- Suppression des corrections nuageuses arbitraires court-onde et long-onde.
 - Le code 3.1 lit les copies racine dans `ressources/albedo/`, pas
   `modele0_maintenance/`.
 
@@ -157,13 +154,13 @@ La documentation détaillée du modèle 3 est dans `modele3/README.md` et
 Régénérer le paquet compact :
 
 ```bash
-./.venv/bin/python -m modele3_1.generer_donnees --overwrite
+./.venv/bin/python -m modele3_1.ressources.generer_donnees --overwrite
 ```
 
 Lancer Paris depuis le paquet global :
 
 ```bash
-./.venv/bin/python -m modele3_1.modele3_1 --lat 48.8566 --lon 2.3522 --mois 7 --temperature-surface 293.0 --moyenne-journaliere-sw --mode-court-onde transmissivite_sw
+./.venv/bin/python -m modele3_1.modele3_1 --lat 48.8566 --lon 2.3522 --mois 7 --temperature-surface 293.0 --moyenne-journaliere-sw
 ```
 
 Lancer les tests :
@@ -177,4 +174,3 @@ Documentation détaillée :
 - `modele3_1/README.md`
 - `modele3_1/THEORIE.md`
 - `modele3_1/PROVENANCE_DONNEES.md`
-- `modele3_1/RECAP_MODIFICATIONS_MODELE_3_1.md`
