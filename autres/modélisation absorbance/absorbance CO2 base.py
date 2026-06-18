@@ -21,13 +21,14 @@ def make_cross_section_CO2_all_bands():
     ]
     all_wavelengths = []       #va permettre de stocker les longueurs d'ondes de tous les spectres
     all_absorbance = []        #va permettre de stocker les absorbances de tous les spectres
+    a= 425e-6  # fraction molaire du CO2 (440 ppm)
     for wmin, wmax in bands:
         
         s = calc_spectrum(
             wmin=wmin, wmax=wmax,
             molecule="CO2", isotope="1,2,3",
             Tgas=255, pressure=1.013,
-            mole_fraction=440e-6,   # 440 ppm
+            mole_fraction=a,   # 425 ppm
             path_length=100,        # 1m = 100 cm   #epaisseur de la colonne d'air
             databank="hitran", verbose=False
         )
@@ -52,7 +53,7 @@ fig, ax = plt.subplots(figsize=(10, 5))
 ax.plot(wl_um, absorption_CO2(wl_um), color="steelblue", linewidth=0.8)
 ax.set_xlabel("Longueur d'onde (µm)")
 ax.set_ylabel("Absorbance ")
-ax.set_title("Absorption du CO₂ (400 ppm, 1m)")
+ax.set_title("Absorption du CO₂ (425 ppm, 1m)")
 ax.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.show()
