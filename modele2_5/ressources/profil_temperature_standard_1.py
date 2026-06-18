@@ -142,11 +142,7 @@ def atmosphere_standard(
     return temperature_k, pression_pa
 
 
-def altitude_depuis_pression(
-    pression_pa: float,
-    pression_surface_pa: float = PRESSION_SURFACE_STANDARD_PA,
-    temperature_surface_k: float = TEMPERATURE_SURFACE_STANDARD_K,
-) -> float:
+def altitude_depuis_pression(pression_pa: float,pression_surface_pa: float = PRESSION_SURFACE_STANDARD_PA,temperature_surface_k: float = TEMPERATURE_SURFACE_STANDARD_K,) -> float:
     """Inverse le profil standard et retourne l'altitude geometrique en metres."""
 
     if pression_pa <= 0.0:
@@ -206,10 +202,7 @@ def temperature_moyenne_altitude(
     return float(np.trapezoid(temperatures_k, altitudes_m) / (altitude_haut_m - altitude_bas_m))
 
 
-def construire_profil_temperature(
-    max_altitude_km: float,
-    step_m: float,
-) -> dict[str, np.ndarray]:
+def construire_profil_temperature(max_altitude_km: float,step_m: float) -> dict[str, np.ndarray]:
     """Construit le profil exporte par le script."""
 
     max_altitude_m = max_altitude_km * 1000.0
