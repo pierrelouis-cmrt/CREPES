@@ -1,14 +1,14 @@
-# Modele 3.1 - colonne radiative finale
+# Modele 3 - colonne radiative finale
 
-Le modele 3.1 calcule les flux radiatifs d'une colonne atmospherique deja
+Le modele 3 calcule les flux radiatifs d'une colonne atmospherique deja
 preparee. Il ne lit pas les fichiers ERA5 bruts pendant le calcul et sert de
 brique stable pour le modele 4.
 
 ## Structure
 
 ```text
-modele3_1/
-  modele3_1.py                  # calcul radiatif d'une colonne
+modele3/
+  modele3.py                  # calcul radiatif d'une colonne
   physique.py                   # constantes et formules physiques
   donnees.py                    # chargement du paquet compact
   ressources/
@@ -19,7 +19,7 @@ modele3_1/
         metadata.json
         README.md
   tests/
-    tester_modele3_1.py
+    tester_modele3.py
 ```
 
 ## Contrat d'une colonne
@@ -75,7 +75,7 @@ Il n'y a pas de mode court-onde alternatif ni de coefficient nuageux radiatif.
 Le paquet compact versionne est dans :
 
 ```text
-modele3_1/ressources/donnees_precalculees/grille_5deg_2024/
+modele3/ressources/donnees_precalculees/grille_5deg_2024/
 ```
 
 Il contient la grille globale 5 degres, les champs surface utiles, les couches
@@ -85,15 +85,15 @@ transmissivite court-onde mensuelle.
 Regenerer le paquet :
 
 ```bash
-./.venv/bin/python -m modele3_1.ressources.generer_donnees --overwrite
+./.venv/bin/python -m modele3.ressources.generer_donnees --overwrite
 ```
 
-Lancer Paris depuis le paquet :
+Lancer une colonne depuis le paquet :
 
 ```bash
-./.venv/bin/python -m modele3_1.modele3_1 \
-  --lat 48.8566 \
-  --lon 2.3522 \
+./.venv/bin/python -m modele3.modele3 \
+  --lat 0 \
+  --lon 0 \
   --mois 7 \
   --temperature-surface 293.0 \
   --moyenne-journaliere-sw
@@ -102,12 +102,12 @@ Lancer Paris depuis le paquet :
 Lancer les tests :
 
 ```bash
-./.venv/bin/python modele3_1/tests/tester_modele3_1.py
+./.venv/bin/python modele3/tests/tester_modele3.py
 ```
 
 ## Limites assumees
 
-- Pas d'evolution de `T_surface(t)` dans 3.1.
+- Pas d'evolution de `T_surface(t)` dans le modele 3.
 - Pas de transport horizontal.
 - Pas d'ozone, aerosols, CH4, N2O ou microphysique nuageuse.
 - Emissivite de surface constante `0.98`.

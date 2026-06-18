@@ -1,4 +1,4 @@
-"""Chargement du paquet compact du modele 3.1."""
+"""Chargement du paquet compact du modele 3."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Modele 3.1 : colonne radiative locale.
+"""Modele 3 : colonne radiative locale.
 
 La fonction publique `calculer_colonne_radiative` recoit une colonne deja
 preparee. Elle ne lit pas les fichiers lourds et peut donc etre appelee en
@@ -19,10 +19,10 @@ try:
         charger_paquet_grille,
         extraire_colonne,
     )
-except ImportError:  # Permet aussi : python modele3_1/modele3_1.py
+except ImportError:  # Permet aussi : python modele3/modele3.py
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from modele3_1 import physique
-    from modele3_1.donnees import (
+    from modele3 import physique
+    from modele3.donnees import (
         DOSSIER_PAQUET_DEFAUT,
         charger_paquet_grille,
         extraire_colonne,
@@ -249,9 +249,9 @@ def calculer_colonne_radiative(
 
 
 def construire_parseur():
-    parseur = argparse.ArgumentParser(description="Modele 3.1 - colonne radiative locale")
-    parseur.add_argument("--lat", type=float, default=48.8566, help="Latitude en degres")
-    parseur.add_argument("--lon", type=float, default=2.3522, help="Longitude en degres")
+    parseur = argparse.ArgumentParser(description="Modele 3 - colonne radiative locale")
+    parseur.add_argument("--lat", type=float, default=0.0, help="Latitude en degres")
+    parseur.add_argument("--lon", type=float, default=0.0, help="Longitude en degres")
     parseur.add_argument("--mois", type=int, default=7, help="Mois 1..12")
     parseur.add_argument("--jour-annee", type=int, default=None, help="Jour 1..365")
     parseur.add_argument("--heure-solaire", type=float, default=12.0, help="Heure solaire locale")
@@ -279,7 +279,7 @@ def construire_parseur():
 
 def afficher_resultat(donnees, resultat):
     surface = donnees["surface"]
-    print("modele3_1_colonne_radiative_locale")
+    print("modele3_colonne_radiative_locale")
     print(f"source_donnees = {donnees.get('source', 'inconnue')}")
     print(f"lat_lon = {resultat['lat_deg']:.4f}, {resultat['lon_deg']:.4f}")
     print(f"mois = {resultat['mois']}")

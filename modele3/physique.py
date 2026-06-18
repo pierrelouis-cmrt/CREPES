@@ -1,4 +1,4 @@
-"""Formules physiques elementaires du modele 3.1.
+"""Formules physiques elementaires du modele 3.
 
 Ce module ne lit aucun fichier. Il contient les constantes, la geometrie
 solaire, Planck, les masses colonne et les opacites infrarouges CO2 + H2O.

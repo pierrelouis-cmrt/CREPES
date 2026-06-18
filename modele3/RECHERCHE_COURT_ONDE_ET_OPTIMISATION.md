@@ -1,20 +1,18 @@
 # Recherche court-onde et optimisation pour le modele 4
 
-Objectif : corriger ou contourner le biais court-onde du modele 3.1 sans
-ajouter un coefficient arbitraire. La solution doit rester compatible avec le
-paquet compact 3.1 et assez simple pour un projet de fin d'annee.
+Objectif : documenter la correction du biais court-onde du modele 3 sans
+ajouter un coefficient arbitraire. La solution reste compatible avec le paquet
+compact du modele 3 et assez simple pour un projet de fin d'annee.
 
 ## Constat local
 
-Le paquet 3.1 contient deja :
+Le paquet compact du modele 3 contient maintenant :
 
 - `era5_sw_down_surface_w_m2` : flux court-onde descendant moyen a la surface ;
 - `era5_sw_net_surface_w_m2` : flux court-onde net moyen a la surface ;
 - `albedo_surface` : albedo mensuel de surface ;
-- `albedo_nuages_effectif` : effet court-onde nuageux effectif CERES au sommet
-  de l'atmosphere.
 
-La formule actuelle du modele 3.1 est :
+Le biais corrige venait de l'ancienne formule de travail :
 
 ```text
 SW_absorbe_surface =
@@ -28,27 +26,18 @@ une correction nuageuse TOA comme si elle representait toute la transmission
 atmospherique de surface. Elle ignore aussi l'absorption et la diffusion par
 l'atmosphere claire.
 
-Controle numerique sur le paquet actuel, compare a `era5_sw_net_surface_w_m2`.
+Controle numerique sur l'ancienne formule, comparee a
+`era5_sw_net_surface_w_m2`.
 La colonne "ERA5 down * (1 - albedo)" correspond au forcage mensuel de
 reference. La recommandation finale ci-dessous garde plutot `S0*cos(i)` au pas
 de temps et utilise ERA5 pour construire une transmissivite mensuelle.
 
-| Mois | Formule actuelle, biais moyen | ERA5 down * (1 - albedo), biais moyen |
+| Mois | Ancienne formule, biais moyen | ERA5 down * (1 - albedo), biais moyen |
 | --- | ---: | ---: |
 | Janvier | +75.63 W/m2 | +5.12 W/m2 |
 | Avril | +78.61 W/m2 | +2.63 W/m2 |
 | Juillet | +98.66 W/m2 | +1.52 W/m2 |
 | Octobre | +74.02 W/m2 | +2.42 W/m2 |
-
-Pour Paris en juillet :
-
-```text
-ERA5 SW_down_surface = 228.4 W/m2
-albedo_surface       = 0.1726
-ERA5 down*(1-alpha)  = 188.98 W/m2
-ERA5 SW_net_surface  = 188.80 W/m2
-modele 3.1 actuel    = 334.62 W/m2
-```
 
 ## Sources scientifiques utilisees
 
@@ -77,7 +66,7 @@ Dans le code actuel, `S0` vaut `1361 W/m2` :
 
 - modele 0 : `modele0_maintenance/codes_python/physique/solaire.py`,
   `constante_solaire = 1361.0` ;
-- modele 3 et 3.1 : `CONSTANTE_SOLAIRE = 1361.0`.
+- modele 0 et modele 3 : `CONSTANTE_SOLAIRE = 1361.0`.
 
 Cette valeur represente l'irradiance solaire totale au sommet de l'atmosphere,
 sur une surface perpendiculaire aux rayons solaires, a environ 1 unite
@@ -224,7 +213,7 @@ doit pas piloter la temperature du modele 4.
 
 ## Implementation simple conseillee
 
-Le modele 3.1 doit fournir un helper court-onde propre et le modele 4 doit
+Le modele 3 doit fournir un helper court-onde propre et le modele 4 doit
 l'utiliser dans sa boucle. Principe :
 
 1. Precalculer une moyenne mensuelle de `S0 * max(cos(i), 0)` sur la grille.
@@ -252,14 +241,14 @@ Le bilan du modele 4 devient alors :
 ```text
 C_surface dT/dt =
     SW_absorbe_surface_corrige
-  + LW_down_absorbe_surface_3_1
-  - LW_up_surface_3_1
+  + LW_down_absorbe_surface_modele3
+  - LW_up_surface_modele3
   - autres termes de surface du modele 0
 ```
 
 ## Optimisation du temps par colonne
 
-Le cout principal du modele 3.1 vient de `flux_corps_noir_dans_bande`, qui
+Le cout principal du modele 3 vient de `flux_corps_noir_dans_bande`, qui
 integre numeriquement Planck avec 2000 pas pour chaque bande et beaucoup de
 temperatures. Ce calcul est repete alors que les temperatures de couches
 mensuelles changent peu ou pas pendant la boucle du modele 4.
