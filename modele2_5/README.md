@@ -80,14 +80,16 @@ Sortie actuelle :
 
 ## Profil standard
 
-Le profil suit l'atmosphère standard 1976 en altitude géopotentielle $h$ :
+Le profil suit l'atmosphère standard 1976 en altitude géopotentielle $h$ : permet d'obtenir la courbe de la température en fonction de l'altitude 
 
+h est l'altitude gepotentielle en m, une autre manière de définir l'altitude afin que g(z) (qu'on approxime à 9.81 et qui n'est pas constant en fct de l'altitude) soit constant. 
+Donc g(h) = cst et g(z) pas cst
 $$
 h=\frac{r_0 z}{r_0+z}
 $$
 
 Dans chaque couche standard :
-
+Lb correspond à la pente de chaque petit morceau de la courbe 
 $$
 T(h)=T_b+L_b(h-h_b)
 $$
@@ -128,7 +130,7 @@ $$
 Les bandes retenues sont :
 
 - $15\ \mu m$, principale bande thermique terrestre ;
-- $4.3\ \mu m$, bande CO2 forte mais faible dans l'émission terrestre à 288 K.
+- $4.3\ \mu m$, bande CO2 forte sur le spectre d'absorption du CO2 mais faible dans les longueurs d'onde émise par la terre à 288 K.
 
 La bande $2.7\ \mu m$ est négligée : son diagnostic était proche de $0.001\ \mathrm{W\,m^{-2}}$ pour $280\to560\ ppm$.
 
