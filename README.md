@@ -165,6 +165,12 @@ Lancer la sortie mensuelle globale par défaut :
 ./.venv/bin/python -m modele4.modele4
 ```
 
+Lancer le moteur rapide, sortie toutes les 4 heures par défaut :
+
+```bash
+./.venv/bin/python -m modele4.rapide
+```
+
 Lancer un test temporel court sur une cellule :
 
 ```bash
@@ -175,6 +181,7 @@ Lancer les tests :
 
 ```bash
 ./.venv/bin/python modele4/tests/tester_modele4.py
+./.venv/bin/python modele4/tests/tester_rapide.py
 ```
 
 Documentation détaillée :

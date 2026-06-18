@@ -250,6 +250,55 @@ d(LW_up_surface)/dT = 4 * emissivite_surface * sigma * T^3
 
 et une derivee numerique pour la convection.
 
+## Moteur rapide
+
+Le moteur rapide conserve la meme equation de bilan, mais change
+l'organisation du calcul.
+
+Le moteur complet appelle une colonne du modele 3 dans la boucle temporelle. Le
+moteur rapide appelle le modele 3 seulement en phase de pre-calcul mensuel pour
+les termes qui varient lentement :
+
+```text
+LW_down_absorbe_surface[mois, lat, lon]
+albedo_surface[mois, lat, lon]
+tau_SW[mois, lat, lon]
+T_air[mois, lat, lon]
+Q_latent[mois, lat, lon]
+C_surface[mois, lat, lon]
+```
+
+Pendant la boucle temporelle, le moteur rapide calcule directement :
+
+```text
+SW_absorbe_surface(t) =
+    S0 * max(cos(i(t)), 0)
+    * tau_SW_mensuel
+    * (1 - albedo_surface)
+
+LW_up_surface(T) =
+    emissivite_surface * sigma * T^4
+```
+
+Puis il met a jour toute la grille en une seule operation `numpy`.
+
+Pour eviter une boucle de Newton par cellule, la mise a jour rapide utilise une
+linearisation semi-implicite :
+
+```text
+T_{n+1} = T_n + dt * B(T_n) / (C + dt * D)
+```
+
+avec :
+
+```text
+D = d(LW_up_surface)/dT + h_convection
+```
+
+Ce schema garde le refroidissement thermique principal stabilise sans rendre le
+code difficile a lire. C'est une approximation du moteur complet, pas un
+remplacement exact colonne par colonne.
+
 ## Donnees d'entree
 
 Le modele 4 charge prioritairement :

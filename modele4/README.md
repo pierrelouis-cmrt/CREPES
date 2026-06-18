@@ -30,6 +30,8 @@ modele4/
   modele4.py               # moteur, CLI, integration temporelle
   surface.py               # capacite, chaleur latente, convection
   tests/tester_modele4.py  # tests numeriques minimaux
+  tests/tester_rapide.py   # tests du moteur rapide
+  rapide.py                # moteur rapide vectorise, sortie 4h par defaut
   README.md
   THEORIE.md
   plan.md
@@ -101,6 +103,67 @@ Lancer la grille complete 5 degres :
 La grille complete appelle beaucoup de colonnes radiatives. Pour developper, il
 est preferable de commencer avec `--max-latitudes` et `--max-longitudes`.
 
+## Moteur rapide
+
+Le moteur rapide est separe du moteur complet :
+
+```bash
+./.venv/bin/python -m modele4.rapide
+```
+
+Par defaut il simule toute la grille pendant `1 jour`, avec `dt = 1800 s`, et
+ecrit une carte toutes les `4 heures` :
+
+```text
+temperature_surface_k[temps_4h, latitude, longitude]
+shape = (7, 36, 72)
+```
+
+Les sorties correspondent a :
+
+```text
+0h, 4h, 8h, 12h, 16h, 20h, 24h
+```
+
+Le script commence par appeler le modele 3 pour pre-calculer les champs
+mensuels reutilises :
+
+- albedo de surface ;
+- transmissivite court-onde ;
+- long-onde descendant absorbe par la surface ;
+- temperature d'air ;
+- flux latent ;
+- capacite thermique.
+
+Ensuite, la boucle temporelle est vectorisee avec `numpy` sur toute la grille.
+Elle ne rappelle plus le modele 3 a chaque pas de temps.
+
+Exemples :
+
+```bash
+# 1 an, une carte toutes les 4 heures
+./.venv/bin/python -m modele4.rapide --jours 365
+
+# 1 an, une carte par jour
+./.venv/bin/python -m modele4.rapide --jours 365 --sortie-heures 24
+
+# 1 an, une carte par heure
+./.venv/bin/python -m modele4.rapide --jours 365 --sortie-heures 1
+
+# Petite grille de test
+./.venv/bin/python -m modele4.rapide --max-latitudes 4 --max-longitudes 8
+```
+
+Options principales du moteur rapide :
+
+- `--jours` : duree de simulation, `1` par defaut.
+- `--dt` : pas de temps interne, `1800 s` par defaut.
+- `--sortie-heures` : frequence de sauvegarde, `4 h` par defaut.
+- `--output` : fichier `.npz` de sortie.
+- `--max-latitudes`, `--max-longitudes` : sous-grille de test.
+- `--convection`, `--facteur-latent`, `--vent`, `--co2` : memes roles que dans
+  le moteur complet.
+
 ## Options principales
 
 - `--mode` : `mensuel` par defaut pour 12 cartes globales, ou `temporel` pour
@@ -152,6 +215,7 @@ Le fichier `.npz` contient :
 
 ```bash
 ./.venv/bin/python modele4/tests/tester_modele4.py
+./.venv/bin/python modele4/tests/tester_rapide.py
 ```
 
 Les tests verifient les briques de surface, une simulation courte sur une
