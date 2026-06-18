@@ -19,6 +19,7 @@ source active.
 | `ressources/db7d35d0a9c6110c5f6d54212de24b21.nc` | ERA5 mensuel sur niveaux de pression. | `t`, `q`, `cc`, `pressure_level`. | Selection grille 5 degres, puis moyenne en pression dans les couches 3.1. | `temperature_couche_k`, `humidite_specifique_couche_kgkg`, `fraction_nuageuse_couche`, `masse_air_couche_kg_m2`, `masse_h2o_couche_kg_m2`. |
 | `ressources/4d43b9edb397c8d4595fc350432d5ac4/data_stream-moda_stepType-avgua.nc` | ERA5 mensuel single levels. | `sp`, `t2m`, `skt`, `lsm`, `siconc`, `sd`, `tcc`, `lcc`, `mcc`, `hcc`. | Selection grille 5 degres. `sp` est converti en hPa ; neige/glace = max(`siconc`, `sd > 0.01 m`). | `pression_surface_hpa`, `temperature_2m_k`, `skin_temperature_k`, `land_fraction`, `snow_ice_fraction`, nuages diagnostiques. |
 | `ressources/4d43b9edb397c8d4595fc350432d5ac4/data_stream-moda_stepType-avgad.nc` | ERA5 flux moyens mensuels. | `avg_sdlwrf`, `avg_snswrf`, `avg_tnlwrf`, `avg_sdswrf`. | Selection grille 5 degres. `avg_tnlwrf` est stocke en valeur absolue pour l'OLR positif. | Flux ERA5 de validation. |
+| Geometrie solaire 3.1 + ERA5 flux | Grandeur derivee. | `avg_sdswrf` et `S0 * max(cos(i), 0)`. | Moyenne mensuelle TOA par latitude, puis `avg_sdswrf / SW_TOA_moyen`, bornage `[0, 1]`. | `sw_toa_moyen_mensuel_w_m2`, `transmissivite_sw_mensuelle`. |
 | `ressources/albedo/albedo01.csv` ... `albedo12.csv` | Albedo de surface mensuel. | Valeurs grille CSV. | Selection au plus proche sur la grille 5 degres, bornage `[0, 1]`. | `albedo_surface`. |
 | `ressources/albedo/CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc` | CERES EBAF-TOA mensuel. | `toa_sw_all_mon`, `toa_sw_clr_c_mon`, `solar_mon`. | Formule effective nuageuse, selection au plus proche, bornage `[0, 0.95]`. | `albedo_nuages_effectif`. |
 
@@ -92,11 +93,40 @@ estimation d'albedo de surface mensuel.
 Usage 3.1 :
 
 ```text
+mode recommande:
+SW_absorbe_surface =
+    transmissivite_sw_mensuelle
+  * SW_incident_TOA_local
+  * (1 - albedo_surface)
+
+mode diagnostic toa_nuages_ceres:
 SW_absorbe_surface =
     SW_incident_TOA_local
   * (1 - albedo_nuages_effectif)
   * (1 - albedo_surface)
 ```
+
+## Detail transmissivite court-onde
+
+Le modele garde la geometrie solaire historique :
+
+```text
+SW_incident_TOA_local = S0 * max(cos(i), 0)
+S0 = 1361 W m-2
+```
+
+Pendant la generation du paquet, cette grandeur est moyennee pour chaque mois
+et latitude sur tous les jours du mois et 96 pas horaires solaires. La
+transmissivite stockee est ensuite :
+
+```text
+transmissivite_sw_mensuelle =
+    era5_sw_down_surface_w_m2 / sw_toa_moyen_mensuel_w_m2
+```
+
+La valeur est bornee dans `[0, 1]`. ERA5 sert donc a corriger la transmission
+atmospherique moyenne vers la surface, sans remplacer le cycle solaire local du
+modele.
 
 References :
 

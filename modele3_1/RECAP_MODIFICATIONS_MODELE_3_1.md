@@ -28,6 +28,7 @@ extraite depuis un paquet compact `.npz`.
 | Emissivite | `0.98`, `0.985` ocean, branches neige/glace. | Constante `0.98` partout. |
 | Albedo surface | `fal` ERA5 ou secours `0.30`. | Donnee explicite : CSV mensuels racine `ressources/albedo`, ou entree fournie. Secours seulement documente. |
 | Albedo nuageux SW | `0.50 * cloud_total`. | Champ explicite `albedo_nuages_effectif` issu de CERES : `(toa_sw_all - toa_sw_clr_c) / solar`. |
+| Transmission SW surface | Absente. | `transmissivite_sw_mensuelle = ERA5 SW_down / moyenne_mensuelle(S0*cos(i))`, bornee `[0, 1]`. |
 | Nuages LW | `tau_nuage = 0.10 * fraction_nuageuse`. | Retire du chemin par defaut. Les fractions nuageuses restent diagnostiques. |
 | CO2 + H2O | Addition des opacites avant transmission. | Conserve : `tau_total = tau_CO2 + tau_H2O`. |
 | Court-onde | Simple et fortement approximatif. | Toujours simple, mais les coefficients caches sont supprimes et les limites sont explicites. |
@@ -64,8 +65,9 @@ Le paquet contient une grille globale `5 degres` :
 ```
 
 Il stocke seulement les champs necessaires : pression de surface, albedos,
-diagnostics surface, flux ERA5 de validation, moyennes de couches, masses air
-et H2O. Les tableaux sont quantifies et documentes dans `metadata.json`.
+transmissivite court-onde mensuelle, diagnostics surface, flux ERA5 de
+validation, moyennes de couches, masses air et H2O. Les tableaux sont
+quantifies et documentes dans `metadata.json`.
 
 ## Ressources copiees depuis le modele 0
 

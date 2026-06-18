@@ -8,6 +8,7 @@ court-onde est fourni par les donnees d'entree.
 
 from __future__ import annotations
 
+from functools import lru_cache
 from math import cos, exp, isfinite, pi, radians, sin
 
 
@@ -229,6 +230,29 @@ def flux_solaire_moyen_journalier(latitude_deg, jour_annee):
     return total / nombre_pas
 
 
+def flux_sw_surface_transmis(
+    latitude_deg,
+    jour_annee,
+    heure_solaire,
+    transmissivite_sw,
+    albedo_surface,
+):
+    sw_toa = flux_solaire_incident(latitude_deg, jour_annee, heure_solaire)
+    sw_down = sw_toa * fraction(transmissivite_sw, defaut=0.0)
+    return sw_down * (1.0 - fraction(albedo_surface, defaut=0.30))
+
+
+def flux_sw_surface_transmis_moyenne_journaliere(
+    latitude_deg,
+    jour_annee,
+    transmissivite_sw,
+    albedo_surface,
+):
+    sw_toa = flux_solaire_moyen_journalier(latitude_deg, jour_annee)
+    sw_down = sw_toa * fraction(transmissivite_sw, defaut=0.0)
+    return sw_down * (1.0 - fraction(albedo_surface, defaut=0.30))
+
+
 def _points_valides(pressions_hpa, valeurs):
     points = []
     for pression, valeur in zip(pressions_hpa, valeurs):
@@ -299,7 +323,12 @@ def luminance_spectrale_planck(longueur_onde_m, temperature_k):
     )
 
 
-def flux_corps_noir_dans_bande(temperature_k, lambda_min_um, lambda_max_um, nombre_pas=2000):
+def flux_corps_noir_dans_bande_direct(
+    temperature_k,
+    lambda_min_um,
+    lambda_max_um,
+    nombre_pas=2000,
+):
     lambda_min_m = lambda_min_um * 1e-6
     lambda_max_m = lambda_max_um * 1e-6
     pas = (lambda_max_m - lambda_min_m) / nombre_pas
@@ -308,6 +337,30 @@ def flux_corps_noir_dans_bande(temperature_k, lambda_min_um, lambda_max_um, nomb
         longueur_onde_m = lambda_min_m + (indice + 0.5) * pas
         total += pi * luminance_spectrale_planck(longueur_onde_m, temperature_k) * pas
     return total
+
+
+@lru_cache(maxsize=50000)
+def _flux_corps_noir_dans_bande_cache(temperature_k, lambda_min_um, lambda_max_um):
+    return flux_corps_noir_dans_bande_direct(
+        temperature_k,
+        lambda_min_um,
+        lambda_max_um,
+    )
+
+
+def flux_corps_noir_dans_bande(temperature_k, lambda_min_um, lambda_max_um, nombre_pas=2000):
+    if nombre_pas != 2000:
+        return flux_corps_noir_dans_bande_direct(
+            temperature_k,
+            lambda_min_um,
+            lambda_max_um,
+            nombre_pas=nombre_pas,
+        )
+    return _flux_corps_noir_dans_bande_cache(
+        round(float(temperature_k), 3),
+        float(lambda_min_um),
+        float(lambda_max_um),
+    )
 
 
 def flux_lw_surface(temperature_surface_k, emissivite_surface=EMISSIVITE_SURFACE_CONSTANTE):

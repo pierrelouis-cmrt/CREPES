@@ -13,6 +13,13 @@
     "valeur": 0.98,
     "source": "constante_modele3_1"
   },
+  "diagnostics_generation": {
+    "transmissivite_sw": {
+      "valeurs_bornees_min": 0,
+      "valeurs_bornees_max": 15,
+      "valeurs_sans_soleil": 28
+    }
+  },
   "sources_fichiers": {
     "era5_profil": "ressources/db7d35d0a9c6110c5f6d54212de24b21.nc",
     "era5_surface": "ressources/4d43b9edb397c8d4595fc350432d5ac4/data_stream-moda_stepType-avgua.nc",
@@ -124,6 +131,22 @@
       "valeur_manquante": 65535,
       "source": "CERES EBAF-TOA, (toa_sw_all - toa_sw_clr_c) / solar"
     },
+    "sw_toa_moyen_mensuel_w_m2": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "W m-2",
+      "scale_factor": 0.1,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "geometrie solaire modele 3.1, S0=1361 W m-2"
+    },
+    "transmissivite_sw_mensuelle": {
+      "dtype_stocke": "uint16",
+      "unite_physique": "1",
+      "scale_factor": 0.0001,
+      "offset": 0.0,
+      "valeur_manquante": 65535,
+      "source": "ERA5 avg_sdswrf / sw_toa_moyen_mensuel_w_m2"
+    },
     "land_fraction": {
       "dtype_stocke": "uint16",
       "unite_physique": "1",
@@ -208,6 +231,7 @@
   "notes": [
     "Les fichiers albedo/CERES sont lus depuis ressources/albedo, copie racine des donnees utiles du modele 0.",
     "Le modele 3.1 n'utilise pas de coefficient nuageux court-onde ou long-onde cache.",
+    "transmissivite_sw_mensuelle corrige le court-onde surface avec ERA5, sans remplacer S0*cos(i).",
     "Les poids_surface sont normalises pour sommer a 1 sur la grille."
   ]
 }

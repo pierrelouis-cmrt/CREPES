@@ -27,6 +27,7 @@ def _donnees_test(albedo_nuages=0.20, cloud_total=1.0, emissivite_surface=0.10):
             "pression_surface_pa": 100_000.0,
             "albedo_surface": 0.30,
             "albedo_nuages_effectif": albedo_nuages,
+            "transmissivite_sw_mensuelle": 0.60,
             "emissivite_surface": emissivite_surface,
             "cloud_total": cloud_total,
             "low_cloud": cloud_total,
@@ -39,7 +40,10 @@ def _donnees_test(albedo_nuages=0.20, cloud_total=1.0, emissivite_surface=0.10):
             "humidites_specifiques_kgkg": [0.006, 0.004, 0.002, 0.0008, 0.0001, 1e-5, 1e-5, 1e-5],
             "fractions_nuageuses": None,
         },
-        "validation_flux": {},
+        "validation_flux": {
+            "era5_sw_down_surface_w_m2": 240.0,
+            "era5_sw_net_surface_w_m2": 168.0,
+        },
         "source": "test",
     }
 
@@ -56,6 +60,7 @@ def tester_albedo_nuages_fourni_pas_cloud_total():
         donnees,
         temperature_surface_k=TEMPERATURE_SURFACE_DEFAUT_K,
         moyenne_journaliere_sw=True,
+        mode_court_onde="toa_nuages_ceres",
     )
     attendu = physique.flux_sw_absorbe_surface(
         resultat["SW_incident_surface"],
@@ -64,6 +69,28 @@ def tester_albedo_nuages_fourni_pas_cloud_total():
     )
     assert abs(resultat["SW_absorbe_surface"] - attendu) < 1e-9
     assert resultat["albedo_nuages_effectif"] == 0.20
+
+
+def tester_mode_transmissivite_sw_utilise_transmissivite():
+    donnees = _donnees_test()
+    resultat = calculer_colonne_radiative(
+        donnees,
+        temperature_surface_k=TEMPERATURE_SURFACE_DEFAUT_K,
+        moyenne_journaliere_sw=True,
+        mode_court_onde="transmissivite_sw",
+    )
+    attendu = (
+        resultat["SW_TOA_local"]
+        * donnees["surface"]["transmissivite_sw_mensuelle"]
+        * (1.0 - donnees["surface"]["albedo_surface"])
+    )
+    assert abs(resultat["SW_absorbe_surface"] - attendu) < 1e-9
+    assert resultat["mode_court_onde"] == "transmissivite_sw"
+
+
+def tester_mode_era5_net_renvoie_flux_net():
+    resultat = calculer_colonne_radiative(_donnees_test(), mode_court_onde="era5_net")
+    assert resultat["SW_absorbe_surface"] == 168.0
 
 
 def tester_nuages_lw_absents_des_opacites():
@@ -78,7 +105,11 @@ def tester_paquet_grille_chargeable_et_sources_racine():
     metadata = paquet["metadata"]
     assert metadata["shape"]["lat"] == 36
     assert metadata["shape"]["lon"] == 72
+    assert "transmissivite_sw_mensuelle" in metadata["variables"]
+    assert "sw_toa_moyen_mensuel_w_m2" in metadata["variables"]
     assert abs(float(paquet["donnees"]["poids_surface"].sum()) - 1.0) < 1e-6
+    transmissivite = paquet["donnees"]["transmissivite_sw_mensuelle"]
+    assert 0.0 <= float(transmissivite.min()) <= float(transmissivite.max()) <= 1.0
     sources = "\n".join(str(v) for v in metadata["sources_fichiers"].values())
     assert "ressources/albedo" in sources
     assert "modele0_maintenance" not in sources
@@ -97,10 +128,21 @@ def tester_paris_depuis_paquet_et_diagnostics_legers():
     assert colonne["surface"]["emissivite_surface"] == 0.98
     assert 0.0 <= colonne["surface"]["albedo_surface"] <= 1.0
     assert 0.0 <= colonne["surface"]["albedo_nuages_effectif"] <= 0.95
+    assert 0.0 <= colonne["surface"]["transmissivite_sw_mensuelle"] <= 1.0
     assert len(colonne["couches"]) > 0
     assert resultat["couches"] == []
     assert resultat["LW_up_surface"] > 0.0
     assert resultat["OLR"] > 0.0
+    attendu_sw = colonne["validation_flux"]["era5_sw_down_surface_w_m2"] * (
+        1.0 - colonne["surface"]["albedo_surface"]
+    )
+    assert abs(resultat["SW_absorbe_surface"] - attendu_sw) < 5.0
+    resultat_era5 = calculer_colonne_radiative(
+        colonne,
+        temperature_surface_k=293.0,
+        mode_court_onde="era5_down_albedo",
+    )
+    assert abs(resultat_era5["SW_absorbe_surface"] - attendu_sw) < 1e-9
 
 
 def tester_appel_en_boucle_sur_plusieurs_colonnes():
@@ -117,6 +159,8 @@ def tester_appel_en_boucle_sur_plusieurs_colonnes():
 def main():
     tester_emissivite_constante_ignore_branches_surface()
     tester_albedo_nuages_fourni_pas_cloud_total()
+    tester_mode_transmissivite_sw_utilise_transmissivite()
+    tester_mode_era5_net_renvoie_flux_net()
     tester_nuages_lw_absents_des_opacites()
     tester_paquet_grille_chargeable_et_sources_racine()
     tester_paris_depuis_paquet_et_diagnostics_legers()

@@ -49,6 +49,8 @@ QUANTIFICATION = {
     "fraction_nuageuse_couche": ("uint16", 1e-4, 0.0, 65535, "1"),
     "albedo_surface": ("uint16", 1e-4, 0.0, 65535, "1"),
     "albedo_nuages_effectif": ("uint16", 1e-4, 0.0, 65535, "1"),
+    "sw_toa_moyen_mensuel_w_m2": ("uint16", 0.1, 0.0, 65535, "W m-2"),
+    "transmissivite_sw_mensuelle": ("uint16", 1e-4, 0.0, 65535, "1"),
     "land_fraction": ("uint16", 1e-4, 0.0, 65535, "1"),
     "snow_ice_fraction": ("uint16", 1e-4, 0.0, 65535, "1"),
     "cloud_total": ("uint16", 1e-4, 0.0, 65535, "1"),
@@ -268,6 +270,45 @@ def charger_albedo_nuages(albedo_dir, latitudes, longitudes, annee, allow_fallba
     return _borne_fraction(valeurs, maximum=0.95)
 
 
+def calculer_sw_toa_moyen_mensuel(latitudes, nombre_pas_horaires=96):
+    """Moyenne mensuelle de S0 * max(cos(i), 0) sur des jours solaires complets."""
+
+    bornes_mois = physique.JOURS_CUMULES_MOIS + [365]
+    sortie = np.zeros((12, len(latitudes)), dtype=np.float32)
+    for mois in range(12):
+        jour_debut = bornes_mois[mois] + 1
+        jour_fin = bornes_mois[mois + 1]
+        for indice_lat, latitude in enumerate(latitudes):
+            total = 0.0
+            nombre_points = 0
+            for jour_annee in range(jour_debut, jour_fin + 1):
+                for indice_heure in range(nombre_pas_horaires):
+                    heure = 24.0 * (indice_heure + 0.5) / nombre_pas_horaires
+                    total += physique.flux_solaire_incident(float(latitude), jour_annee, heure)
+                    nombre_points += 1
+            sortie[mois, indice_lat] = total / nombre_points
+    return sortie
+
+
+def calculer_transmissivite_sw(era5_sw_down_surface, sw_toa_moyen_mensuel):
+    denominateur = sw_toa_moyen_mensuel[:, :, None]
+    avec_soleil = denominateur > 1e-6
+    brut = np.divide(
+        era5_sw_down_surface,
+        denominateur,
+        out=np.zeros_like(era5_sw_down_surface, dtype=np.float32),
+        where=avec_soleil,
+    )
+    brut = np.nan_to_num(brut, nan=0.0, posinf=1.0, neginf=0.0)
+    transmissivite = np.clip(brut, 0.0, 1.0).astype(np.float32)
+    diagnostics = {
+        "valeurs_bornees_min": int(np.count_nonzero(brut < 0.0)),
+        "valeurs_bornees_max": int(np.count_nonzero(brut > 1.0)),
+        "valeurs_sans_soleil": int(np.count_nonzero(~avec_soleil)),
+    }
+    return transmissivite, diagnostics
+
+
 def _moyenne_profile(p_levels_hpa, valeurs, p_bas, p_haut):
     if p_bas <= p_haut:
         return np.nan
@@ -405,6 +446,7 @@ def ecrire_paquet(sortie_dir, tableaux, metadata, overwrite):
         "| Profils `T`, `q`, `cc` | ERA5 pression, `ressources/*.nc` | Moyennes par couche de pression 3.1. |\n"
         "| Surface et nuages | ERA5 single levels, `ressources/**/*.nc` | Selection au plus proche sur grille 5 degres. |\n"
         "| Flux de validation | ERA5 flux moyens | Stockes pour comparaison, jamais pour recalibrer. |\n"
+        "| Transmissivite SW | Geometrie solaire 3.1 + ERA5 `avg_sdswrf` | `ERA5 SW_down / moyenne_mensuelle(S0*cos(i))`, borne `[0, 1]`. |\n"
         "| Albedo surface | `ressources/albedo/albedo01.csv` ... `albedo12.csv` | Selection mensuelle au plus proche. |\n"
         "| Albedo nuages | `ressources/albedo/CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc` | `(toa_sw_all_mon - toa_sw_clr_c_mon) / solar_mon`. |\n\n"
         "Les fichiers `ressources/albedo/*` sont des copies racine des donnees utiles\n"
@@ -412,9 +454,10 @@ def ecrire_paquet(sortie_dir, tableaux, metadata, overwrite):
         "`modele0_maintenance/`.\n\n"
         "## Contenu\n\n"
         "Le `.npz` contient seulement les champs necessaires au calcul normal :\n"
-        "coordonnees, poids de surface, pression de surface, albedos, diagnostics\n"
-        "surface, flux ERA5 de validation et couches pretraitees. Les facteurs de\n"
-        "quantification, unites et sources sont dans `metadata.json`.\n",
+        "coordonnees, poids de surface, pression de surface, albedos, transmissivite\n"
+        "court-onde mensuelle, diagnostics surface, flux ERA5 de validation et\n"
+        "couches pretraitees. Les facteurs de quantification, unites et sources\n"
+        "sont dans `metadata.json`.\n",
         encoding="utf-8",
     )
     return npz_path
@@ -454,6 +497,12 @@ def generer(args):
         args.annee,
         args.allow_fallbacks,
     )
+    _message("Calcul transmissivite court-onde mensuelle")
+    sw_toa_moyen = calculer_sw_toa_moyen_mensuel(latitudes)
+    transmissivite_sw, diagnostics_transmissivite = calculer_transmissivite_sw(
+        flux["era5_sw_down_surface_w_m2"],
+        sw_toa_moyen,
+    )
     _message("Construction des couches pretraitees")
     couches = charger_profils_et_couches(fichier_profil, surface, latitudes, longitudes, args.annee)
 
@@ -469,6 +518,8 @@ def generer(args):
         **surface,
         "albedo_surface": _borne_fraction(albedo_surface),
         "albedo_nuages_effectif": _borne_fraction(albedo_nuages, maximum=0.95),
+        "sw_toa_moyen_mensuel_w_m2": sw_toa_moyen,
+        "transmissivite_sw_mensuelle": transmissivite_sw,
         **flux,
         **couches,
     }
@@ -487,6 +538,9 @@ def generer(args):
         "emissivite_surface": {
             "valeur": physique.EMISSIVITE_SURFACE_CONSTANTE,
             "source": "constante_modele3_1",
+        },
+        "diagnostics_generation": {
+            "transmissivite_sw": diagnostics_transmissivite,
         },
         "sources_fichiers": {
             "era5_profil": str(Path(fichier_profil).relative_to(RACINE_DEPOT)),
@@ -517,6 +571,8 @@ def generer(args):
                 "fraction_nuageuse_couche": "ERA5 cc moyenne par couche",
                 "albedo_surface": "ressources/albedo/albedo01.csv..albedo12.csv",
                 "albedo_nuages_effectif": "CERES EBAF-TOA, (toa_sw_all - toa_sw_clr_c) / solar",
+                "sw_toa_moyen_mensuel_w_m2": "geometrie solaire modele 3.1, S0=1361 W m-2",
+                "transmissivite_sw_mensuelle": "ERA5 avg_sdswrf / sw_toa_moyen_mensuel_w_m2",
                 "land_fraction": "ERA5 lsm",
                 "snow_ice_fraction": "ERA5 siconc ou sd > 0.01 m",
                 "cloud_total": "ERA5 tcc",
@@ -532,6 +588,7 @@ def generer(args):
         "notes": [
             "Les fichiers albedo/CERES sont lus depuis ressources/albedo, copie racine des donnees utiles du modele 0.",
             "Le modele 3.1 n'utilise pas de coefficient nuageux court-onde ou long-onde cache.",
+            "transmissivite_sw_mensuelle corrige le court-onde surface avec ERA5, sans remplacer S0*cos(i).",
             "Les poids_surface sont normalises pour sommer a 1 sur la grille.",
         ],
     }

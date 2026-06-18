@@ -100,7 +100,9 @@ def _indice_plus_proche(valeurs, cible):
 
 def _extraire_mensuel(tableau, indice_lat, indice_lon, mois=None, jour_annee=None):
     tableau = np.asarray(tableau)
-    if tableau.ndim == 3:
+    if tableau.ndim == 2:
+        valeurs = tableau[:, indice_lat]
+    elif tableau.ndim == 3:
         valeurs = tableau[:, indice_lat, indice_lon]
     elif tableau.ndim == 4:
         valeurs = tableau[:, :, indice_lat, indice_lon]
@@ -148,6 +150,15 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
         defaut=0.0,
         maximum=0.95,
     )
+    transmissivite_sw = None
+    if "transmissivite_sw_mensuelle" in donnees:
+        transmissivite_sw = physique.fraction(
+            mensuel("transmissivite_sw_mensuelle"),
+            defaut=0.0,
+        )
+    sw_toa_moyen = None
+    if "sw_toa_moyen_mensuel_w_m2" in donnees:
+        sw_toa_moyen = _float_ou_none(mensuel("sw_toa_moyen_mensuel_w_m2"))
 
     surface = {
         "latitude_deg": latitude,
@@ -158,9 +169,15 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
         "pression_surface_hpa": pression_surface_hpa,
         "albedo_surface": albedo_surface,
         "albedo_nuages_effectif": albedo_nuages,
+        "sw_toa_moyen_mensuel_w_m2": sw_toa_moyen,
+        "transmissivite_sw_mensuelle": transmissivite_sw,
         "emissivite_surface": EMISSIVITE_SURFACE,
         "source_albedo_surface": _source_variable(paquet, "albedo_surface"),
         "source_albedo_nuages_effectif": _source_variable(paquet, "albedo_nuages_effectif"),
+        "source_transmissivite_sw_mensuelle": _source_variable(
+            paquet,
+            "transmissivite_sw_mensuelle",
+        ),
         "source_emissivite_surface": "constante_0.98",
     }
 

@@ -62,6 +62,12 @@ Deux usages sont volontairement separes.
 Court-onde :
 
 ```text
+mode recommande:
+SW_down_surface =
+    transmissivite_sw_mensuelle * SW_incident_TOA_local
+SW_absorbe_surface = SW_down_surface * (1 - albedo_surface)
+
+mode diagnostic toa_nuages_ceres:
 SW_absorbe_surface =
     SW_incident_TOA_local
   * (1 - albedo_nuages_effectif)
@@ -77,6 +83,10 @@ SW_absorbe_surface =
 Interpretation : part supplementaire de solaire reflechi en ciel tout temps par
 rapport au ciel clair, normalisee par le solaire entrant. Ce n'est pas un
 albedo microphysique local du nuage.
+
+Depuis la mise a jour court-onde, ce champ CERES n'est plus le mode recommande
+pour integrer la temperature de surface dans le modele 4. Il reste disponible
+pour comparer l'ancienne approximation documentee.
 
 Long-onde :
 
@@ -102,8 +112,19 @@ S0 = 1361 W m-2
 ```
 
 L'option `--moyenne-journaliere-sw` moyenne cette formule sur 96 pas horaires.
-Il n'y a pas d'ozone, aerosols, absorption solaire H2O ou diffusion Rayleigh
-explicite dans 3.1.
+Le paquet stocke aussi une moyenne mensuelle de cette geometrie solaire :
+
+```text
+SW_TOA_moyen_mensuel =
+    moyenne_mensuelle(S0 * max(cos(theta), 0))
+transmissivite_sw_mensuelle =
+    ERA5 SW_down_surface / SW_TOA_moyen_mensuel
+```
+
+La boucle temporelle peut donc garder le cycle jour/nuit avec `S0*cos(i)` tout
+en appliquant une transmission atmospherique mensuelle issue d'ERA5. Il n'y a
+pas d'ozone, aerosols, absorption solaire H2O ou diffusion Rayleigh explicite
+dans 3.1.
 
 ## 6. Donnees et transformations
 
@@ -115,6 +136,7 @@ seule fois :
 | ERA5 profils | Selection grille 5 degres, moyennes en pression de `t`, `q`, `cc`. | `temperature_couche_k`, `humidite_specifique_couche_kgkg`, `fraction_nuageuse_couche`. |
 | ERA5 surface | Selection grille 5 degres. | `pression_surface_hpa`, `temperature_2m_k`, `skin_temperature_k`, `cloud_total`, `low_cloud`, `medium_cloud`, `high_cloud`. |
 | ERA5 flux | Selection grille 5 degres. | Flux de validation : LW bas, SW net surface, OLR, SW descendant. |
+| Solaire + ERA5 SW down | Moyenne mensuelle de `S0 * max(cos(i), 0)`, puis rapport ERA5/TOA borne `[0, 1]`. | `sw_toa_moyen_mensuel_w_m2`, `transmissivite_sw_mensuelle`. |
 | CSV albedo | Selection au plus proche sur la grille 5 degres. | `albedo_surface`. |
 | CERES | Formule effective nuageuse puis selection au plus proche. | `albedo_nuages_effectif`. |
 | Quantification | Echelles documentees dans `metadata.json`. | `.npz` compact de 2,1 Mo. |
@@ -134,14 +156,15 @@ LW_down_surface        = 349.91 W m-2
 ERA5 LW_down_surface   = 364.20 W m-2
 OLR modele             = 286.15 W m-2
 ERA5 OLR               = 252.90 W m-2
-SW_absorbe_surface     = 334.62 W m-2
+SW_absorbe_surface     = 190.45 W m-2
 ERA5 SW_net_surface    = 188.80 W m-2
 ```
 
 Le long-onde reste dans un ordre de grandeur utile. L'OLR s'eloigne du modele 3
 apres retrait du nuage long-onde arbitraire, ce qui est attendu. Le court-onde
-reste trop eleve car 3.1 ne represente pas le transfert solaire atmospherique
-complet. Cette limite est documentee au lieu d'etre cachee par calibration.
+recommande reconstruit le SW descendant ERA5 moyen via une transmissivite
+mensuelle. Le mode `toa_nuages_ceres` reste plus grossier et ne doit servir que
+de diagnostic.
 
 ## Sources externes
 

@@ -66,6 +66,8 @@ Ajouts/corrections par rapport au modèle 3 :
 - Albédo de surface lu depuis `ressources/albedo/albedo01.csv` à `albedo12.csv`.
 - Albédo nuageux effectif CERES :
   `(toa_sw_all_mon - toa_sw_clr_c_mon) / solar_mon`.
+- Transmissivité court-onde mensuelle :
+  `ERA5 SW_down / moyenne_mensuelle(S0 * max(cos(i), 0))`.
 - Suppression des coefficients cachés `0.50 * cloud_total` et
   `tau_nuage = 0.10 * fraction_nuageuse`.
 - Le code 3.1 lit les copies racine dans `ressources/albedo/`, pas
@@ -161,7 +163,7 @@ Régénérer le paquet compact :
 Lancer Paris depuis le paquet global :
 
 ```bash
-./.venv/bin/python -m modele3_1.modele3_1 --lat 48.8566 --lon 2.3522 --mois 7 --temperature-surface 293.0 --moyenne-journaliere-sw
+./.venv/bin/python -m modele3_1.modele3_1 --lat 48.8566 --lon 2.3522 --mois 7 --temperature-surface 293.0 --moyenne-journaliere-sw --mode-court-onde transmissivite_sw
 ```
 
 Lancer les tests :

@@ -15,6 +15,7 @@ Entrees minimales d'une colonne :
 | Surface | `pression_surface_pa` | Base locale de la colonne ; plus de `1013.25 hPa` fixe. |
 | Surface | `albedo_surface` | Fraction court-onde reflechie par la surface. |
 | Surface | `albedo_nuages_effectif` | Correction court-onde nuageuse issue de CERES ou fournie par l'appelant. |
+| Surface | `transmissivite_sw_mensuelle` | Transmission atmospherique court-onde mensuelle derivee d'ERA5. |
 | Surface | `emissivite_surface` | Fixee a `0.98` dans 3.1. |
 | Couches | `pression_bas/haut`, `temperature_k`, `humidite_specifique_kgkg`, `masse_air`, `masse_h2o` | Transfert long-onde CO2 + H2O. |
 | Parametres | `temperature_surface_k`, `co2_ppm` | Temperature imposee et concentration CO2 uniforme. |
@@ -23,6 +24,8 @@ Sorties principales :
 
 ```text
 SW_incident_surface
+SW_TOA_local
+SW_down_surface
 SW_absorbe_surface
 LW_up_surface
 LW_down_surface
@@ -49,6 +52,7 @@ Ce paquet est genere depuis les ressources locales racine :
 | `ressources/db7d35d0a9c6110c5f6d54212de24b21.nc` | ERA5 `t`, `q`, `cc` sur niveaux de pression. | Moyennes par couche de temperature, humidite et fraction nuageuse diagnostique. |
 | `ressources/4d43.../data_stream-moda_stepType-avgua.nc` | ERA5 `sp`, `t2m`, `skt`, `lsm`, `siconc`, `sd`, `tcc`, `lcc`, `mcc`, `hcc`. | Pression de surface, diagnostics surface et nuages. |
 | `ressources/4d43.../data_stream-moda_stepType-avgad.nc` | ERA5 `avg_sdlwrf`, `avg_snswrf`, `avg_tnlwrf`, `avg_sdswrf`. | Flux de validation, pas de calibration cachee. |
+| Geometrie solaire 3.1 + ERA5 `avg_sdswrf` | `S0 * max(cos(i), 0)` moyen mensuel et SW descendant ERA5. | `sw_toa_moyen_mensuel_w_m2`, `transmissivite_sw_mensuelle`. |
 | `ressources/albedo/albedo01.csv` ... `albedo12.csv` | Albedo de surface mensuel. | `albedo_surface`. |
 | `ressources/albedo/CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc` | CERES `toa_sw_all_mon`, `toa_sw_clr_c_mon`, `solar_mon`. | `albedo_nuages_effectif`. |
 
@@ -85,7 +89,20 @@ nuage. Elle remplace explicitement l'ancienne approximation opaque
 
 ## Formules
 
-Court-onde :
+Court-onde recommande pour le modele 4 :
+
+```text
+SW_TOA_local(t) = S0 * max(cos(i(t)), 0)
+transmissivite_sw_mensuelle =
+    era5_sw_down_surface_w_m2 / moyenne_mensuelle(SW_TOA_local)
+SW_down_surface(t) =
+    transmissivite_sw_mensuelle * SW_TOA_local(t)
+SW_absorbe_surface =
+    SW_down_surface * (1 - albedo_surface)
+```
+
+Le mode diagnostic historique reste disponible avec
+`mode_court_onde="toa_nuages_ceres"` :
 
 ```text
 SW_absorbe_surface =
@@ -128,7 +145,8 @@ Calculer Paris, extrait depuis la grille 5 degres :
   --lon 2.3522 \
   --mois 7 \
   --temperature-surface 293.0 \
-  --moyenne-journaliere-sw
+  --moyenne-journaliere-sw \
+  --mode-court-onde transmissivite_sw
 ```
 
 Lancer les tests :
@@ -143,7 +161,7 @@ Lancer les tests :
 - Pas de dynamique atmospherique ni d'echanges horizontaux.
 - Pas d'ozone, aerosols, CH4, N2O ou microphysique nuageuse.
 - Pas de lecture directe MODIS/HDF dans 3.1 ; emissivite constante `0.98`.
-- Court-onde volontairement simple : la comparaison a ERA5 reste informative,
-  pas une validation stricte.
+- Court-onde volontairement simple : 3.1 garde `S0 * max(cos(i), 0)` et utilise
+  ERA5 seulement pour une transmissivite mensuelle moyenne.
 - Coefficients CO2/H2O effectifs herites du modele 3 et documentes dans
   `THEORIE.md`.

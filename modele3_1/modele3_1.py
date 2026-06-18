@@ -204,6 +204,78 @@ def comparaison_validation(resultat, validation_flux):
     return comparaison
 
 
+def _flux_court_onde(
+    surface,
+    validation_flux,
+    jour_annee,
+    heure_solaire,
+    moyenne_journaliere_sw,
+    mode_court_onde,
+):
+    if moyenne_journaliere_sw:
+        sw_toa_local = physique.flux_solaire_moyen_journalier(
+            surface["latitude_deg"],
+            jour_annee,
+        )
+    else:
+        sw_toa_local = physique.flux_solaire_incident(
+            surface["latitude_deg"],
+            jour_annee,
+            heure_solaire,
+        )
+
+    albedo_surface = physique.fraction(surface.get("albedo_surface"), defaut=0.30)
+    albedo_nuages = physique.fraction(
+        surface.get("albedo_nuages_effectif"),
+        defaut=0.0,
+        maximum=0.95,
+    )
+    transmissivite_sw = surface.get("transmissivite_sw_mensuelle")
+
+    if mode_court_onde == "transmissivite_sw":
+        if transmissivite_sw is None:
+            raise ValueError("mode transmissivite_sw demande sans transmissivite_sw_mensuelle.")
+        transmissivite_sw = physique.fraction(transmissivite_sw, defaut=0.0)
+        sw_down_surface = sw_toa_local * transmissivite_sw
+        sw_absorbe_surface = sw_down_surface * (1.0 - albedo_surface)
+    elif mode_court_onde == "era5_down_albedo":
+        if "era5_sw_down_surface_w_m2" not in validation_flux:
+            raise ValueError("mode era5_down_albedo demande sans era5_sw_down_surface_w_m2.")
+        sw_down_surface = validation_flux["era5_sw_down_surface_w_m2"]
+        sw_absorbe_surface = sw_down_surface * (1.0 - albedo_surface)
+    elif mode_court_onde == "era5_net":
+        if "era5_sw_net_surface_w_m2" not in validation_flux:
+            raise ValueError("mode era5_net demande sans era5_sw_net_surface_w_m2.")
+        sw_down_surface = validation_flux.get("era5_sw_down_surface_w_m2")
+        sw_absorbe_surface = validation_flux["era5_sw_net_surface_w_m2"]
+    elif mode_court_onde == "toa_nuages_ceres":
+        sw_down_surface = sw_toa_local * (1.0 - albedo_nuages)
+        sw_absorbe_surface = physique.flux_sw_absorbe_surface(
+            sw_toa_local,
+            albedo_surface,
+            albedo_nuages,
+        )
+    else:
+        raise ValueError(
+            "mode_court_onde inconnu. Choisir transmissivite_sw, "
+            "era5_down_albedo, era5_net ou toa_nuages_ceres."
+        )
+
+    return {
+        "mode_court_onde": mode_court_onde,
+        "SW_TOA_local": sw_toa_local,
+        "SW_down_surface": sw_down_surface,
+        "SW_absorbe_surface": sw_absorbe_surface,
+        "albedo_surface": albedo_surface,
+        "albedo_nuages_effectif": albedo_nuages,
+        "transmissivite_sw_mensuelle": (
+            None
+            if transmissivite_sw is None
+            else physique.fraction(transmissivite_sw, defaut=0.0)
+        ),
+    }
+
+
 def calculer_colonne_radiative(
     donnees,
     temperature_surface_k=TEMPERATURE_SURFACE_DEFAUT_K,
@@ -211,6 +283,7 @@ def calculer_colonne_radiative(
     jour_annee=None,
     heure_solaire=12.0,
     moyenne_journaliere_sw=False,
+    mode_court_onde="transmissivite_sw",
     bandes=None,
     diagnostics_lourds=False,
 ):
@@ -272,29 +345,15 @@ def calculer_colonne_radiative(
     olr = max(0.0, flux_surface_total - flux_surface_bandes) + flux_sommet_bandes
     lw_down_absorbe_surface = emissivite_surface * lw_down_surface
 
-    if moyenne_journaliere_sw:
-        sw_incident_surface = physique.flux_solaire_moyen_journalier(
-            surface["latitude_deg"],
-            jour_annee,
-        )
-    else:
-        sw_incident_surface = physique.flux_solaire_incident(
-            surface["latitude_deg"],
-            jour_annee,
-            heure_solaire,
-        )
-
-    albedo_surface = physique.fraction(surface.get("albedo_surface"), defaut=0.30)
-    albedo_nuages = physique.fraction(
-        surface.get("albedo_nuages_effectif"),
-        defaut=0.0,
-        maximum=0.95,
+    court_onde = _flux_court_onde(
+        surface,
+        donnees.get("validation_flux", {}),
+        jour_annee,
+        heure_solaire,
+        moyenne_journaliere_sw,
+        mode_court_onde,
     )
-    sw_absorbe_surface = physique.flux_sw_absorbe_surface(
-        sw_incident_surface,
-        albedo_surface,
-        albedo_nuages,
-    )
+    sw_absorbe_surface = court_onde["SW_absorbe_surface"]
 
     resultat = {
         "lat_deg": surface["latitude_deg"],
@@ -305,7 +364,10 @@ def calculer_colonne_radiative(
         "moyenne_journaliere_sw": moyenne_journaliere_sw,
         "temperature_surface_k": temperature_surface_k,
         "co2_ppm": co2_ppm,
-        "SW_incident_surface": sw_incident_surface,
+        "mode_court_onde": court_onde["mode_court_onde"],
+        "SW_incident_surface": court_onde["SW_TOA_local"],
+        "SW_TOA_local": court_onde["SW_TOA_local"],
+        "SW_down_surface": court_onde["SW_down_surface"],
         "SW_absorbe_surface": sw_absorbe_surface,
         "LW_up_surface": flux_surface_total,
         "LW_down_surface": lw_down_surface,
@@ -314,13 +376,19 @@ def calculer_colonne_radiative(
         "flux_net_radiatif_surface": (
             sw_absorbe_surface + lw_down_absorbe_surface - flux_surface_total
         ),
-        "albedo_surface": albedo_surface,
-        "albedo_nuages_effectif": albedo_nuages,
+        "albedo_surface": court_onde["albedo_surface"],
+        "albedo_nuages_effectif": court_onde["albedo_nuages_effectif"],
+        "sw_toa_moyen_mensuel_w_m2": surface.get("sw_toa_moyen_mensuel_w_m2"),
+        "transmissivite_sw_mensuelle": court_onde["transmissivite_sw_mensuelle"],
         "emissivite_surface": emissivite_surface,
         "sources": {
             "albedo_surface": surface.get("source_albedo_surface", "inconnue"),
             "albedo_nuages_effectif": surface.get(
                 "source_albedo_nuages_effectif",
+                "inconnue",
+            ),
+            "transmissivite_sw_mensuelle": surface.get(
+                "source_transmissivite_sw_mensuelle",
                 "inconnue",
             ),
             "emissivite_surface": "constante_0.98",
@@ -348,6 +416,17 @@ def construire_parseur():
         "--moyenne-journaliere-sw",
         action="store_true",
         help="Moyenne la formule solaire instantanee sur 24 h",
+    )
+    parseur.add_argument(
+        "--mode-court-onde",
+        choices=(
+            "transmissivite_sw",
+            "era5_down_albedo",
+            "era5_net",
+            "toa_nuages_ceres",
+        ),
+        default=None,
+        help="Mode de calcul court-onde",
     )
     parseur.add_argument(
         "--temperature-surface",
@@ -382,6 +461,7 @@ def afficher_resultat(donnees, resultat):
     print(f"jour_annee = {resultat['jour_annee']}")
     print(f"heure_solaire = {resultat['heure_solaire']:.2f}")
     print(f"moyenne_journaliere_sw = {resultat['moyenne_journaliere_sw']}")
+    print(f"mode_court_onde = {resultat['mode_court_onde']}")
     print(f"T_surface_K = {resultat['temperature_surface_k']:.3f}")
     print(f"CO2_ppm = {resultat['co2_ppm']:.3f}")
     print(f"p_surface_hPa = {surface['pression_surface_pa'] / 100.0:.3f}")
@@ -390,7 +470,9 @@ def afficher_resultat(donnees, resultat):
     print(f"emissivite_surface = {resultat['emissivite_surface']:.4f}")
     print()
     print("flux_W_m2")
-    print(f"SW_incident_surface = {resultat['SW_incident_surface']:.6f}")
+    print(f"SW_TOA_local = {resultat['SW_TOA_local']:.6f}")
+    if resultat["SW_down_surface"] is not None:
+        print(f"SW_down_surface = {resultat['SW_down_surface']:.6f}")
     print(f"SW_absorbe_surface = {resultat['SW_absorbe_surface']:.6f}")
     print(f"LW_up_surface = {resultat['LW_up_surface']:.6f}")
     print(f"LW_down_surface = {resultat['LW_down_surface']:.6f}")
@@ -435,6 +517,13 @@ def main():
             jour_annee=args.jour_annee,
         )
 
+    mode_court_onde = args.mode_court_onde
+    if mode_court_onde is None:
+        if args.donnees_extraites is not None:
+            mode_court_onde = "toa_nuages_ceres"
+        else:
+            mode_court_onde = "transmissivite_sw"
+
     resultat = calculer_colonne_radiative(
         donnees,
         temperature_surface_k=args.temperature_surface,
@@ -442,6 +531,7 @@ def main():
         jour_annee=args.jour_annee,
         heure_solaire=args.heure_solaire,
         moyenne_journaliere_sw=args.moyenne_journaliere_sw,
+        mode_court_onde=mode_court_onde,
         diagnostics_lourds=args.diagnostics_lourds,
     )
 
