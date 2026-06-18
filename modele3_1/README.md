@@ -51,7 +51,7 @@ calculer_colonne_radiative(donnees_colonne, temperature_surface_k, co2_ppm)
 
 ## Physique conservee
 
-Court-onde :
+Short-wave :
 
 ```text
 SW_TOA_local = S0 * max(cos(i), 0)
@@ -60,7 +60,7 @@ SW_absorbe_surface = SW_down_surface * (1 - albedo_surface)
 S0 = 1361 W m-2
 ```
 
-Long-onde :
+Long-wave :
 
 ```text
 LW_up_surface = 0.98 * sigma * T_surface^4
