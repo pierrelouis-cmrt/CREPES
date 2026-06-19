@@ -19,11 +19,7 @@ RESSOURCES_DIR = Path(__file__).resolve().parent / "ressources"
 if str(RESSOURCES_DIR) not in sys.path:
     sys.path.insert(0, str(RESSOURCES_DIR))
 
-from profil_temperature_standard import (
-    altitude_depuis_pression,
-    atmosphere_standard,
-    temperature_moyenne_altitude,
-)
+from profil_temperature_standard import (altitude_depuis_pression,atmosphere_standard,temperature_moyenne_altitude)
 from profil_vertical_atmosphere_co2 import calculer_profil
 
 

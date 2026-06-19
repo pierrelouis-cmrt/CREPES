@@ -34,19 +34,27 @@ Variables surface classiques :
 
 Flux moyens téléchargés :
 
-- `avg_sdlwrf` : mean surface downward long-wave radiation flux
-- `avg_sdlwrfcs` : same, clear-sky
-- `avg_sdswrf` : mean surface downward short-wave radiation flux
-- `avg_sdswrfcs` : same, clear-sky
-- `avg_slhtf` : mean surface latent heat flux
-- `avg_snlwrf` : mean surface net long-wave radiation flux
-- `avg_snlwrfcs` : same, clear-sky
-- `avg_snswrf` : mean surface net short-wave radiation flux
-- `avg_snswrfcs` : same, clear-sky
-- `avg_ishf` : mean surface sensible heat flux
-- `avg_tdswrf` : mean top downward short-wave radiation flux
-- `avg_tnlwrf` : mean top net long-wave radiation flux
-- `avg_tnlwrfcs` : same, clear-sky
-- `avg_tnswrfcs` : mean top net short-wave radiation flux, clear-sky
+- `avg_sdlwrf`   : flux radiatif infrarouge descendant moyen à la surface
+- `avg_sdlwrfcs` : flux radiatif infrarouge descendant moyen à la surface en ciel clair
+
+- `avg_sdswrf`   : flux radiatif solaire descendant moyen à la surface
+- `avg_sdswrfcs` : flux radiatif solaire descendant moyen à la surface en ciel clair
+
+- `avg_slhtf`    : flux moyen de chaleur latente à la surface
+
+- `avg_snlwrf`   : flux radiatif infrarouge net moyen à la surface
+- `avg_snlwrfcs` : flux radiatif infrarouge net moyen à la surface en ciel clair
+
+- `avg_snswrf`   : flux radiatif solaire net moyen à la surface
+- `avg_snswrfcs` : flux radiatif solaire net moyen à la surface en ciel clair
+
+- `avg_ishf`     : flux moyen de chaleur sensible à la surface
+
+- `avg_tdswrf`   : flux radiatif solaire descendant moyen au sommet de l’atmosphère
+
+- `avg_tnlwrf`   : flux radiatif infrarouge net moyen au sommet de l’atmosphère
+- `avg_tnlwrfcs` : flux radiatif infrarouge net moyen au sommet de l’atmosphère en ciel clair
+
+- `avg_tnswrfcs` : flux radiatif solaire net moyen au sommet de l’atmosphère en ciel clair
 
 Contexte vérifié : ce sont des moyennes mensuelles ERA5 pour 2024, 12 mois, grille `0.25°`. Le modèle 3 final n’utilise plus tout : il garde surtout `t/q`, `sp/t2m/skt/lsm/siconc/sd`, l’albédo CSV, et les flux `avg_sdlwrf`, `avg_snswrf`, `avg_tnlwrf`, `avg_sdswrf`.
