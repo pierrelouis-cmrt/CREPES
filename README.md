@@ -11,6 +11,7 @@ Projet Climat, Groupe D, 2026
 | `modele2/`             | Colonne atmosphérique CO2 à 6 couches avec noyau radiatif infrarouge simplifié.                 |
 | `modele2_5/`           | Itération du modèle 2 : 10 couches en pression, profil standard, bandes CO2 découpées et tests. |
 | `modele3/`             | Colonne radiative finale pour le modèle 4, avec paquet `.npz` compact et provenances explicites. |
+| `modele4/`             | Grille de température de surface couplée au modèle 3 et aux termes de surface du modèle 0.       |
 
 ## Résumé rapide des modèles
 
@@ -61,6 +62,18 @@ Ajouts/corrections par rapport au modèle 2.5 :
 - Suppression des corrections nuageuses arbitraires court-onde et long-onde.
 - Le code 3 lit les copies racine dans `ressources/albedo/`, pas
   `modele0_maintenance/`.
+
+### Modèle 4
+
+Première grille de surface couplée :
+
+- Variable calculée : `T_surface(t, lat, lon)`.
+- Grille globale 5 degrés du paquet compact modèle 3.
+- Cellules indépendantes, sans transport horizontal.
+- Flux radiatifs fournis par le modèle 3.
+- Capacité thermique, flux latent et convection repris/clarifiés depuis le
+  modèle 0.
+- Intégration temporelle Backward Euler.
 
 ## Modèle 0
 
@@ -143,3 +156,35 @@ Documentation détaillée :
 - `modele3/README.md`
 - `modele3/THEORIE.md`
 - `modele3/PROVENANCE_DONNEES.md`
+
+## Modèle 4
+
+Lancer la sortie mensuelle globale par défaut :
+
+```bash
+./.venv/bin/python -m modele4.modele4
+```
+
+Lancer le moteur rapide, sortie toutes les 4 heures par défaut :
+
+```bash
+./.venv/bin/python -m modele4.rapide
+```
+
+Lancer un test temporel court sur une cellule :
+
+```bash
+./.venv/bin/python -m modele4.modele4 --mode temporel --jours 0.020833333333333332 --max-latitudes 1 --max-longitudes 1 --frequence-sortie-pas 1 --output /tmp/modele4_test.npz
+```
+
+Lancer les tests :
+
+```bash
+./.venv/bin/python modele4/tests/tester_modele4.py
+./.venv/bin/python modele4/tests/tester_rapide.py
+```
+
+Documentation détaillée :
+
+- `modele4/README.md`
+- `modele4/THEORIE.md`
