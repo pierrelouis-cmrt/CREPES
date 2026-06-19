@@ -63,7 +63,7 @@ def _calculer_bases_standard(pression_surface_pa: float = PRESSION_SURFACE_STAND
     "calculer_bases_standard(pression_surface_pa,temperature_de_la_surface_k)->tableau (liste(température),liste(pressions))"
     "float = PRESSION_SURFACE_STANDARD_PA, signifie que par défaut on prend la pression de surface standard"
 
-    return np.asarray(temperatures), np.asarray(pressions)
+    #return np.asarray(temperatures), np.asarray(pressions)
 
 
 def atmosphere_standard(altitude_geometrique_m: np.ndarray,pression_surface_pa: float = PRESSION_SURFACE_STANDARD_PA,temperature_surface_k: float = TEMPERATURE_SURFACE_STANDARD_K,) -> tuple[np.ndarray, np.ndarray]:
@@ -71,7 +71,7 @@ def atmosphere_standard(altitude_geometrique_m: np.ndarray,pression_surface_pa: 
 
     "atmosphere_standard(liste(altitude_geometrique_m,pression_surface_pa,temperature_de_la_surface_k)->tableau (température,pression)"
 
-    return temperature_k, pression_pa
+    #return temperature_k, pression_pa
 
 
 def altitude_depuis_pression(pression_pa: float,pression_surface_pa: float = PRESSION_SURFACE_STANDARD_PA,temperature_surface_k: float = TEMPERATURE_SURFACE_STANDARD_K) -> float:
@@ -86,7 +86,7 @@ def temperature_moyenne_altitude(altitude_bas_m: float,altitude_haut_m: float,no
     """Moyenne numerique de T(z) entre deux altitudes geometriques."""
     "temperature_moyenne_altitude(altitude_bas_m,altitude_haut_m,nombre_points)->moyenne de la temperature entre les deux altitudes"
 
-    return float(np.trapezoid(temperatures_k, altitudes_m) / (altitude_haut_m - altitude_bas_m))
+    #return float(np.trapezoid(temperatures_k, altitudes_m) / (altitude_haut_m - altitude_bas_m))
 
 
 
@@ -112,7 +112,7 @@ def construire_graphique_temperature(profil: dict[str, np.ndarray],sortie_fichie
     """Construit le graphique temperature-altitude."""
 
 
-    return fig, plt
+    #return fig, plt
 
 "creer les chemeins pr acceder aux fichier csv et graphique"
 def analyser_arguments(argv: list[str]) -> argparse.Namespace:
@@ -144,7 +144,7 @@ def main(argv: list[str] | None = None) -> int:
         raise ValueError("--step-m doit etre strictement positif.")
 
     profil = construire_profil_temperature(args.max_altitude_km, args.step_m)
-"permet de mettre les donnees dans un CSV, pour les utiliser dans d'autres logiciels"
+    "permet de mettre les donnees dans un CSV, pour les utiliser dans d'autres logiciels"
     if args.csv:
         args.csv.parent.mkdir(parents=True, exist_ok=True)
         np.savetxt(
@@ -162,7 +162,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
 
-"visuel"
+    "visuel"
     sans_interface = environnement_sans_interface_graphique()
     chemin_sortie = args.output
     if sans_interface and chemin_sortie is None:
