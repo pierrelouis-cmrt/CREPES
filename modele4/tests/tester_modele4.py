@@ -37,6 +37,52 @@ def tester_capacite_depuis_rzsm_modifie_le_sol():
     assert capacite_humide > capacite_seche
 
 
+def tester_capacite_rzsm_sans_melange_surface():
+    cellule = {
+        "land_fraction": 0.0,
+        "snow_ice_fraction": 1.0,
+    }
+    capacite = surface.capacite_surface(cellule, rzsm=0.35)
+    assert abs(capacite - surface.capacite_depuis_rzsm(0.35)) < 1e-6
+
+
+def tester_grille_rzsm_modele0_bins_1_degre():
+    contenu = "\n".join(
+        (
+            "lat,lon,RZSM",
+            "0.0,0.0,0.2",
+            "0.25,0.25,0.4",
+            "1.0,1.0,0.8",
+        )
+    )
+    with tempfile.TemporaryDirectory() as dossier:
+        chemin = Path(dossier) / "rzsm.csv"
+        chemin.write_text(contenu, encoding="utf-8")
+        grille = surface.charger_grille_rzsm(chemin)
+
+    valeur = surface.rzsm_plus_proche(grille, 0.2, 0.2)
+    assert abs(valeur - 0.3) < 1e-12
+
+
+def tester_flux_latent_par_continent_sans_moyenne():
+    cellule = {
+        "latitude_deg": 10.0,
+        "longitude_deg": 20.0,
+        "land_fraction": 1.0,
+    }
+    flux = surface.flux_latent_moyen(
+        cellule,
+        detecteur_continent=lambda _lat, _lon: "Africa",
+    )
+    assert abs(flux - surface.Q_LATENT_CONTINENT_W_M2["Africa"]) < 1e-12
+
+    flux_polaire = surface.flux_latent_moyen(
+        {"latitude_deg": 80.0, "longitude_deg": 0.0},
+        detecteur_continent=lambda _lat, _lon: "Europe",
+    )
+    assert flux_polaire == 0.0
+
+
 def tester_flux_convection_signe():
     config = surface.ConfigurationSurface(mode_convection="toutes", vent_m_s=2.5)
     flux_chaud = surface.flux_convection(300.0, 290.0, config)
@@ -103,6 +149,9 @@ def tester_simulation_mensuelle_point():
 def main():
     tester_capacite_surface_finie()
     tester_capacite_depuis_rzsm_modifie_le_sol()
+    tester_capacite_rzsm_sans_melange_surface()
+    tester_grille_rzsm_modele0_bins_1_degre()
+    tester_flux_latent_par_continent_sans_moyenne()
     tester_flux_convection_signe()
     tester_simulation_courte_point()
     tester_ecriture_npz()

@@ -163,6 +163,8 @@ Options principales du moteur rapide :
 - `--max-latitudes`, `--max-longitudes` : sous-grille de test.
 - `--convection`, `--facteur-latent`, `--vent`, `--co2` : memes roles que dans
   le moteur complet.
+- `--rzsm-csv` : source RZSM du modele 0, chargee par defaut pour la capacite
+  surfacique ; les constantes ne servent que si RZSM manque.
 
 ## Options principales
 
@@ -179,10 +181,13 @@ Options principales du moteur rapide :
 - `--vent` : vent constant en m/s pour la convection forcee.
 - `--max-latitudes`, `--max-longitudes` : sous-grille rapide de developpement.
 - `--rzsm-csv` : CSV RZSM du modele 0 pour utiliser la capacite thermique
-  continentale issue de l'humidite du sol.
+  issue de l'humidite du sol. Par defaut, le modele charge
+  `modele0_maintenance/ressources/capacite_humidite/average_rzsm_tout.csv`.
+  Si la source ou une valeur locale manque, il retombe seulement alors sur
+  `CP_SEC`.
 - `--no-progress` : desactive la barre de progression console.
 
-Exemple avec le CSV RZSM du modele 0 :
+Exemple avec un CSV RZSM explicite :
 
 ```bash
 ./.venv/bin/python -m modele4.modele4 \
@@ -224,9 +229,9 @@ cellule et l'ecriture du fichier `.npz`.
 ## Limites de la V1
 
 - Pas de transport horizontal.
-- Pas de capacite RZSM pretraitee dans le paquet compact ; le modele 4 peut
-  charger le CSV RZSM du modele 0 avec `--rzsm-csv`, sinon il utilise un
-  melange terre/ocean/glace base sur les constantes du modele 0.
+- Pas de capacite RZSM pretraitee dans le paquet compact ; le modele 4 charge
+  le CSV RZSM du modele 0 a l'execution et utilise `CP_SEC` seulement en
+  fallback si cette source ou la valeur locale manque.
 - Pas de diffusion du sol : le module du modele 0 est conserve mais pas branche,
   car son interpretation en flux de surface est encore ambigu.
 - Pas de recalcul des profils atmospheriques quand `T_surface` change.
