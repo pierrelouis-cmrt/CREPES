@@ -45,7 +45,7 @@ class ConfigurationRapide:
     temperature_initiale_k: float | None = None
     max_latitudes: int | None = None
     max_longitudes: int | None = None
-    rzsm_csv: Path | None = None
+    rzsm_csv: Path | None = RZSM_MODELE0_DEFAUT
     facteur_latent: float = 1.0
     mode_convection: str = "toutes"
     vent_m_s: float = surface.VENT_DEFAUT_M_S
@@ -347,6 +347,7 @@ def simuler_rapide(paquet, config=None):
             "temperature_air_defaut_k": config.temperature_air_defaut_k,
             "source_paquet": str(paquet["npz_path"]),
             "source_capacite": surface.source_capacite_surface(config.rzsm_csv),
+            "source_flux_latent": surface.source_flux_latent(),
             "lat_indices": list(lat_indices),
             "lon_indices": list(lon_indices),
             "mois_precalcules": [int(mois) for mois in champs["mois_utiles"]],
@@ -394,10 +395,10 @@ def construire_parseur():
     parseur.add_argument(
         "--rzsm-csv",
         type=Path,
-        default=None,
+        default=RZSM_MODELE0_DEFAUT,
         help=(
-            "CSV RZSM du modele 0 pour la capacite continentale. "
-            f"Exemple: {RZSM_MODELE0_DEFAUT}"
+            "CSV RZSM du modele 0 pour la capacite surfacique. "
+            f"Par defaut: {RZSM_MODELE0_DEFAUT}"
         ),
     )
     parseur.add_argument("--facteur-latent", type=float, default=1.0)
@@ -445,4 +446,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

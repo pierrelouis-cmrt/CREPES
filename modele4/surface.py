@@ -9,6 +9,7 @@ maintenance.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from math import isfinite
 from pathlib import Path
 
@@ -25,6 +26,21 @@ EPAISSEUR_ACTIVE_M = 0.5
 DELTA_HVAP = 2_453_000.0
 RHO_EAU = 1000.0
 DELTA_T_AN = 365.25 * 24.0 * 3600.0
+RACINE_PROJET = Path(__file__).resolve().parents[1]
+RZSM_MODELE0_DEFAUT = (
+    RACINE_PROJET
+    / "modele0_maintenance"
+    / "ressources"
+    / "capacite_humidite"
+    / "average_rzsm_tout.csv"
+)
+SHAPEFILE_CONTINENTS_MODELE0 = (
+    RACINE_PROJET
+    / "modele0_maintenance"
+    / "ressources"
+    / "carte"
+    / "ne_110m_admin_0_countries.shp"
+)
 
 Q_LATENT_CONTINENT_W_M2 = {
     "Europe": DELTA_HVAP * RHO_EAU * (0.49 / DELTA_T_AN),
@@ -33,17 +49,26 @@ Q_LATENT_CONTINENT_W_M2 = {
     "Oceania": DELTA_HVAP * RHO_EAU * (0.41 / DELTA_T_AN),
     "Africa": DELTA_HVAP * RHO_EAU * (0.58 / DELTA_T_AN),
     "Asia": DELTA_HVAP * RHO_EAU * (0.37 / DELTA_T_AN),
+    "Océan": DELTA_HVAP * RHO_EAU * (1.40 / DELTA_T_AN),
     "Ocean": DELTA_HVAP * RHO_EAU * (1.40 / DELTA_T_AN),
     "Antarctica": 0.0,
 }
 
-Q_LATENT_TERRE_MOYEN_W_M2 = sum(
-    Q_LATENT_CONTINENT_W_M2[nom]
-    for nom in ("Europe", "North America", "South America", "Oceania", "Africa", "Asia")
-) / 6.0
-
 TEMPERATURE_AIR_DEFAUT_K = 288.0
 VENT_DEFAUT_M_S = 2.5
+
+try:
+    import geopandas as gpd
+    from shapely.geometry import Point
+
+    GEOPANDAS_DISPONIBLE = True
+except ImportError:  # pragma: no cover - dependance optionnelle
+    gpd = None
+    Point = None
+    GEOPANDAS_DISPONIBLE = False
+
+_CACHE_RZSM = {}
+_CACHE_DETECTEURS_CONTINENT = {}
 
 
 @dataclass(frozen=True)
@@ -76,40 +101,80 @@ def fraction(valeur, defaut=0.0):
 def capacite_depuis_rzsm(rzsm):
     """Capacite surfacique Carcajous issue de l'humidite RZSM."""
 
-    rzsm = max(1e-6, min(0.999, float(rzsm)))
-    if abs(rzsm - 0.9) < 1e-9:
-        cp_kj_kg_k = CP_ICE
-    else:
-        w = (RHO_W * rzsm) / (RHO_BULK * (1.0 - rzsm) + RHO_W * rzsm)
-        cp_kj_kg_k = CP_SEC + w * (CP_WATER - CP_SEC)
-    return cp_kj_kg_k * 1000.0 * RHO_BULK * EPAISSEUR_ACTIVE_M
+    rzsm_array = np.asarray(rzsm, dtype=float)
+    glace = np.isclose(rzsm_array, 0.9)
+    rzsm_clipped = np.clip(rzsm_array, 1e-6, 0.999)
+    w = (RHO_W * rzsm_clipped) / (
+        RHO_BULK * (1.0 - rzsm_clipped) + RHO_W * rzsm_clipped
+    )
+    cp_kj_kg_k = CP_SEC + w * (CP_WATER - CP_SEC)
+    cp_kj_kg_k = np.where(glace, CP_ICE, cp_kj_kg_k)
+    capacite = cp_kj_kg_k * 1000.0 * RHO_BULK * EPAISSEUR_ACTIVE_M
+    if capacite.ndim == 0:
+        return float(capacite)
+    return capacite
+
+
+def _moyenne_par_bins_modele0(latitudes, longitudes, valeurs):
+    """Reproduit le regrillage 1 degre du modele 0 sans dependance SciPy."""
+
+    grid_res = 1.0
+    lon_bins = np.arange(-180.0, 180.0 + grid_res, grid_res)
+    lat_bins = np.arange(-90.0, 90.0 + grid_res, grid_res)
+    sommes = np.zeros((len(lat_bins) - 1, len(lon_bins) - 1), dtype=np.float64)
+    comptes = np.zeros_like(sommes)
+
+    masque = np.isfinite(latitudes) & np.isfinite(longitudes) & np.isfinite(valeurs)
+    latitudes = latitudes[masque]
+    longitudes = ((longitudes[masque] + 180.0) % 360.0) - 180.0
+    valeurs = valeurs[masque]
+
+    indices_lon = np.searchsorted(lon_bins, longitudes, side="right") - 1
+    indices_lat = np.searchsorted(lat_bins, latitudes, side="right") - 1
+    indices_lon = np.where(np.isclose(longitudes, lon_bins[-1]), len(lon_bins) - 2, indices_lon)
+    indices_lat = np.where(np.isclose(latitudes, lat_bins[-1]), len(lat_bins) - 2, indices_lat)
+
+    dans_grille = (
+        (indices_lat >= 0)
+        & (indices_lat < sommes.shape[0])
+        & (indices_lon >= 0)
+        & (indices_lon < sommes.shape[1])
+    )
+    np.add.at(sommes, (indices_lat[dans_grille], indices_lon[dans_grille]), valeurs[dans_grille])
+    np.add.at(comptes, (indices_lat[dans_grille], indices_lon[dans_grille]), 1.0)
+
+    grille = np.full_like(sommes, np.nan)
+    np.divide(sommes, comptes, out=grille, where=comptes > 0.0)
+    return grille, lat_bins, lon_bins
 
 
 def charger_grille_rzsm(csv_path):
-    """Charge le CSV RZSM du modele 0 dans une grille reguliere."""
+    """Charge et regrille le CSV RZSM comme le faisait le modele 0."""
 
+    if csv_path is None:
+        return None
     csv_path = Path(csv_path)
+    cle_cache = str(csv_path.resolve()) if csv_path.exists() else str(csv_path)
+    if cle_cache in _CACHE_RZSM:
+        return _CACHE_RZSM[cle_cache]
     if not csv_path.exists():
-        raise FileNotFoundError(f"CSV RZSM introuvable: {csv_path}")
+        return None
 
     table = np.genfromtxt(csv_path, delimiter=",", names=True)
-    latitudes = np.unique(table["lat"])
-    longitudes = np.unique(table["lon"])
-    valeurs = table["RZSM"]
-    if len(latitudes) * len(longitudes) == len(valeurs):
-        rzsm = valeurs.reshape((len(latitudes), len(longitudes)))
-    else:
-        rzsm = np.full((len(latitudes), len(longitudes)), np.nan)
-        index_lat = {valeur: indice for indice, valeur in enumerate(latitudes)}
-        index_lon = {valeur: indice for indice, valeur in enumerate(longitudes)}
-        for lat, lon, valeur in zip(table["lat"], table["lon"], valeurs):
-            rzsm[index_lat[lat], index_lon[lon]] = valeur
-    return {
+    table = np.atleast_1d(table)
+    rzsm, latitudes, longitudes = _moyenne_par_bins_modele0(
+        np.asarray(table["lat"], dtype=np.float64),
+        np.asarray(table["lon"], dtype=np.float64),
+        np.asarray(table["RZSM"], dtype=np.float64),
+    )
+    grille = {
         "latitudes": latitudes,
         "longitudes": longitudes,
         "rzsm": rzsm,
         "source": str(csv_path),
     }
+    _CACHE_RZSM[cle_cache] = grille
+    return grille
 
 
 def rzsm_plus_proche(grille_rzsm, lat_deg, lon_deg):
@@ -118,8 +183,14 @@ def rzsm_plus_proche(grille_rzsm, lat_deg, lon_deg):
     lon_deg = ((float(lon_deg) + 180.0) % 360.0) - 180.0
     latitudes = grille_rzsm["latitudes"]
     longitudes = grille_rzsm["longitudes"]
-    indice_lat = int(np.nanargmin(np.abs(latitudes - float(lat_deg))))
-    indice_lon = int(np.nanargmin(np.abs(longitudes - lon_deg)))
+    indice_lat = min(
+        int(np.nanargmin(np.abs(latitudes - float(lat_deg)))),
+        grille_rzsm["rzsm"].shape[0] - 1,
+    )
+    indice_lon = min(
+        int(np.nanargmin(np.abs(longitudes - lon_deg))),
+        grille_rzsm["rzsm"].shape[1] - 1,
+    )
     valeur = float(grille_rzsm["rzsm"][indice_lat, indice_lon])
     if not isfinite(valeur):
         return None
@@ -129,45 +200,98 @@ def rzsm_plus_proche(grille_rzsm, lat_deg, lon_deg):
 def capacite_surface(surface, rzsm=None):
     """Retourne C en J m-2 K-1 pour une cellule du modele 4.
 
-    Le modele 0 utilisait RZSM quand il etait disponible. Si `rzsm` est fourni,
-    la partie continentale reprend cette capacite. Sinon la V1 utilise les
-    constantes du modele 0 avec un melange simple terre/ocean/glace depuis les
-    fractions deja presentes dans le paquet.
+    Le modele 0 utilisait directement la capacite RZSM locale quand elle etait
+    disponible. La constante seche n'est utilisee qu'en fallback si la valeur
+    RZSM manque.
     """
 
-    land = fraction(surface.get("land_fraction"), defaut=1.0)
-    snow_ice = fraction(surface.get("snow_ice_fraction"), defaut=0.0)
-
-    if rzsm is None:
-        capacite_land = CP_SEC * 1000.0 * RHO_BULK * EPAISSEUR_ACTIVE_M
-    else:
-        capacite_land = capacite_depuis_rzsm(rzsm)
-    capacite_ocean = CP_WATER * 1000.0 * RHO_W * EPAISSEUR_ACTIVE_M
-    capacite_glace = CP_ICE * 1000.0 * RHO_BULK * EPAISSEUR_ACTIVE_M
-
-    capacite_sans_glace = land * capacite_land + (1.0 - land) * capacite_ocean
-    return snow_ice * capacite_glace + (1.0 - snow_ice) * capacite_sans_glace
+    if rzsm is not None:
+        rzsm = _float_fini(rzsm)
+    if rzsm is not None:
+        return capacite_depuis_rzsm(rzsm)
+    return CP_SEC * 1000.0 * RHO_BULK * EPAISSEUR_ACTIVE_M
 
 
 def source_capacite_surface(rzsm_csv=None):
-    if rzsm_csv is not None:
-        return f"modele0 RZSM {rzsm_csv} + melange land/ocean/snow_ice"
-    return "modele0 constantes capacite + melange land/ocean/snow_ice du paquet modele3"
+    if rzsm_csv is not None and Path(rzsm_csv).exists():
+        return f"modele0 RZSM {rzsm_csv}; fallback CP_SEC seulement si valeur manquante"
+    return "modele0 CP_SEC fallback; RZSM indisponible"
 
 
-def flux_latent_moyen(surface, facteur=1.0):
-    """Flux latent positif quand la surface perd de l'energie."""
+def creer_detecteur_continent(shapefile_path=SHAPEFILE_CONTINENTS_MODELE0):
+    """Cree le detecteur continent/ocean du modele 0."""
 
+    shapefile_path = Path(shapefile_path)
+    if not GEOPANDAS_DISPONIBLE or not shapefile_path.exists():
+        return None
+    try:
+        monde = gpd.read_file(shapefile_path).to_crs(epsg=4326)
+    except Exception:
+        return None
+
+    monde_valide = monde[monde.geometry.notna()]
+
+    def detecter(lat, lon):
+        point = Point(lon, lat)
+        for _, ligne in monde_valide.iterrows():
+            if ligne["geometry"].contains(point):
+                return ligne["CONTINENT"]
+        return "Océan"
+
+    return detecter
+
+
+def _detecteur_continent(shapefile_path=SHAPEFILE_CONTINENTS_MODELE0):
+    cle = str(Path(shapefile_path).resolve()) if Path(shapefile_path).exists() else str(shapefile_path)
+    if cle not in _CACHE_DETECTEURS_CONTINENT:
+        _CACHE_DETECTEURS_CONTINENT[cle] = creer_detecteur_continent(shapefile_path)
+    return _CACHE_DETECTEURS_CONTINENT[cle]
+
+
+@lru_cache(maxsize=8192)
+def _continent_point_cache(shapefile_key, lat_deg, lon_deg):
+    detecteur = _detecteur_continent(Path(shapefile_key))
+    if detecteur is None:
+        return "Océan"
+    return detecteur(lat_deg, lon_deg)
+
+
+def continent_point(lat_deg, lon_deg, shapefile_path=SHAPEFILE_CONTINENTS_MODELE0):
+    lon_deg = ((float(lon_deg) + 180.0) % 360.0) - 180.0
+    lat_deg = float(lat_deg)
+    chemin = Path(shapefile_path)
+    cle = str(chemin.resolve()) if chemin.exists() else str(chemin)
+    return _continent_point_cache(cle, round(lat_deg, 6), round(lon_deg, 6))
+
+
+def source_flux_latent(shapefile_path=SHAPEFILE_CONTINENTS_MODELE0):
+    if GEOPANDAS_DISPONIBLE and Path(shapefile_path).exists():
+        return f"modele0 continents {shapefile_path}"
+    return "modele0 fallback ocean; detecteur continent indisponible"
+
+
+def flux_latent_moyen(
+    surface,
+    facteur=1.0,
+    detecteur_continent=None,
+    shapefile_path=SHAPEFILE_CONTINENTS_MODELE0,
+):
+    """Flux latent annuel moyen du modele 0, positif en perte de surface."""
+
+    facteur = max(0.0, _float_fini(facteur, 0.0))
+    if facteur == 0.0:
+        return 0.0
     latitude = _float_fini(surface.get("latitude_deg"), 0.0)
     if latitude is not None and latitude > 75.0:
         return 0.0
+    longitude = _float_fini(surface.get("longitude_deg"), 0.0)
+    if detecteur_continent is None:
+        continent = continent_point(latitude, longitude, shapefile_path=shapefile_path)
+    else:
+        continent = detecteur_continent(latitude, longitude)
 
-    land = fraction(surface.get("land_fraction"), defaut=1.0)
-    snow_ice = fraction(surface.get("snow_ice_fraction"), defaut=0.0)
-    q_terre = Q_LATENT_TERRE_MOYEN_W_M2
-    q_ocean = Q_LATENT_CONTINENT_W_M2["Ocean"]
-    q_base = land * q_terre + (1.0 - land) * q_ocean
-    return max(0.0, float(facteur)) * q_base * (1.0 - snow_ice)
+    q_base = Q_LATENT_CONTINENT_W_M2.get(continent, Q_LATENT_CONTINENT_W_M2["Océan"])
+    return facteur * q_base
 
 
 def coefficient_convection_forcee(vent_m_s):
