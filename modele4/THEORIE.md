@@ -103,24 +103,21 @@ cp = cp_sec + w * (cp_water - cp_sec)
 C = cp * rho_bulk * e
 ```
 
-Le paquet compact actuel ne contient pas RZSM. Si le CSV RZSM du modele 0 est
-fourni avec `--rzsm-csv`, la partie continentale utilise la formule RZSM. Sinon
-la V1 du modele 4 utilise les constantes du modele 0 et les fractions deja
-presentes dans le paquet :
+Le paquet compact actuel ne contient pas RZSM. Le modele 4 charge donc par
+defaut le CSV RZSM conserve dans `modele0_maintenance/`, le regrille a 1 degre
+comme le modele 0, puis prend la valeur locale la plus proche. Quand RZSM est
+disponible, la capacite est directement :
 
 ```text
-C_land  = cp_sec   * rho_bulk * e
-C_ocean = cp_water * rho_w    * e
-C_ice   = cp_ice   * rho_bulk * e
-
-C_surface =
-    f_snow_ice * C_ice
-  + (1 - f_snow_ice) * (f_land * C_land + (1 - f_land) * C_ocean)
+C_surface = C_RZSM
 ```
 
-Ce choix est plus coherent pour une grille globale que le fallback sec unique :
-les oceans ont une inertie plus grande que les continents, sans introduire un
-ocean dynamique.
+Les constantes ne servent qu'en fallback si la source RZSM ou la valeur locale
+manque :
+
+```text
+C_surface = cp_sec * rho_bulk * e
+```
 
 ## Chaleur latente
 
@@ -144,23 +141,19 @@ Ocean         1.40 m/an
 Antarctica    0.00 m/an
 ```
 
-Dans la V1 globale, le paquet compact fournit une fraction terre/mer mais pas
-un continent par cellule. Le modele 4 utilise donc :
+Le modele 4 reprend la detection continent/ocean du modele 0 avec le shapefile
+Natural Earth conserve dans `modele0_maintenance/ressources/carte/`. Le flux
+latent d'une cellule est donc la valeur du continent trouve au centre de la
+cellule, ou la valeur ocean si aucun polygone ne contient ce point :
 
 ```text
-Q_land = moyenne des continents non oceaniques
-Q_ocean = valeur ocean du modele 0
-
-Q_latent =
-  facteur_latent
-  * (f_land * Q_land + (1 - f_land) * Q_ocean)
-  * (1 - f_snow_ice)
+continent = detecteur_shapefile(lat, lon) ou Ocean
+Q_latent = facteur_latent * Q_latent_continent[continent]
 ```
 
 Le flux latent est garde positif ou nul. Il represente une perte d'energie de
-surface moyenne. La modulation jour/nuit du modele 0 n'est pas reprise telle
-quelle, car elle pouvait rendre le flux latent negatif la nuit ; ce serait une
-source de chaleur non physique pour cette V1 globale.
+surface moyenne. Comme dans `P_em_surf_evap` du modele 0, le flux est force a
+`0` au nord de `75 degres`.
 
 ## Convection
 

@@ -28,13 +28,7 @@ except ImportError:  # Permet aussi : python modele4/modele4.py
 
 SORTIE_DEFAUT = Path(__file__).resolve().parent / "sorties" / "simulation_modele4.npz"
 MOIS_DEFAUT = tuple(range(1, 13))
-RZSM_MODELE0_DEFAUT = (
-    Path(__file__).resolve().parents[1]
-    / "modele0_maintenance"
-    / "ressources"
-    / "capacite_humidite"
-    / "average_rzsm_tout.csv"
-)
+RZSM_MODELE0_DEFAUT = surface.RZSM_MODELE0_DEFAUT
 
 
 @dataclass
@@ -49,7 +43,7 @@ class ConfigurationModele4:
     indices_lon: tuple[int, ...] | None = None
     max_latitudes: int | None = None
     max_longitudes: int | None = None
-    rzsm_csv: Path | None = None
+    rzsm_csv: Path | None = RZSM_MODELE0_DEFAUT
     afficher_progression: bool = False
     surface: surface.ConfigurationSurface = surface.ConfigurationSurface()
 
@@ -308,6 +302,7 @@ def simuler(paquet, config=None):
             "afficher_progression": config.afficher_progression,
             "source_paquet": str(paquet["npz_path"]),
             "source_capacite": surface.source_capacite_surface(config.rzsm_csv),
+            "source_flux_latent": surface.source_flux_latent(),
             "lat_indices": list(lat_indices),
             "lon_indices": list(lon_indices),
         },
@@ -427,6 +422,7 @@ def simuler_mensuel(paquet, config=None, mois=MOIS_DEFAUT):
             "afficher_progression": config.afficher_progression,
             "source_paquet": str(paquet["npz_path"]),
             "source_capacite": surface.source_capacite_surface(config.rzsm_csv),
+            "source_flux_latent": surface.source_flux_latent(),
             "lat_indices": list(lat_indices),
             "lon_indices": list(lon_indices),
         },
@@ -477,10 +473,10 @@ def construire_parseur():
     parseur.add_argument(
         "--rzsm-csv",
         type=Path,
-        default=None,
+        default=RZSM_MODELE0_DEFAUT,
         help=(
-            "CSV RZSM du modele 0 pour la capacite continentale. "
-            f"Exemple: {RZSM_MODELE0_DEFAUT}"
+            "CSV RZSM du modele 0 pour la capacite surfacique. "
+            f"Par defaut: {RZSM_MODELE0_DEFAUT}"
         ),
     )
     parseur.add_argument("--facteur-latent", type=float, default=1.0)
