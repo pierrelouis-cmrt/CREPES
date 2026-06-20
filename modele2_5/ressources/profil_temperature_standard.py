@@ -57,10 +57,7 @@ def geometrique_depuis_geopotentiel(altitude_geopotentielle_m: np.ndarray) -> np
     )
 
 
-def _calculer_bases_standard(
-    pression_surface_pa: float = PRESSION_SURFACE_STANDARD_PA,
-    temperature_surface_k: float = TEMPERATURE_SURFACE_STANDARD_K,
-) -> tuple[np.ndarray, np.ndarray]:
+def _calculer_bases_standard(pression_surface_pa: float = PRESSION_SURFACE_STANDARD_PA,temperature_surface_k: float = TEMPERATURE_SURFACE_STANDARD_K) -> tuple[np.ndarray, np.ndarray]:
     """Calcule temperature et pression aux bases des couches standard."""
 
     temperatures = [temperature_surface_k]
@@ -89,13 +86,10 @@ def _calculer_bases_standard(
     return np.asarray(temperatures), np.asarray(pressions)
 
 
-def atmosphere_standard(
-    altitude_geometrique_m: np.ndarray,
-    pression_surface_pa: float = PRESSION_SURFACE_STANDARD_PA,
-    temperature_surface_k: float = TEMPERATURE_SURFACE_STANDARD_K,
-) -> tuple[np.ndarray, np.ndarray]:
+def atmosphere_standard(altitude_geometrique_m: np.ndarray,pression_surface_pa: float = PRESSION_SURFACE_STANDARD_PA,temperature_surface_k: float = TEMPERATURE_SURFACE_STANDARD_K) -> tuple[np.ndarray, np.ndarray]:
     """Retourne temperature (K) et pression (Pa) a une altitude geometrique."""
 
+    "atmosphere_standard(liste (altitude_geometrique_m), liste(pression_surface_pa), temperature_surface_k) -> tableau [liste (temperature_k), liste(pression_pa)]"
     altitude_geometrique_m = np.asarray(altitude_geometrique_m, dtype=float)
     altitude_geopotentielle_m = geopotentiel_depuis_geometrique(altitude_geometrique_m)
     if np.any(
@@ -139,14 +133,11 @@ def atmosphere_standard(
                 temperature_k[masque] / temperature_base_k
             ) ** (-G0 / (R_AIR * gradient_thermique))
 
+
     return temperature_k, pression_pa
 
 
-def altitude_depuis_pression(
-    pression_pa: float,
-    pression_surface_pa: float = PRESSION_SURFACE_STANDARD_PA,
-    temperature_surface_k: float = TEMPERATURE_SURFACE_STANDARD_K,
-) -> float:
+def altitude_depuis_pression(pression_pa: float,pression_surface_pa: float = PRESSION_SURFACE_STANDARD_PA,temperature_surface_k: float = TEMPERATURE_SURFACE_STANDARD_K,) -> float:
     """Inverse le profil standard et retourne l'altitude geometrique en metres."""
 
     if pression_pa <= 0.0:
@@ -206,10 +197,7 @@ def temperature_moyenne_altitude(
     return float(np.trapezoid(temperatures_k, altitudes_m) / (altitude_haut_m - altitude_bas_m))
 
 
-def construire_profil_temperature(
-    max_altitude_km: float,
-    step_m: float,
-) -> dict[str, np.ndarray]:
+def construire_profil_temperature(max_altitude_km: float,step_m: float) -> dict[str, np.ndarray]:
     """Construit le profil exporte par le script."""
 
     max_altitude_m = max_altitude_km * 1000.0

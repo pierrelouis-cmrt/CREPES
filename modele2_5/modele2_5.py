@@ -19,11 +19,7 @@ RESSOURCES_DIR = Path(__file__).resolve().parent / "ressources"
 if str(RESSOURCES_DIR) not in sys.path:
     sys.path.insert(0, str(RESSOURCES_DIR))
 
-from profil_temperature_standard import (
-    altitude_depuis_pression,
-    atmosphere_standard,
-    temperature_moyenne_altitude,
-)
+from profil_temperature_standard import (altitude_depuis_pression,atmosphere_standard,temperature_moyenne_altitude)
 from profil_vertical_atmosphere_co2 import calculer_profil
 
 
@@ -35,7 +31,6 @@ CONSTANTE_STEFAN_BOLTZMANN = 5.670374419e-8  # W m-2 K-4
 CONSTANTE_PLANCK = 6.62607015e-34  # J s
 VITESSE_LUMIERE = 299_792_458.0  # m s-1
 CONSTANTE_BOLTZMANN = 1.380649e-23  # J K-1
-
 
 # =============================================================================
 # Parametres globaux du cas de reference

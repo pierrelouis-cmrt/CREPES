@@ -6,11 +6,11 @@ Le modèle 4 doit produire une température de surface `T_surface(t, lat, lon)`
 sur une grille de la surface terrestre.
 
 Il ne doit pas réimplémenter le transfert radiatif colonne par colonne. Il doit
-appeler le modèle 3.1 comme module radiatif local.
+appeler le modèle 3 comme module radiatif local.
 
 Responsabilités :
 
-- modèle 3.1 : calculer les flux radiatifs d'une colonne locale pour une
+- modèle 3 : calculer les flux radiatifs d'une colonne locale pour une
   température de surface donnée ;
 - modèle 4 : construire la grille, appeler les colonnes et intégrer le bilan de
   surface dans le temps.
@@ -35,11 +35,11 @@ C_surface dT_surface/dt =
 
 Le modèle 4 reprend la logique du modèle 0 pour les bilans de surface, mais en
 remplaçant le long-onde atmosphérique constant par les flux calculés par le
-modèle 3.1.
+modèle 3.
 
 ## Décision court-onde pour la première version
 
-Le court-onde renvoyé par le modèle 3.1 reste un diagnostic pédagogique de
+Le court-onde renvoyé par le modèle 3 reste un diagnostic pédagogique de
 géométrie solaire simplifiée. Pour faire évoluer `T_surface` dans le modèle 4,
 il ne doit pas être utilisé tel quel, car il surestime fortement le flux net de
 surface.
@@ -80,12 +80,12 @@ mode_forcage_mensuel = era5_sw_down_surface_w_m2 * (1 - albedo_surface)
 mode_validation      = era5_sw_net_surface_w_m2
 ```
 
-Le champ `albedo_nuages_effectif` issu de CERES EBAF-TOA reste utile comme
-diagnostic et provenance du modèle 3.1, mais il ne doit pas être appliqué
-directement comme transmission solaire de surface dans le modèle 4.
+Les anciennes corrections nuageuses TOA de type `albedo_nuages_effectif`
+restent des diagnostics historiques. Elles ne doivent pas être réintroduites
+comme transmission solaire de surface dans le modèle 4.
 
 La justification détaillée et les sources sont dans
-`modele4/RECHERCHE_COURT_ONDE_ET_OPTIMISATION.md`.
+`modele3/RECHERCHE_COURT_ONDE_ET_OPTIMISATION.md`.
 
 ## Entrées attendues
 
@@ -96,7 +96,7 @@ Pour chaque cellule :
 - capacité thermique surfacique ;
 - données de surface disponibles : albédo, terre/mer, neige/glace,
   émissivité ;
-- données atmosphériques mensuelles utilisées par le modèle 3.1.
+- données atmosphériques mensuelles utilisées par le modèle 3.
 
 ## Données versionnables pour Git
 
@@ -117,12 +117,11 @@ nombre_cellules = 36 * 72 = 2592
 
 Le modèle 4 ne doit pas versionner les 37 niveaux ERA5 bruts. Il doit
 pré-calculer localement, à partir de `ressources/`, les grandeurs directement
-utilisées par le modèle 3.1 :
+utilisées par le modèle 3 :
 
-- pressions bas/haut des couches du modèle 3.1 ;
+- pressions bas/haut des couches du modèle 3 ;
 - température moyenne de couche `T_moyen` ;
 - humidité spécifique moyenne de couche `q_moyen` ;
-- fraction nuageuse de couche ;
 - pression de surface mensuelle ;
 - albédo de surface mensuel ;
 - émissivité de surface constante `0.98`, donc pas de carte dédiée à stocker ;
@@ -138,14 +137,14 @@ Format recommandé :
   facteurs d'échelle, l'année/source et les variables ;
 - viser des fichiers suivis par Git nettement sous `30 Mo`.
 
-Le générateur de référence doit être commun au modèle 3.1 et au modèle 4. Il
-vit côté `modele3_1`, car il prépare d'abord les colonnes radiatives que le
-modèle 3.1 sait consommer, puis le modèle 4 itère sur ces mêmes colonnes.
+Le générateur de référence doit être commun au modèle 3 et au modèle 4. Il
+vit côté `modele3`, car il prépare d'abord les colonnes radiatives que le
+modèle 3 sait consommer, puis le modèle 4 itère sur ces mêmes colonnes.
 
 Exemple de dossier versionnable :
 
 ```text
-modele3_1/donnees_precalculees/grille_5deg_2024/
+modele3/ressources/donnees_precalculees/grille_5deg_2024/
   metadata.json
   donnees_colonnes_5deg_2024.npz
   README.md
@@ -164,7 +163,7 @@ Exemples de quantification acceptable :
 T_moyen_K              -> pas 0.01 K
 q_moyen_kgkg           -> pas 1e-7 kg/kg
 pression_hPa           -> pas 0.1 hPa
-albedo/cloud/fraction   -> pas 1e-4
+albedo/fraction         -> pas 1e-4
 flux_W_m2              -> pas 0.1 W/m2
 ```
 
@@ -172,7 +171,7 @@ Le workflow attendu est donc :
 
 1. un membre du groupe qui possède les gros fichiers lance le prétraitement ;
 2. le script lit `ressources/`, interpole sur la grille 5°, construit les
-   couches du modèle 3.1 et écrit les `.npz`/`metadata.json` compacts ;
+   couches du modèle 3 et écrit les `.npz`/`metadata.json` compacts ;
 3. ces fichiers pré-calculés sont suivis par Git ;
 4. les autres membres clonent le dépôt et peuvent lancer le modèle 4 sans
    télécharger les gros fichiers d'origine.
@@ -180,19 +179,19 @@ Le workflow attendu est donc :
 Commande cible à implémenter :
 
 ```bash
-./.venv/bin/python -m modele3_1.generer_donnees \
+./.venv/bin/python -m modele3.ressources.generer_donnees \
   --resolution 5 \
   --annee 2024 \
   --ressources-dir ressources \
   --albedo-dir modele0_maintenance/ressources/albedo \
-  --output modele3_1/donnees_precalculees/grille_5deg_2024
+  --output modele3/ressources/donnees_precalculees/grille_5deg_2024
 ```
 
 Le modèle 4 devra ensuite charger prioritairement ces données pré-calculées
-produites par `modele3_1`. Si elles sont absentes mais que `ressources/`
-existe, il pourra proposer la commande de génération. S'il n'y a ni données
-pré-calculées ni `ressources/`, il devra échouer avec un message clair plutôt
-que lancer une simulation globale fausse.
+produites par `modele3.ressources.generer_donnees`. Si elles sont absentes
+mais que `ressources/` existe, il pourra proposer la commande de génération.
+S'il n'y a ni données pré-calculées ni `ressources/`, il devra échouer avec un
+message clair plutôt que lancer une simulation globale fausse.
 
 ## Boucle temporelle
 
@@ -208,8 +207,8 @@ dt = 1800 s
 2. lire/interpoler les données mensuelles de la cellule ;
 3. calculer `SW_TOA_local(t) = S0 * max(cos(i(t)), 0)` ;
 4. appliquer la transmissivité mensuelle `tau_SW_mensuel` issue d'ERA5 ;
-5. appeler le modèle 3.1 avec la température de surface courante ;
-6. récupérer les flux long-onde du modèle 3.1 ;
+5. appeler le modèle 3 avec la température de surface courante ;
+6. récupérer les flux long-onde du modèle 3 ;
 7. utiliser `SW_absorbe_surface_corrige` dans le bilan de surface ;
 8. calculer les autres termes de surface repris du modèle 0 ;
 9. mettre à jour `T_surface`.
@@ -241,7 +240,7 @@ Diagnostics utiles :
 - flux radiatifs moyens ;
 - température minimale/maximale par cellule ;
 - cartes mensuelles ou journalières ;
-- série temporelle pour une cellule de référence, par exemple Paris.
+- série temporelle pour une cellule de référence.
 
 ## Validation
 
@@ -249,7 +248,7 @@ Comparer progressivement :
 
 - cartes de température simulée contre `skin temperature` ou `2m temperature` ;
 - flux court-onde corrigé contre `era5_sw_net_surface_w_m2` ;
-- flux long-onde du modèle 3.1 contre ERA5 ;
+- flux long-onde du modèle 3 contre ERA5 ;
 - comportement saisonnier entre hémisphères ;
 - différence terre/océan ;
 - différence altitude basse / montagne.
@@ -264,6 +263,6 @@ Ne pas ajouter tout de suite :
 - rétroaction de la surface sur les profils atmosphériques ;
 - calibration spectroscopique avancée.
 
-Le premier modèle 4 doit surtout prouver que le modèle 3.1 peut être appelé de
+Le premier modèle 4 doit surtout prouver que le modèle 3 peut être appelé de
 manière stable sur une grille et que le bilan de surface produit une évolution
 cohérente de `T_surface`.

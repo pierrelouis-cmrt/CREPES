@@ -10,8 +10,8 @@ Projet Climat, Groupe D, 2026
 | `modele1/`             | Colonne radiative CO2 simplifiée à 3 couches.                                                   |
 | `modele2/`             | Colonne atmosphérique CO2 à 6 couches avec noyau radiatif infrarouge simplifié.                 |
 | `modele2_5/`           | Itération du modèle 2 : 10 couches en pression, profil standard, bandes CO2 découpées et tests. |
-| `modele3/`             | Colonne radiative locale : ERA5, CO2 + H2O simple, nuages, émissivité et diagnostics.           |
-| `modele3_1/`           | Colonne radiative nettoyée pour le modèle 4, avec paquet `.npz` compact et provenances explicites. |
+| `modele3/`             | Colonne radiative finale pour le modèle 4, avec paquet `.npz` compact et provenances explicites. |
+| `modele4/`             | Grille de température de surface couplée au modèle 3 et aux termes de surface du modèle 0.       |
 
 ## Résumé rapide des modèles
 
@@ -47,28 +47,33 @@ Ajouts par rapport au modèle 2 :
 
 ### Modèle 3
 
-Ajouts par rapport au modèle 2.5 :
+Ajouts/corrections par rapport au modèle 2.5 :
 
+- Paquet compact `modele3/ressources/donnees_precalculees/grille_5deg_2024/`.
+- Grille globale `5 degrés` prête pour le modèle 4.
 - Appel local par latitude/longitude et mois ou jour.
 - Pression de surface locale au lieu de `1013.25 hPa` fixe.
-- Profils ERA5 locaux `T(p)` et `q(p)` quand `ressources/` est présent.
+- Profils ERA5 locaux `T(p)` et `q(p)` prétraités par couche.
 - Opacité H2O effective additionnée à l'opacité CO2 avant transmission.
-- Nuages simples, albédo de surface, émissivité de surface.
-- Extrait JSON versionnable pour exécuter Paris sans les gros fichiers locaux.
-
-### Modèle 3.1
-
-Ajouts/corrections par rapport au modèle 3 :
-
-- Paquet compact `modele3_1/ressources/donnees_precalculees/grille_5deg_2024/`.
-- Grille globale `5 degrés` prête pour le modèle 4.
 - Émissivité constante `0.98`.
 - Albédo de surface lu depuis `ressources/albedo/albedo01.csv` à `albedo12.csv`.
 - Transmissivité court-onde mensuelle :
   `ERA5 SW_down / moyenne_mensuelle(S0 * max(cos(i), 0))`.
 - Suppression des corrections nuageuses arbitraires court-onde et long-onde.
-- Le code 3.1 lit les copies racine dans `ressources/albedo/`, pas
+- Le code 3 lit les copies racine dans `ressources/albedo/`, pas
   `modele0_maintenance/`.
+
+### Modèle 4
+
+Première grille de surface couplée :
+
+- Variable calculée : `T_surface(t, lat, lon)`.
+- Grille globale 5 degrés du paquet compact modèle 3.
+- Cellules indépendantes, sans transport horizontal.
+- Flux radiatifs fournis par le modèle 3.
+- Capacité thermique, flux latent et convection repris/clarifiés depuis le
+  modèle 0.
+- Intégration temporelle Backward Euler.
 
 ## Modèle 0
 
@@ -128,16 +133,16 @@ La documentation détaillée du modèle 2.5 est dans `modele2_5/README.md`.
 
 ## Modèle 3
 
-Lancer le cas Paris avec l'extrait versionné :
+Régénérer le paquet compact :
 
 ```bash
-./.venv/bin/python -m modele3.modele3 --donnees-extraites modele3/donnees_exemple/paris_2024_m07.json --temperature-surface 293.0 --moyenne-journaliere-sw
+./.venv/bin/python -m modele3.ressources.generer_donnees --overwrite
 ```
 
-Créer un extrait compact depuis les gros fichiers locaux de `ressources/` :
+Lancer une colonne depuis le paquet global :
 
 ```bash
-./.venv/bin/python -m modele3.preparer_point --lat 48.8566 --lon 2.3522 --mois 7 --output modele3/donnees_exemple/paris_2024_m07.json
+./.venv/bin/python -m modele3.modele3 --lat 0 --lon 0 --mois 7 --temperature-surface 293.0 --moyenne-journaliere-sw
 ```
 
 Lancer les tests :
@@ -146,31 +151,40 @@ Lancer les tests :
 ./.venv/bin/python modele3/tests/tester_modele3.py
 ```
 
-La documentation détaillée du modèle 3 est dans `modele3/README.md` et
-`modele3/THEORIE.md`.
+Documentation détaillée :
 
-## Modèle 3.1
+- `modele3/README.md`
+- `modele3/THEORIE.md`
+- `modele3/PROVENANCE_DONNEES.md`
 
-Régénérer le paquet compact :
+## Modèle 4
+
+Lancer la sortie mensuelle globale par défaut :
 
 ```bash
-./.venv/bin/python -m modele3_1.ressources.generer_donnees --overwrite
+./.venv/bin/python -m modele4.modele4
 ```
 
-Lancer Paris depuis le paquet global :
+Lancer le moteur rapide, sortie toutes les 4 heures par défaut :
 
 ```bash
-./.venv/bin/python -m modele3_1.modele3_1 --lat 48.8566 --lon 2.3522 --mois 7 --temperature-surface 293.0 --moyenne-journaliere-sw
+./.venv/bin/python -m modele4.rapide
+```
+
+Lancer un test temporel court sur une cellule :
+
+```bash
+./.venv/bin/python -m modele4.modele4 --mode temporel --jours 0.020833333333333332 --max-latitudes 1 --max-longitudes 1 --frequence-sortie-pas 1 --output /tmp/modele4_test.npz
 ```
 
 Lancer les tests :
 
 ```bash
-./.venv/bin/python modele3_1/tests/tester_modele3_1.py
+./.venv/bin/python modele4/tests/tester_modele4.py
+./.venv/bin/python modele4/tests/tester_rapide.py
 ```
 
 Documentation détaillée :
 
-- `modele3_1/README.md`
-- `modele3_1/THEORIE.md`
-- `modele3_1/PROVENANCE_DONNEES.md`
+- `modele4/README.md`
+- `modele4/THEORIE.md`
