@@ -27,6 +27,7 @@ PRESSION_SURFACE_STANDARD_PA = 101_325.0
 TEMPERATURE_SURFACE_STANDARD_K = 288.15
 
 # U.S. Standard Atmosphere 1976, jusqu'a 84,852 km geopotentiels.
+# Chaque base marque un changement possible de gradient de temperature.
 BASES_GEOPOTENTIELLES_M = np.array(
     [0.0, 11_000.0, 20_000.0, 32_000.0, 47_000.0, 51_000.0, 71_000.0, 84_852.0]
 )
@@ -63,6 +64,7 @@ def _calculer_bases_standard(pression_surface_pa: float = PRESSION_SURFACE_STAND
     temperatures = [temperature_surface_k]
     pressions = [pression_surface_pa]
 
+    # On avance couche par couche pour connaitre les valeurs aux interfaces.
     for indice, gradient_thermique in enumerate(GRADIENTS_THERMIQUES_K_M):
         altitude_bas_m = BASES_GEOPOTENTIELLES_M[indice]
         altitude_haut_m = BASES_GEOPOTENTIELLES_M[indice + 1]
@@ -112,6 +114,7 @@ def atmosphere_standard(altitude_geometrique_m: np.ndarray,pression_surface_pa: 
     indices_couches = np.minimum(indices_couches, len(GRADIENTS_THERMIQUES_K_M) - 1)
 
     for indice_couche, gradient_thermique in enumerate(GRADIENTS_THERMIQUES_K_M):
+        # On applique la formule de la couche standard qui contient chaque altitude.
         masque = indices_couches == indice_couche
         if not np.any(masque):
             continue
@@ -154,6 +157,7 @@ def altitude_depuis_pression(pression_pa: float,pression_surface_pa: float = PRE
         )
 
     for indice, gradient_thermique in enumerate(GRADIENTS_THERMIQUES_K_M):
+        # On cherche la couche standard qui encadre la pression demandee.
         pression_bas_pa = pressions_bases[indice]
         pression_haut_pa = pressions_bases[indice + 1]
         if pression_bas_pa >= pression_pa >= pression_haut_pa:

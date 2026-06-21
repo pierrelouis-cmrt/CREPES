@@ -134,7 +134,7 @@ Les bandes retenues sont :
 
 La bande $2.7\ \mu m$ est négligée : son diagnostic était proche de $0.001\ \mathrm{W\,m^{-2}}$ pour $280\to560\ ppm$.
 
-Le découpage coeur/ailes est conservé : le diagnostic montre qu'il change la
+Le découpage cœur/ailes est conservé : le diagnostic montre qu'il change la
 réponse marginale au doublement CO2. Coefficients effectifs utilisés dans
 $\Delta\tau$, après calibration :
 
@@ -142,11 +142,11 @@ $\Delta\tau$, après calibration :
 | ---------------------------- | -----------: | ----- | -------: |
 | CO2_15um_aile_gauche_externe |  13.00-14.00 | aile  | 0.010471 |
 | CO2_15um_aile_gauche_interne |  14.00-14.60 | aile  | 0.114530 |
-| CO2_15um_coeur_sature        |  14.60-15.40 | coeur | 1.308912 |
+| CO2_15um_coeur_sature        |  14.60-15.40 | cœur | 1.308912 |
 | CO2_15um_aile_droite_interne |  15.40-16.20 | aile  | 0.130891 |
 | CO2_15um_aile_droite_externe |  16.20-18.00 | aile  | 0.015707 |
 | CO2_4_3um_aile_gauche        |    4.00-4.20 | aile  | 0.006545 |
-| CO2_4_3um_coeur_sature       |    4.20-4.40 | coeur | 0.490842 |
+| CO2_4_3um_coeur_sature       |    4.20-4.40 | cœur | 0.490842 |
 | CO2_4_3um_aile_droite        |    4.40-4.60 | aile  | 0.006545 |
 
 ## Opacité et flux
@@ -220,7 +220,7 @@ Diagnostic de contribution :
 | ------------------ | ------------------------: |
 | Toutes sous-bandes |                  3.930000 |
 | 15 µm total        |                  3.816900 |
-| 15 µm coeur        |                  1.818766 |
+| 15 µm cœur        |                  1.818766 |
 | 15 µm ailes        |                  1.998134 |
 | 4.3 µm total       |                  0.113100 |
 

@@ -56,14 +56,45 @@ def construire_couches(donnees, co2_ppm=CO2_DEFAUT_PPM):
             copie["pression_bas_pa"] = copie["pression_bas_hpa"] * 100.0
         if "pression_haut_pa" not in copie:
             copie["pression_haut_pa"] = copie["pression_haut_hpa"] * 100.0
+        p_bas = physique.valeur_finie(copie.get("pression_bas_pa"))
+        p_haut = physique.valeur_finie(copie.get("pression_haut_pa"))
+        if p_bas is None or p_haut is None or p_bas <= p_haut:
+            raise ValueError(
+                f"Couche {copie['nom']} invalide: "
+                f"pression_bas_pa={copie.get('pression_bas_pa')}, "
+                f"pression_haut_pa={copie.get('pression_haut_pa')}"
+            )
+        copie["pression_bas_pa"] = p_bas
+        copie["pression_haut_pa"] = p_haut
         if "masse_air_kg_m2" not in copie:
-            delta_p = copie["pression_bas_pa"] - copie["pression_haut_pa"]
+            delta_p = p_bas - p_haut
             copie["masse_air_kg_m2"] = physique.masse_air_depuis_delta_p(delta_p)
+        masse_air = physique.valeur_finie(copie.get("masse_air_kg_m2"))
+        if masse_air is None or masse_air <= 0.0:
+            raise ValueError(f"Couche {copie['nom']} invalide: masse_air_kg_m2={masse_air}")
+        copie["masse_air_kg_m2"] = masse_air
+        humidite = physique.valeur_finie(copie.get("humidite_specifique_kgkg"))
+        if humidite is None or humidite < 0.0:
+            raise ValueError(
+                f"Couche {copie['nom']} invalide: "
+                f"humidite_specifique_kgkg={copie.get('humidite_specifique_kgkg')}"
+            )
+        copie["humidite_specifique_kgkg"] = humidite
         if "masse_h2o_kg_m2" not in copie:
             copie["masse_h2o_kg_m2"] = physique.masse_h2o_colonne(
-                copie.get("humidite_specifique_kgkg", 0.0),
-                copie["masse_air_kg_m2"],
+                humidite,
+                masse_air,
             )
+        masse_h2o = physique.valeur_finie(copie.get("masse_h2o_kg_m2"))
+        if masse_h2o is None or masse_h2o < 0.0:
+            raise ValueError(f"Couche {copie['nom']} invalide: masse_h2o_kg_m2={masse_h2o}")
+        temperature = physique.valeur_finie(copie.get("temperature_k"))
+        if temperature is None:
+            raise ValueError(
+                f"Couche {copie['nom']} invalide: temperature_k={copie.get('temperature_k')}"
+            )
+        copie["masse_h2o_kg_m2"] = masse_h2o
+        copie["temperature_k"] = temperature
         couches.append(copie)
     return couches
 
@@ -109,21 +140,35 @@ def comparaison_validation(resultat, validation_flux):
     return comparaison
 
 
-def calculer_flux_court_onde(surface, jour_annee, heure_solaire, moyenne_journaliere_sw):
+def calculer_flux_court_onde(
+    surface,
+    jour_annee,
+    heure_solaire,
+    moyenne_journaliere_sw,
+    utiliser_moyenne_mensuelle=False,
+):
+    sw_toa_mensuel = physique.valeur_finie(surface.get("sw_toa_moyen_mensuel_w_m2"))
     if moyenne_journaliere_sw:
-        sw_toa_local = physique.flux_solaire_moyen_journalier(
-            surface["latitude_deg"],
-            jour_annee,
-        )
+        if utiliser_moyenne_mensuelle and sw_toa_mensuel is not None:
+            sw_toa_local = sw_toa_mensuel
+            mode_court_onde = "moyenne_mensuelle_paquet"
+        else:
+            sw_toa_local = physique.flux_solaire_moyen_journalier(
+                surface["latitude_deg"],
+                jour_annee,
+            )
+            mode_court_onde = "moyenne_journaliere_jour_representatif"
     else:
         sw_toa_local = physique.flux_solaire_incident(
             surface["latitude_deg"],
             jour_annee,
             heure_solaire,
         )
+        mode_court_onde = "instantane_jour_representatif"
 
     albedo_surface = physique.fraction(surface.get("albedo_surface"), defaut=0.30)
     transmissivite_sw = physique.fraction(surface["transmissivite_sw_mensuelle"], defaut=0.0)
+    # Le court-onde descend jusqu'a la surface puis l'albedo en renvoie une partie.
     sw_down_surface = sw_toa_local * transmissivite_sw
     sw_absorbe_surface = sw_down_surface * (1.0 - albedo_surface)
 
@@ -133,6 +178,7 @@ def calculer_flux_court_onde(surface, jour_annee, heure_solaire, moyenne_journal
         "SW_absorbe_surface": sw_absorbe_surface,
         "albedo_surface": albedo_surface,
         "transmissivite_sw_mensuelle": transmissivite_sw,
+        "mode_court_onde": mode_court_onde,
     }
 
 
@@ -149,8 +195,10 @@ def calculer_colonne_radiative(
         bandes = physique.BANDES_INFRAROUGES
 
     surface = donnees["surface"]
+    jour_annee_argument = jour_annee
     if jour_annee is None:
         jour_annee = surface.get("jour_annee") or physique.jour_milieu_mois(surface["mois"])
+    jour_representatif_mois = jour_annee_argument is None and surface.get("jour_annee") is None
 
     couches = construire_couches(donnees, co2_ppm=co2_ppm)
     emissivite_surface = physique.EMISSIVITE_SURFACE_CONSTANTE
@@ -162,6 +210,7 @@ def calculer_colonne_radiative(
     diagnostics_bandes = []
 
     for bande in bandes:
+        # Chaque bande long-onde est propagee vers le sommet puis vers la surface.
         flux_surface_bande = emissivite_surface * physique.flux_corps_noir_dans_bande(
             temperature_surface_k,
             bande["lambda_min_um"],
@@ -176,6 +225,7 @@ def calculer_colonne_radiative(
 
         tau_co2_total = 0.0
         tau_h2o_total = 0.0
+        # Ces sommes servent surtout a lire rapidement ce qui absorbe dans la bande.
         for couche in couches:
             diagnostic = physique.opacites_couche_bande(couche, bande)
             tau_co2_total += diagnostic["tau_co2"]
@@ -204,6 +254,7 @@ def calculer_colonne_radiative(
         jour_annee,
         heure_solaire,
         moyenne_journaliere_sw,
+        utiliser_moyenne_mensuelle=jour_representatif_mois,
     )
     sw_absorbe_surface = court_onde["SW_absorbe_surface"]
 
@@ -214,6 +265,7 @@ def calculer_colonne_radiative(
         "jour_annee": jour_annee,
         "heure_solaire": heure_solaire,
         "moyenne_journaliere_sw": moyenne_journaliere_sw,
+        "mode_court_onde": court_onde["mode_court_onde"],
         "temperature_surface_k": temperature_surface_k,
         "co2_ppm": co2_ppm,
         "SW_TOA_local": court_onde["SW_TOA_local"],

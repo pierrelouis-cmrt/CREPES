@@ -43,6 +43,8 @@ class ConfigurationRapide:
     sortie_heures: float = 4.0
     co2_ppm: float = physique.CO2_DEFAUT_PPM
     temperature_initiale_k: float | None = None
+    indices_lat: tuple[int, ...] | None = None
+    indices_lon: tuple[int, ...] | None = None
     max_latitudes: int | None = None
     max_longitudes: int | None = None
     rzsm_csv: Path | None = RZSM_MODELE0_DEFAUT
@@ -53,11 +55,19 @@ class ConfigurationRapide:
     afficher_progression: bool = True
 
 
-def _indices_grille(taille, maximum=None):
-    if maximum is None:
-        return tuple(range(taille))
-    maximum = max(1, min(int(maximum), taille))
-    return tuple(range(maximum))
+def _indices_grille(taille, indices=None, maximum=None):
+    if indices is not None:
+        selection = tuple(int(indice) for indice in indices)
+    elif maximum is None:
+        selection = tuple(range(taille))
+    else:
+        maximum = max(1, min(int(maximum), taille))
+        selection = tuple(range(maximum))
+
+    for indice in selection:
+        if indice < 0 or indice >= taille:
+            raise ValueError(f"Indice de grille hors limites: {indice} pour taille {taille}")
+    return selection
 
 
 def _afficher_progression(etapes_effectuees, nombre_etapes, unite, largeur=32):
@@ -145,6 +155,7 @@ def _flux_convection_vectoriel(temperature_surface, temperature_air, config):
 
 
 def _precalculer_champs(paquet, config, latitudes, longitudes, mois_utiles):
+    # Le rapide prepare les champs lents une fois pour eviter de rappeler le modele 3.
     grille_rzsm = (
         surface.charger_grille_rzsm(config.rzsm_csv) if config.rzsm_csv is not None else None
     )
@@ -240,8 +251,16 @@ def simuler_rapide(paquet, config=None):
         raise ValueError("sortie_heures doit etre strictement positif.")
 
     donnees = paquet["donnees"]
-    lat_indices = _indices_grille(len(donnees["lat_deg"]), config.max_latitudes)
-    lon_indices = _indices_grille(len(donnees["lon_deg"]), config.max_longitudes)
+    lat_indices = _indices_grille(
+        len(donnees["lat_deg"]),
+        indices=config.indices_lat,
+        maximum=config.max_latitudes,
+    )
+    lon_indices = _indices_grille(
+        len(donnees["lon_deg"]),
+        indices=config.indices_lon,
+        maximum=config.max_longitudes,
+    )
     latitudes = np.asarray(donnees["lat_deg"][list(lat_indices)], dtype=np.float64)
     longitudes = np.asarray(donnees["lon_deg"][list(lon_indices)], dtype=np.float64)
 
@@ -269,6 +288,7 @@ def simuler_rapide(paquet, config=None):
     if config.afficher_progression:
         _afficher_progression(0, nombre_pas, "pas")
 
+    # A partir d'ici, toute la grille avance ensemble avec des tableaux numpy.
     for pas in range(nombre_pas):
         t_sec = pas * config.dt_s
         jour_annee = int(t_sec // 86400.0) % 365 + 1
@@ -298,6 +318,7 @@ def simuler_rapide(paquet, config=None):
             * physique.SIGMA
             * np.maximum(temperature, 1.0) ** 3
         )
+        # Le pas semi-implicite amortit LW montant et convection dans le meme calcul.
         delta_t = config.dt_s * flux_net / (capacite + config.dt_s * (d_lw + h_convection))
         temperature = temperature + delta_t
         if not np.isfinite(temperature).all():
@@ -337,6 +358,8 @@ def simuler_rapide(paquet, config=None):
         "metadata": {
             "modele": "modele4_rapide",
             "description": "integration vectorisee, precalculs mensuels via modele 3",
+            "etat_provenance": "courant",
+            "artefact_obsolete": False,
             "jours": config.jours,
             "dt_s": config.dt_s,
             "sortie_heures": config.sortie_heures,
@@ -348,6 +371,7 @@ def simuler_rapide(paquet, config=None):
             "source_paquet": str(paquet["npz_path"]),
             "source_capacite": surface.source_capacite_surface(config.rzsm_csv),
             "source_flux_latent": surface.source_flux_latent(),
+            "statut_flux_latent": surface.STATUT_FLUX_LATENT,
             "lat_indices": list(lat_indices),
             "lon_indices": list(lon_indices),
             "mois_precalcules": [int(mois) for mois in champs["mois_utiles"]],

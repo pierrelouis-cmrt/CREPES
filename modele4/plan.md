@@ -51,9 +51,9 @@ projet :
 SW_TOA_local(t) = S0 * max(cos(i(t)), 0)
 ```
 
-avec `S0 = 1361 W/m2`, la constante solaire deja utilisee dans le modele 0 et
-le modele 3. La correction consiste a ajouter une transmissivite atmospherique
-mensuelle derivee d'ERA5 :
+avec `S0 = 1361 W/m2`, la constante solaire déjà utilisée dans le modèle 0 et
+le modèle 3. La correction consiste à ajouter une transmissivité atmosphérique
+mensuelle dérivée d'ERA5 :
 
 ```text
 tau_SW_mensuel =
@@ -69,11 +69,11 @@ SW_absorbe_surface_corrige =
 
 Ce choix suit la forme standard du bilan court-onde net de surface
 `R_ns = (1 - alpha) R_s`, conserve l'albédo explicite du projet, garde le
-cycle jour/nuit et saisonnier calcule par le modele, et utilise ERA5 seulement
-pour representer l'effet atmospherique moyen que le projet ne modelise pas
+cycle jour/nuit et saisonnier calculé par le modèle, et utilise ERA5 seulement
+pour représenter l'effet atmosphérique moyen que le projet ne modélise pas
 encore.
 
-Deux modes de comparaison peuvent être gardes :
+Deux modes de comparaison peuvent être gardés :
 
 ```text
 mode_forcage_mensuel = era5_sw_down_surface_w_m2 * (1 - albedo_surface)

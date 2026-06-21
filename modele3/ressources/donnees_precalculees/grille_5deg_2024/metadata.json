@@ -13,11 +13,23 @@
     "valeur": 0.98,
     "source": "constante_modele3"
   },
+  "conventions": {
+    "longitude_deg": "-180..180",
+    "albedo_nearest_neighbor": "longitudes source et cible normalisees -180..180",
+    "court_onde_mensuel": "transmissivite et SW_TOA moyennes sur le mois complet"
+  },
   "diagnostics_generation": {
     "transmissivite_sw": {
       "valeurs_bornees_min": 0,
       "valeurs_bornees_max": 15,
       "valeurs_sans_soleil": 28
+    },
+    "couches_verticales": {
+      "epaisseur_min_hpa": 0.1,
+      "couches_valides": 306114,
+      "couches_nulles_ou_negatives": 0,
+      "couches_nulles_ou_negatives_corrigees_paquet": 4,
+      "delta_p_min_hpa": 0.1
     }
   },
   "sources_fichiers": {
@@ -47,7 +59,7 @@
       "scale_factor": 0.1,
       "offset": 0.0,
       "valeur_manquante": 65535,
-      "source": "pretraitement ERA5 pression_surface + bords 3"
+      "source": "pretraitement ERA5 pression_surface + bords 3, couches <0.1 hPa ignorees"
     },
     "pression_haut_couche_hpa": {
       "dtype_stocke": "uint16",
@@ -55,7 +67,7 @@
       "scale_factor": 0.1,
       "offset": 0.0,
       "valeur_manquante": 65535,
-      "source": "bords 3"
+      "source": "bords 3, couches <0.1 hPa ignorees"
     },
     "temperature_couche_k": {
       "dtype_stocke": "int16",
@@ -111,7 +123,7 @@
       "scale_factor": 0.0001,
       "offset": 0.0,
       "valeur_manquante": 65535,
-      "source": "ressources/albedo/albedo01.csv..albedo12.csv"
+      "source": "ressources/albedo/albedo01.csv..albedo12.csv, longitudes normalisees -180..180"
     },
     "sw_toa_moyen_mensuel_w_m2": {
       "dtype_stocke": "uint16",
@@ -181,7 +193,8 @@
   "notes": [
     "Les CSV d'albedo sont lus depuis ressources/albedo, copie racine des donnees utiles du modele 0.",
     "Le modele 3 n'utilise pas de coefficient nuageux court-onde ou long-onde.",
-    "transmissivite_sw_mensuelle corrige le court-onde surface avec ERA5, sans remplacer S0*cos(i).",
+    "transmissivite_sw_mensuelle corrige le court-onde surface avec ERA5 et une moyenne mensuelle coherente de S0*cos(i).",
+    "Quatre couches nulles du paquet initial ont ete marquees manquantes; le chargeur trace toute couche non positive restante.",
     "Les poids_surface sont normalises pour sommer a 1 sur la grille."
   ]
 }

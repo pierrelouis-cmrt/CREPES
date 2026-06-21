@@ -184,6 +184,7 @@ def co2_moyen_ppm_par_couche(
     de pression entre points successifs du profil vertical.
     """
 
+    # On échantillonne finement la couche pour obtenir une moyenne représentative.
     altitudes_m = np.linspace(altitude_bas_km * 1000.0, altitude_haut_km * 1000.0, 201)
     profil = calculer_profil(
         altitudes_m,
@@ -204,6 +205,7 @@ def co2_moyen_ppm_par_couche(
 def creer_couches_atmospheriques() -> tuple[CoucheAtmospherique, ...]:
     """Construit les 6 couches à partir du découpage et du profil vertical."""
 
+    # Les pressions de bord viennent du profil atmosphérique standard.
     altitudes_bords_m = np.array(
         [altitude for _, altitude, _, _ in PARAMETRES_COUCHES]
         + [PARAMETRES_COUCHES[-1][2]]
@@ -249,6 +251,7 @@ def calculer_profondeur_optique(
     - l'épaisseur de la couche en pression, qui représente sa masse d'air.
     """
 
+    # Plus une couche contient de CO2 et de masse d'air, plus elle absorbe.
     return (
         bande.coefficient_opacite
         * (couche.co2_moyen_ppm / CO2_REFERENCE_PPM)
@@ -285,6 +288,7 @@ def propager_flux_montant(
 
     flux = flux_surface_bande
     for couche in couches:
+        # Le flux monte couche par couche, avec absorption puis réémission.
         tau = calculer_profondeur_optique(couche, bande)
         transmission = transmission_depuis_tau(tau)
         emissivite = emissivite_depuis_transmission(transmission)
@@ -310,6 +314,7 @@ def propager_flux_descendant(
 
     flux = 0.0
     for couche in reversed(couches):
+        # Même calcul que vers le haut, mais en partant du sommet de l'atmosphère.
         tau = calculer_profondeur_optique(couche, bande)
         transmission = transmission_depuis_tau(tau)
         emissivite = emissivite_depuis_transmission(transmission)

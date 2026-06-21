@@ -14,7 +14,16 @@ if str(ROOT) not in sys.path:
 
 from modele3.donnees import charger_paquet_grille
 from modele4 import surface
-from modele4.modele4 import ConfigurationModele4, enregistrer_resultat, simuler, simuler_mensuel
+from modele4.modele4 import (
+    ConfigurationModele4,
+    enregistrer_resultat,
+    simuler,
+    simuler_diagnostic_mensuel,
+)
+
+
+BORNE_T_MIN_K = 150.0
+BORNE_T_MAX_K = 350.0
 
 
 def tester_capacite_surface_finie():
@@ -46,6 +55,13 @@ def tester_capacite_rzsm_sans_melange_surface():
     assert abs(capacite - surface.capacite_depuis_rzsm(0.35)) < 1e-6
 
 
+def tester_capacite_surface_positive_plausible():
+    capacites = surface.capacite_depuis_rzsm(np.array([0.05, 0.35, 0.9]))
+    assert np.isfinite(capacites).all()
+    assert (capacites > 5.0e5).all()
+    assert (capacites < 5.0e6).all()
+
+
 def tester_grille_rzsm_modele0_bins_1_degre():
     contenu = "\n".join(
         (
@@ -75,12 +91,14 @@ def tester_flux_latent_par_continent_sans_moyenne():
         detecteur_continent=lambda _lat, _lon: "Africa",
     )
     assert abs(flux - surface.Q_LATENT_CONTINENT_W_M2["Africa"]) < 1e-12
+    assert flux >= 0.0
 
     flux_polaire = surface.flux_latent_moyen(
         {"latitude_deg": 80.0, "longitude_deg": 0.0},
         detecteur_continent=lambda _lat, _lon: "Europe",
     )
     assert flux_polaire == 0.0
+    assert "pas une evaporation interactive" in surface.STATUT_FLUX_LATENT
 
 
 def tester_flux_convection_signe():
@@ -106,8 +124,23 @@ def tester_simulation_courte_point():
     temperatures = resultat["temperature_surface_k"]
     assert temperatures.shape == (2, 1, 1)
     assert np.isfinite(temperatures).all()
+    assert temperatures.min() > BORNE_T_MIN_K
+    assert temperatures.max() < BORNE_T_MAX_K
     assert resultat["capacite_surface_j_m2_k"].shape == (1, 1)
     assert "flux_net_surface" in resultat["diagnostics_moyens"]
+
+    diagnostics = resultat["diagnostics_moyens"]
+    assert diagnostics["SW_absorbe_surface"][0, 0] >= 0.0
+    assert diagnostics["LW_down_absorbe_surface"][0, 0] > 0.0
+    assert diagnostics["LW_up_surface"][0, 0] > 0.0
+    assert diagnostics["flux_latent"][0, 0] == 0.0
+    assert diagnostics["flux_convection"][0, 0] == 0.0
+
+    delta_temperature = float(temperatures[-1, 0, 0] - temperatures[0, 0, 0])
+    flux_net = float(diagnostics["flux_net_surface"][0, 0])
+    capacite = float(resultat["capacite_surface_j_m2_k"][0, 0])
+    attendu = config.dt_s * flux_net / capacite
+    assert abs(delta_temperature - attendu) < 5e-4
 
 
 def tester_ecriture_npz():
@@ -130,7 +163,7 @@ def tester_ecriture_npz():
             assert "metadata_json" in npz.files
 
 
-def tester_simulation_mensuelle_point():
+def tester_simulation_diagnostic_mensuel_point():
     paquet = charger_paquet_grille()
     config = ConfigurationModele4(
         iterations_implicites=1,
@@ -138,24 +171,30 @@ def tester_simulation_mensuelle_point():
         indices_lon=(36,),
         surface=surface.ConfigurationSurface(facteur_latent=0.0, mode_convection="aucune"),
     )
-    resultat = simuler_mensuel(paquet, config)
+    resultat = simuler_diagnostic_mensuel(paquet, config)
     temperatures = resultat["temperature_surface_k"]
     assert temperatures.shape == (12, 1, 1)
     assert resultat["mois"].tolist() == list(range(1, 13))
     assert np.isfinite(temperatures).all()
-    assert resultat["metadata"]["mode_sortie"] == "mensuel"
+    assert temperatures.min() > BORNE_T_MIN_K
+    assert temperatures.max() < BORNE_T_MAX_K
+    assert resultat["metadata"]["mode_sortie"] == "diagnostic_mensuel_un_pas"
+    assert resultat["metadata"]["integration_mois_complet"] is False
+    assert resultat["metadata"]["pas_par_mois"] == 1
+    assert "pas une integration de mois complet" in resultat["metadata"]["description"]
 
 
 def main():
     tester_capacite_surface_finie()
     tester_capacite_depuis_rzsm_modifie_le_sol()
     tester_capacite_rzsm_sans_melange_surface()
+    tester_capacite_surface_positive_plausible()
     tester_grille_rzsm_modele0_bins_1_degre()
     tester_flux_latent_par_continent_sans_moyenne()
     tester_flux_convection_signe()
     tester_simulation_courte_point()
     tester_ecriture_npz()
-    tester_simulation_mensuelle_point()
+    tester_simulation_diagnostic_mensuel_point()
     print("tests_modele4_ok")
 
 

@@ -60,6 +60,7 @@ def _metadata(npz) -> dict:
 
 
 def _normaliser_axes(valeurs, latitudes, longitudes):
+    # On remet les cartes dans l'ordre habituel : sud-nord et ouest-est.
     ordre_lat = np.argsort(latitudes)
     ordre_lon = np.argsort(((longitudes + 180.0) % 360.0) - 180.0)
     longitudes = ((longitudes + 180.0) % 360.0) - 180.0
@@ -135,6 +136,7 @@ def _aires_mailles(latitudes, longitudes):
     lat = np.deg2rad(latitudes)
     sud = np.maximum(lat - pas_lat / 2.0, -np.pi / 2.0)
     nord = np.minimum(lat + pas_lat / 2.0, np.pi / 2.0)
+    # Une maille proche des poles couvre moins de surface qu'une maille tropicale.
     aire_lat = RAYON_TERRE_M**2 * pas_lon * (np.sin(nord) - np.sin(sud))
     return np.repeat(aire_lat[:, None], len(longitudes), axis=1)
 
@@ -187,6 +189,7 @@ def _limites(valeurs, divergeant=False):
 
 def _tracer_carte(ax, donnees, extent, titre, label, cmap, divergeant=False):
     vmin, vmax = _limites(donnees, divergeant=divergeant)
+    # imshow suffit ici : la grille est reguliere apres normalisation des axes.
     image = ax.imshow(
         donnees,
         origin="lower",
@@ -219,6 +222,7 @@ def creer_planisphere_total(sortie, sauvegarde=None, afficher=True):
     final_c = temperature[-1] - 273.15
     delta_t = temperature[-1] - temperature[0]
     flux_horizontal = diagnostic["flux_horizontal_net_surface_moyen_w_m2"]
+    # Le flux moyen devient une puissance globale grace aux aires de mailles.
     puissance_horizontale = puissance_totale_pw(flux_horizontal, latitudes, longitudes)
 
     fig, axes = plt.subplots(3, 1, figsize=(15, 15), constrained_layout=True)

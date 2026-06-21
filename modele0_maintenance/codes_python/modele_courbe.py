@@ -15,6 +15,7 @@ from physique import convection
 
 def f_rhs(T, phinet, C, q_latent, q_convection=0.0):
     """Bilan energetique de surface sous forme dT/dt."""
+    # Les pertes de surface sont soustraites, le rayonnement atmosphérique réchauffe.
     return (
         phinet
         - q_latent
@@ -29,6 +30,7 @@ def _vent_forcee(index, config):
     vent = config.get("vent")
     if vent is not None:
         return vent
+    # Sinon on prend la vitesse journalière la plus proche du pas de temps courant.
     vents = config.get("vents_journaliers", [2.5])
     jour = min(index // int(24 * 3600 / lib.dt), len(vents) - 1)
     return vents[jour]
@@ -76,6 +78,7 @@ def backward_euler(days, T0, dt, lat_rad, lon_deg, sim_params):
     q_latent_step_hist = np.empty(step_count + 1)
     q_convection_hist = np.empty(step_count + 1)
 
+    # Ces historiques servent aux graphiques et au diagnostic, pas au calcul suivant.
     albedo_sol_hist[0] = alb_sol_daily[0]
     albedo_nuages_hist[0] = alb_nuages_daily[0]
     C_hist[0] = C_const
@@ -86,6 +89,7 @@ def backward_euler(days, T0, dt, lat_rad, lon_deg, sim_params):
     for index in range(step_count):
         t_sec = index * dt
         day_of_year, heure_solaire = f.get_time_variables(t_sec, lon_deg)
+        # Les séries annuelles sont déjà ramenées au pas quotidien ou au pas modèle.
         albedo_sol = alb_sol_daily[day_of_year]
         albedo_nuages = alb_nuages_daily[day_of_year]
         q_latent_step = q_latent_smoothed[index]
@@ -99,6 +103,7 @@ def backward_euler(days, T0, dt, lat_rad, lon_deg, sim_params):
         )
 
         X = T[index]
+        # Newton cherche directement la température du pas suivant.
         for _ in range(8):
             q_conv = flux_convection(X, index, sim_params)
             F = X - T[index] - dt * f_rhs(
@@ -112,6 +117,7 @@ def backward_euler(days, T0, dt, lat_rad, lon_deg, sim_params):
                 q_minus = flux_convection(X - eps, index, sim_params)
                 rhs_plus = f_rhs(X + eps, phi_n, C_const, q_latent_step, q_plus)
                 rhs_minus = f_rhs(X - eps, phi_n, C_const, q_latent_step, q_minus)
+                # La convection rend la dérivée moins simple, donc on l'estime localement.
                 dF = 1.0 - dt * ((rhs_plus - rhs_minus) / (2 * eps))
             if abs(dF) < 1e-12:
                 break
@@ -211,6 +217,7 @@ def run_point_simulation(
     vent=2.5,
 ):
     """Prepare les entrees et lance la simulation ponctuelle."""
+    # Cette fonction fait le lien entre les modules physiques et l'intégrateur.
     sim_params = f.prepare_simulation_inputs(
         lat_deg=lat_sim,
         lon_deg=lon_sim,
@@ -224,6 +231,7 @@ def run_point_simulation(
             "vent": vent,
         }
         if mode_convection in ("forcee", "toutes") and vent is None:
+            # vent=None signifie: utiliser la série journalière NASA/cache.
             config["vents_journaliers"] = convection.get_daily_wind_speed(
                 lat_sim, lon_sim
             )
@@ -307,6 +315,7 @@ if __name__ == "__main__":
 
     steps_per_year = int(365 * 24 * 3600 / lib.dt)
     if len(output["temperature"]) > steps_per_year:
+        # Sur deux ans, on affiche surtout la deuxième année, déjà plus stabilisée.
         slicer = slice(steps_per_year, None)
     else:
         slicer = slice(None)

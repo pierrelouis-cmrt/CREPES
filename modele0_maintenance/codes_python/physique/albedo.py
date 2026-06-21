@@ -16,6 +16,7 @@ from scipy.ndimage import gaussian_filter1d
 
 from chemins import ALBEDO_DIR, CACHE_DIR, CERES_FILE, ensure_cache_dir
 
+# xarray sert seulement à lire le NetCDF CERES des nuages.
 try:
     import xarray as xr
 
@@ -35,6 +36,7 @@ except ImportError:
 
 def lisser_donnees_annuelles(valeurs_mensuelles: np.ndarray, sigma: float):
     """Lisse 12 valeurs mensuelles en 365 valeurs journalieres."""
+    # Le mode wrap évite une rupture artificielle entre décembre et janvier.
     jours_par_mois = np.array(
         [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     )
@@ -51,6 +53,7 @@ def load_albedo_series(csv_dir: Path = ALBEDO_DIR, pattern: str = "albedo{:02d}.
     for month in range(1, 13):
         df = pd.read_csv(csv_dir / pattern.format(month))
         if latitudes is None:
+            # Le premier CSV donne les axes; les mois suivants gardent la même grille.
             latitudes = df["Latitude/Longitude"].astype(float).to_numpy()
             longitudes = df.columns[1:].astype(float).to_numpy()
         cubes.append(df.set_index("Latitude/Longitude").to_numpy(dtype=float))
@@ -71,6 +74,7 @@ def load_monthly_cloud_albedo_from_ceres(
 
     with xr.open_dataset(ceres_file, decode_times=True) as ds:
         ds.load()
+        # Les longitudes CERES sont ramenées en [-180, 180] pour matcher le reste.
         ds = ds.assign_coords(lon=(((ds.lon + 180) % 360) - 180)).sortby("lon")
         toa_sw_all = ds["toa_sw_all_mon"]
         toa_sw_clr = ds["toa_sw_clr_c_mon"]
@@ -94,6 +98,7 @@ def load_monthly_cloud_albedo_from_ceres(
     return monthly_values
 
 
+# Cache CSV très simple pour éviter de rappeler l'API NASA pendant les essais.
 def _read_albedo_cache(cache_file: Path):
     if not cache_file.exists():
         return {}
@@ -154,9 +159,9 @@ def get_nasa_albedo_cached(
         ]
         albedo = sum(values) / len(values) if values else 0.3
     except Exception:
+        # Fallback volontairement neutre si le réseau ou la réponse API échoue.
         albedo = 0.3
 
     cache[cache_key] = max(0.05, min(0.95, albedo))
     _write_albedo_cache(cache_file, cache)
     return cache[cache_key]
-

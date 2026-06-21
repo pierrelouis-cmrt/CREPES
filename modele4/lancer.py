@@ -123,11 +123,18 @@ SCENARIOS_RAPIDE = (
 
 SCENARIOS_CLASSIQUE = (
     Scenario(
-        titre="Mensuel global",
+        titre="Diagnostic mensuel global",
         module="modele4.modele4",
-        description="12 cartes mensuelles avec recalcul radiatif local par cellule.",
+        description=(
+            "12 diagnostics mensuels a un pas avec recalcul radiatif local par cellule."
+        ),
         parametres=(
-            Parametre("--mode", "mensuel", "Mode de sortie.", choix=("mensuel", "temporel")),
+            Parametre(
+                "--mode",
+                "diagnostic-mensuel",
+                "Mode de sortie.",
+                choix=("diagnostic-mensuel", "mensuel", "temporel"),
+            ),
             Parametre("--dt", "1800", "Pas numerique en secondes."),
             Parametre("--max-latitudes", "", "Sous-grille latitude ; vide = globale."),
             Parametre("--max-longitudes", "", "Sous-grille longitude ; vide = globale."),
@@ -149,7 +156,12 @@ SCENARIOS_CLASSIQUE = (
         module="modele4.modele4",
         description="Integration pas-a-pas sur 4 x 8 cellules ; utile pour validation.",
         parametres=(
-            Parametre("--mode", "temporel", "Mode de sortie.", choix=("mensuel", "temporel")),
+            Parametre(
+                "--mode",
+                "temporel",
+                "Mode de sortie.",
+                choix=("diagnostic-mensuel", "mensuel", "temporel"),
+            ),
             Parametre("--jours", "1", "Duree simulee en jours."),
             Parametre("--dt", "1800", "Pas numerique en secondes."),
             Parametre("--frequence-sortie-pas", "48", "Ecrit une carte tous les N pas."),
@@ -169,7 +181,12 @@ SCENARIOS_CLASSIQUE = (
         module="modele4.modele4",
         description="Test minimal : une cellule et un pas de 1800 s.",
         parametres=(
-            Parametre("--mode", "temporel", "Mode de sortie.", choix=("mensuel", "temporel")),
+            Parametre(
+                "--mode",
+                "temporel",
+                "Mode de sortie.",
+                choix=("diagnostic-mensuel", "mensuel", "temporel"),
+            ),
             Parametre("--jours", "0.020833333333333332", "Duree ; ici 1 pas de 1800 s."),
             Parametre("--dt", "1800", "Pas numerique en secondes."),
             Parametre("--frequence-sortie-pas", "1", "Ecrit a chaque pas."),
@@ -188,6 +205,7 @@ SCENARIOS_CLASSIQUE = (
 
 
 MOTEURS = (
+    # Le menu propose d'abord le moteur, puis des scenarios deja pre-remplis.
     Moteur(
         titre="Rapide - modele4.rapide",
         resume="Moteur conseille pour travailler : vectorise, rapide, adapte aux longues runs.",
@@ -335,7 +353,7 @@ def afficher_aide_parametres() -> None:
         ("--jours", "duree simulee en jours."),
         ("--dt", "pas de temps interne en secondes."),
         ("--sortie-heures", "frequence de sauvegarde du moteur rapide."),
-        ("--mode", "mensuel = 12 cartes ; temporel = pas-a-pas."),
+        ("--mode", "diagnostic-mensuel = 12 cartes a un pas ; temporel = pas-a-pas."),
         ("--max-latitudes/--max-longitudes", "sous-grille de test ; vide = globale."),
         ("--output", "chemin du fichier .npz produit."),
         ("--co2", "concentration CO2 en ppm."),
@@ -425,6 +443,7 @@ def lancer_commande(commande: list[str]) -> int:
 def gerer_scenario(scenario: Scenario) -> bool:
     valeurs = valeurs_initiales(scenario)
     while True:
+        # L'utilisateur peut lancer directement ou ajuster la commande avant execution.
         afficher_titre()
         print(f"\nScenario : {scenario.titre}")
         print(scenario.description)

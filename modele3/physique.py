@@ -295,6 +295,7 @@ def flux_lw_surface(temperature_surface_k, emissivite_surface=EMISSIVITE_SURFACE
 
 
 def tau_co2(couche, bande):
+    # Le CO2 depend de la concentration et de l'epaisseur de la couche.
     return (
         bande["a_co2"]
         * (couche["co2_ppm"] / CO2_REFERENCE_PPM)
@@ -303,6 +304,7 @@ def tau_co2(couche, bande):
 
 
 def tau_h2o(couche, bande):
+    # La vapeur d'eau depend surtout de la masse d'eau presente dans la colonne.
     return bande["a_h2o"] * (couche["masse_h2o_kg_m2"] / MASSE_H2O_REFERENCE_KG_M2)
 
 
@@ -313,6 +315,7 @@ def transmission_depuis_tau(tau_total):
 def opacites_couche_bande(couche, bande):
     opacite_co2 = tau_co2(couche, bande)
     opacite_h2o = tau_h2o(couche, bande)
+    # Les deux opacites sont additionnees avant de calculer la transmission.
     tau_total = opacite_co2 + opacite_h2o
     transmission = transmission_depuis_tau(tau_total)
     return {

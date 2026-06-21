@@ -122,6 +122,7 @@ def _pas_implicite_cellule(
     config,
     moyenne_journaliere_sw=False,
 ):
+    # Un pas pour une cellule : on cherche la temperature qui ferme le bilan.
     surface_colonne = colonne["surface"]
     temperature_air_k = surface.temperature_air(surface_colonne, config.surface)
     q_latent = surface.flux_latent_moyen(
@@ -132,6 +133,7 @@ def _pas_implicite_cellule(
     x = float(temperature_depart_k)
     dernier_flux = None
     for _ in range(max(1, int(config.iterations_implicites))):
+        # Newton corrige peu a peu la temperature du pas implicite.
         radiatif = calculer_colonne_radiative(
             colonne,
             temperature_surface_k=x,
@@ -198,6 +200,7 @@ def _afficher_progression(etapes_effectuees, nombre_etapes, largeur=32, unite="e
 def simuler(paquet, config=None):
     """Lance une simulation modele 4 et retourne les tableaux resultats."""
 
+    # Moteur classique : chaque cellule recalcule sa colonne radiative.
     if config is None:
         config = ConfigurationModele4()
     if config.dt_s <= 0:
@@ -291,6 +294,8 @@ def simuler(paquet, config=None):
         "metadata": {
             "modele": "modele4",
             "mode_sortie": "temporel",
+            "etat_provenance": "courant",
+            "artefact_obsolete": False,
             "jours": config.jours,
             "dt_s": config.dt_s,
             "co2_ppm": config.co2_ppm,
@@ -303,14 +308,20 @@ def simuler(paquet, config=None):
             "source_paquet": str(paquet["npz_path"]),
             "source_capacite": surface.source_capacite_surface(config.rzsm_csv),
             "source_flux_latent": surface.source_flux_latent(),
+            "statut_flux_latent": surface.STATUT_FLUX_LATENT,
             "lat_indices": list(lat_indices),
             "lon_indices": list(lon_indices),
         },
     }
 
 
-def simuler_mensuel(paquet, config=None, mois=MOIS_DEFAUT):
-    """Calcule 12 cartes mensuelles globales, sans integration annuelle lourde."""
+def simuler_diagnostic_mensuel(paquet, config=None, mois=MOIS_DEFAUT):
+    """Calcule des diagnostics mensuels independants, a un pas implicite.
+
+    Chaque carte part de l'etat initial du mois et applique un seul pas de duree
+    ``dt_s`` avec un court-onde journalier moyen. Ce mode donne une lecture
+    saisonniere rapide des flux de surface, mais ne simule pas un mois complet.
+    """
 
     if config is None:
         config = ConfigurationModele4()
@@ -410,12 +421,21 @@ def simuler_mensuel(paquet, config=None, mois=MOIS_DEFAUT):
         "diagnostics_moyens": diagnostics,
         "metadata": {
             "modele": "modele4",
-            "mode_sortie": "mensuel",
+            "mode_sortie": "diagnostic_mensuel_un_pas",
+            "etat_provenance": "courant",
+            "artefact_obsolete": False,
+            "description": (
+                "12 diagnostics mensuels independants: un pas implicite dt_s "
+                "depuis l'etat initial de chaque mois, pas une integration de "
+                "mois complet"
+            ),
             "mois": list(mois),
             "dt_s": config.dt_s,
             "co2_ppm": config.co2_ppm,
             "iterations_implicites": config.iterations_implicites,
             "moyenne_journaliere_sw": True,
+            "integration_mois_complet": False,
+            "pas_par_mois": 1,
             "mode_convection": config.surface.mode_convection,
             "facteur_latent": config.surface.facteur_latent,
             "vent_m_s": config.surface.vent_m_s,
@@ -423,10 +443,17 @@ def simuler_mensuel(paquet, config=None, mois=MOIS_DEFAUT):
             "source_paquet": str(paquet["npz_path"]),
             "source_capacite": surface.source_capacite_surface(config.rzsm_csv),
             "source_flux_latent": surface.source_flux_latent(),
+            "statut_flux_latent": surface.STATUT_FLUX_LATENT,
             "lat_indices": list(lat_indices),
             "lon_indices": list(lon_indices),
         },
     }
+
+
+def simuler_mensuel(paquet, config=None, mois=MOIS_DEFAUT):
+    """Alias historique: voir ``simuler_diagnostic_mensuel``."""
+
+    return simuler_diagnostic_mensuel(paquet, config=config, mois=mois)
 
 
 def enregistrer_resultat(resultat, chemin):
@@ -456,9 +483,12 @@ def construire_parseur():
     parseur = argparse.ArgumentParser(description="Modele 4 - grille de surface")
     parseur.add_argument(
         "--mode",
-        choices=("mensuel", "temporel"),
-        default="mensuel",
-        help="mensuel par defaut: 12 cartes globales ; temporel: integration pas-a-pas.",
+        choices=("diagnostic-mensuel", "mensuel", "temporel"),
+        default="diagnostic-mensuel",
+        help=(
+            "diagnostic-mensuel par defaut: 12 cartes a un pas ; "
+            "mensuel est un alias historique ; temporel: integration pas-a-pas."
+        ),
     )
     parseur.add_argument("--paquet", type=Path, default=DOSSIER_PAQUET_DEFAUT)
     parseur.add_argument("--output", type=Path, default=SORTIE_DEFAUT)
@@ -514,8 +544,8 @@ def main():
             vent_m_s=args.vent,
         ),
     )
-    if args.mode == "mensuel":
-        resultat = simuler_mensuel(paquet, config)
+    if args.mode in {"diagnostic-mensuel", "mensuel"}:
+        resultat = simuler_diagnostic_mensuel(paquet, config)
     else:
         resultat = simuler(paquet, config)
     chemin = enregistrer_resultat(resultat, args.output)

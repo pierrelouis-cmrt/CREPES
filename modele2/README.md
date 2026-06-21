@@ -169,7 +169,7 @@ $$
 Après intégration sur une couche :
 
 $$
-\frac{I_{b,\mathrm{sortie}}}{I_{b,\mathrm{entree}}}
+\frac{I_{b,\mathrm{sortie}}}{I_{b,\mathrm{entrée}}}
 =
 \exp(-\tau_b)
 $$
@@ -343,6 +343,6 @@ encore calibrée scientifiquement. Les prochaines validations importantes sont :
   \(3{,}7\) à \(3{,}9\ \mathrm{W\,m^{-2}}\) ;
 - tester une grille verticale plus fine, par exemple 8 à 10 couches ;
 - découper la bande CO2 en sous-bandes plus crédibles, notamment ailes faibles
-  et coeur saturé ;
+  et cœur saturé ;
 - ajouter ensuite seulement les bilans d'énergie et l'évolution temporelle des
   températures.

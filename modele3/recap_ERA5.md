@@ -3,7 +3,7 @@ Fichier : `ressources/db7d35d0a9c6110c5f6d54212de24b21.nc`
 
 Variables cochées/téléchargées :
 
-- `t` : Temperature, en K
+- `t` : Température, en K
 - `q` : Specific humidity, en `kg kg**-1`
 - `cc` : Fraction of cloud cover, entre 0 et 1
 - `z` : Geopotential, en `m**2 s**-2`

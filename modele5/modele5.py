@@ -174,6 +174,7 @@ def _precalculer_couches_horizontales(paquet, config, lat_indices, lon_indices, 
         temperature_ref[indice_mois] = temperature
         epaisseur_m[indice_mois] = epaisseur
 
+        # On garde en memoire ce que chaque couche peut emettre vers ses voisines.
         transmission_cumulee = np.ones((n_bandes, len(indices_lat), len(indices_lon)))
         delta_p_pa = np.maximum((p_bas - p_haut) * 100.0, 0.0)
         for couche in range(n_couches):
@@ -213,6 +214,7 @@ def _precalculer_couches_horizontales(paquet, config, lat_indices, lon_indices, 
                     transmission_cumulee[bande_indice]
                     * physique.EMISSIVITE_SURFACE_CONSTANTE
                 )
+                # La couche suivante voit seulement ce qui traverse deja celles du dessus.
                 transmission_cumulee[bande_indice] *= transmission
 
     return {
@@ -241,6 +243,7 @@ def _geometrie_grille(latitudes, longitudes):
     lat_rad = np.deg2rad(np.asarray(latitudes, dtype=np.float64))
     lat_sud = np.maximum(lat_rad - 0.5 * dlat, -0.5 * np.pi)
     lat_nord = np.minimum(lat_rad + 0.5 * dlat, 0.5 * np.pi)
+    # Les mailles retrecissent vers les poles, donc leur aire depend de la latitude.
     aire = RAYON_TERRE_M**2 * dlon * (np.sin(lat_nord) - np.sin(lat_sud))
     longueur_meridienne = RAYON_TERRE_M * dlat
     longueurs_nord = RAYON_TERRE_M * np.cos(lat_nord[:-1]) * dlon
@@ -379,6 +382,7 @@ def simuler(paquet, config=None):
         flux_latent = champs_surface["flux_latent"][indice_mois]
         capacite = champs_surface["capacite"][indice_mois]
 
+        # Une surface plus chaude rend les couches voisines un peu plus emissives.
         anomalie_surface = temperature - temperature_initiale
         emission = champs_couches["emission_ref"][indice_mois] + (
             champs_couches["derivee_emission"][indice_mois]
@@ -397,6 +401,7 @@ def simuler(paquet, config=None):
             convergence * champs_couches["transmission_vers_surface"][indice_mois],
             axis=(0, 1),
         )
+        # Seule la part transmise jusqu'au sol entre dans le bilan de surface.
 
         cosinus = modele4_rapide._cosinus_solaire_grille(
             latitudes, longitudes, jour_annee, t_sec
@@ -423,6 +428,7 @@ def simuler(paquet, config=None):
         temperature = temperature + config.dt_s * flux_net / (
             capacite + config.dt_s * (d_lw + h_convection)
         )
+        # La temperature avance d'un pas de temps avec le bilan net de surface.
         if not np.isfinite(temperature).all():
             raise FloatingPointError("Temperature non finie dans le modele 5.")
 

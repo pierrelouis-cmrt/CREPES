@@ -42,7 +42,7 @@ Ajouts par rapport au modèle 2 :
 
 - 10 couches en niveaux de pression.
 - Profil de température standard 1976.
-- Découpage CO2 en sous-bandes coeur/ailes.
+- Découpage CO2 en sous-bandes cœur/ailes.
 - Facteur diffusif `D = 1,66`.
 - Calibration sur le forçage `280 -> 560 ppm`.
 - Tests numériques séparés.
@@ -76,6 +76,8 @@ Première grille de surface couplée :
 - Capacité thermique, flux latent et convection repris/clarifiés depuis le
   modèle 0.
 - Intégration temporelle Backward Euler.
+- Modèle de surface pédagogique forcé par les flux du modèle 3 : pas de
+  circulation, pas d'océan dynamique, pas de modèle climatique complet.
 
 ### Modèle 5
 
@@ -175,7 +177,7 @@ Documentation détaillée :
 
 ## Modèle 4
 
-Lancer la sortie mensuelle globale par défaut :
+Lancer le diagnostic mensuel global par défaut :
 
 ```bash
 ./.venv/bin/python -m modele4.modele4

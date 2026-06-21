@@ -20,6 +20,7 @@ DOSSIER_PAQUET_DEFAUT = (
 FICHIER_NPZ_DEFAUT = "donnees_colonnes_5deg_2024.npz"
 EMISSIVITE_SURFACE = physique.EMISSIVITE_SURFACE_CONSTANTE
 ALBEDO_SURFACE_SECOURS = 0.30
+LONGITUDE_CONVENTION = "-180..180"
 
 
 def _float_ou_none(valeur):
@@ -73,6 +74,7 @@ def charger_paquet_grille(chemin=DOSSIER_PAQUET_DEFAUT):
     if not npz_path.exists():
         raise FileNotFoundError(f"paquet NPZ introuvable: {npz_path}")
 
+    # Le NPZ contient les tableaux, le JSON explique comment les lire.
     with metadata_path.open(encoding="utf-8") as fichier:
         metadata = json.load(fichier)
 
@@ -93,6 +95,15 @@ def charger_paquet_grille(chemin=DOSSIER_PAQUET_DEFAUT):
 def _indice_plus_proche(valeurs, cible):
     valeurs = np.asarray(valeurs, dtype=float)
     return int(np.nanargmin(np.abs(valeurs - cible)))
+
+
+def _distance_longitude_deg(valeurs, cible):
+    valeurs = np.asarray(valeurs, dtype=float)
+    return np.abs(((valeurs - float(cible) + 180.0) % 360.0) - 180.0)
+
+
+def _indice_longitude_plus_proche(valeurs, cible):
+    return int(np.nanargmin(_distance_longitude_deg(valeurs, cible)))
 
 
 def _extraire_mensuel(tableau, indice_lat, indice_lon, mois=None, jour_annee=None):
@@ -125,8 +136,9 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
     donnees = paquet["donnees"]
     latitudes = donnees["lat_deg"]
     longitudes = donnees["lon_deg"]
+    # On choisit simplement le point de grille le plus proche de la demande.
     indice_lat = _indice_plus_proche(latitudes, lat)
-    indice_lon = _indice_plus_proche(longitudes, lon)
+    indice_lon = _indice_longitude_plus_proche(longitudes, lon)
     latitude = float(latitudes[indice_lat])
     longitude = float(longitudes[indice_lon])
 
@@ -177,6 +189,15 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
             surface[nom] = valeur
 
     couches = []
+    diagnostics_donnees = {
+        "convention_longitude": paquet["metadata"].get("conventions", {}).get(
+            "longitude_deg",
+            LONGITUDE_CONVENTION,
+        ),
+        "couches_ignorees_incompletes": 0,
+        "couches_ignorees_non_positives": 0,
+        "couches_non_positives_exemples": [],
+    }
     pression_bas = mensuel("pression_bas_couche_hpa")
     pression_haut = mensuel("pression_haut_couche_hpa")
     temperature = mensuel("temperature_couche_k")
@@ -185,9 +206,45 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
     masse_h2o = mensuel("masse_h2o_couche_kg_m2")
 
     for indice in range(len(pression_haut)):
+        # Les couches incompletes ou physiquement impossibles sont ignorees ici.
         p_bas = _float_ou_none(pression_bas[indice])
         p_haut = _float_ou_none(pression_haut[indice])
-        if p_bas is None or p_haut is None or p_bas <= p_haut:
+        temperature_k = _float_ou_none(temperature[indice])
+        humidite_kgkg = _float_ou_none(humidite[indice])
+        masse_air_kg_m2 = _float_ou_none(masse_air[indice])
+        masse_h2o_kg_m2 = _float_ou_none(masse_h2o[indice])
+        if (
+            p_bas is None
+            or p_haut is None
+            or temperature_k is None
+            or humidite_kgkg is None
+            or masse_air_kg_m2 is None
+            or masse_h2o_kg_m2 is None
+        ):
+            diagnostics_donnees["couches_ignorees_incompletes"] += 1
+            continue
+        if p_bas <= p_haut:
+            diagnostics_donnees["couches_ignorees_non_positives"] += 1
+            if len(diagnostics_donnees["couches_non_positives_exemples"]) < 5:
+                diagnostics_donnees["couches_non_positives_exemples"].append(
+                    {
+                        "indice_source": int(indice),
+                        "pression_bas_hpa": p_bas,
+                        "pression_haut_hpa": p_haut,
+                    }
+                )
+            continue
+        if masse_air_kg_m2 <= 0.0:
+            diagnostics_donnees["couches_ignorees_non_positives"] += 1
+            if len(diagnostics_donnees["couches_non_positives_exemples"]) < 5:
+                diagnostics_donnees["couches_non_positives_exemples"].append(
+                    {
+                        "indice_source": int(indice),
+                        "pression_bas_hpa": p_bas,
+                        "pression_haut_hpa": p_haut,
+                        "masse_air_kg_m2": masse_air_kg_m2,
+                    }
+                )
             continue
         couches.append(
             {
@@ -196,10 +253,10 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
                 "pression_haut_hpa": p_haut,
                 "pression_bas_pa": p_bas * 100.0,
                 "pression_haut_pa": p_haut * 100.0,
-                "temperature_k": float(temperature[indice]),
-                "humidite_specifique_kgkg": max(0.0, float(humidite[indice])),
-                "masse_air_kg_m2": max(0.0, float(masse_air[indice])),
-                "masse_h2o_kg_m2": max(0.0, float(masse_h2o[indice])),
+                "temperature_k": temperature_k,
+                "humidite_specifique_kgkg": max(0.0, humidite_kgkg),
+                "masse_air_kg_m2": masse_air_kg_m2,
+                "masse_h2o_kg_m2": max(0.0, masse_h2o_kg_m2),
             }
         )
 
@@ -220,6 +277,7 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
         "surface": surface,
         "couches": couches,
         "validation_flux": validation_flux,
+        "diagnostics_donnees": diagnostics_donnees,
         "source": f"paquet {paquet['npz_path'].name}",
         "indices_grille": {"lat": indice_lat, "lon": indice_lon},
     }
