@@ -11,14 +11,14 @@ thermique de surface ; il calcule seulement les flux radiatifs pour une colonne
 donnée. Le modèle 4 utilisera ces flux pour faire évoluer `T_surface(t)`.
 
 Le modèle 3 est la version finale de la colonne radiative locale : il garde le
-noyau radiatif utile des itérations précédentes, avec un court-onde corrigé
+noyau radiatif utile des itérations précédentes, avec un flux shortwave corrigé
 par transmissivité ERA5 mensuelle, une émissivité de surface constante et sans
 opacité radiative explicite des nuages.
 
 ## Héritage du modèle 2.5
 
-Le noyau long-onde vient du modèle 2.5. Il est conservé ici sous une forme plus
-stable pour le modèle 4.
+Le noyau de transfert longwave vient du modèle 2.5. Il est conservé ici sous
+une forme plus stable pour le modèle 4.
 
 Les éléments repris sont :
 
@@ -49,9 +49,9 @@ nuageuses. Il contient seulement les contributions CO2 et H2O :
 tau_total_bande = tau_CO2_bande + tau_H2O_bande
 ```
 
-Ainsi, l'héritage du 2.5 concerne le transfert long-onde spectral et la logique
-CO2 effective. Le court-onde, la surface, les données et les nuages suivent les
-choix propres au modèle 3 décrits plus bas.
+Ainsi, l'héritage du 2.5 concerne le transfert longwave spectral et la logique
+CO2 effective. Le traitement shortwave, la surface, les données et les nuages
+suivent les choix propres au modèle 3 décrits plus bas.
 
 ## Colonne locale
 
@@ -101,7 +101,7 @@ masse_H2O = q_couche * masse_air
 Dans le modèle 3, ces couches sont stockées dans un paquet compact. Le calcul
 radiatif normal ne relit pas les gros fichiers ERA5 bruts.
 
-## Court-onde
+## Shortwave
 
 La géométrie solaire reste celle du projet :
 
@@ -134,11 +134,11 @@ dans le paquet. Pour un calcul instantané, le modèle utilise le jour milieu du
 mois comme jour représentatif, ce qui garde le cycle jour/nuit mais ne prétend
 pas être une moyenne mensuelle.
 
-Cette partie remplace l'ancien court-onde simplifié. Il n'y a plus de mode
-court-onde alternatif dans le modèle 3, et il n'y a plus d'albédo nuageux
+Cette partie remplace l'ancien shortwave simplifié. Il n'y a plus de mode
+shortwave alternatif dans le modèle 3, et il n'y a plus d'albédo nuageux
 effectif multiplié explicitement dans la formule.
 
-## Long-onde
+## Longwave
 
 La surface émet selon Stefan-Boltzmann :
 
@@ -234,14 +234,14 @@ transmission.
 ## Nuages
 
 Les nuages ne sont pas un terme radiatif explicite dans le modèle 3. Leur effet
-moyen sur le court-onde de surface est inclus dans la transmissivité ERA5
+moyen sur le flux shortwave de surface est inclus dans la transmissivité ERA5
 mensuelle :
 
 ```text
 SW_down_surface = transmissivite_sw_mensuelle * SW_TOA_local
 ```
 
-Dans le long-onde, il n'y a pas de `tau_nuage` :
+Dans le traitement longwave, il n'y a pas de `tau_nuage` :
 
 ```text
 tau_total = tau_CO2 + tau_H2O
@@ -249,7 +249,7 @@ tau_total = tau_CO2 + tau_H2O
 
 Les anciens mécanismes qui associaient `low_cloud_cover`,
 `medium_cloud_cover`, `high_cloud_cover` ou `total_cloud_cover` à un albédo
-nuageux court-onde ou à une opacité grise long-onde ne sont donc pas repris.
+nuageux shortwave ou à une opacité grise longwave ne sont donc pas repris.
 
 ## Flux de sortie
 
@@ -267,7 +267,7 @@ flux_net_radiatif_surface
 diagnostics par bande
 ```
 
-Le long-onde descendant absorbé par la surface est :
+Le flux longwave descendant absorbé par la surface est :
 
 ```text
 LW_down_absorbe_surface = epsilon_surface * LW_down_surface
@@ -288,7 +288,7 @@ flux de surface située hors des bandes modélisées.
 ## Données et limites reprises
 
 Le paquet compact versionné contient les champs nécessaires au calcul normal :
-coordonnées, pression de surface, albédo de surface, transmissivité court-onde
+coordonnées, pression de surface, albédo de surface, transmissivité shortwave
 mensuelle, couches verticales prétraitées et flux ERA5 de validation.
 
 Ce qui est volontairement absent du modèle 3 :
@@ -298,8 +298,8 @@ Ce qui est volontairement absent du modèle 3 :
 - pas de lecture directe ERA5 pendant `calculer_colonne_radiative` ;
 - pas de fallback analytique dans le calcul normal ;
 - pas d'émissivité variable de surface ;
-- pas d'albédo nuageux court-onde explicite ;
-- pas d'opacité nuageuse long-onde explicite ;
+- pas d'albédo nuageux shortwave explicite ;
+- pas d'opacité nuageuse longwave explicite ;
 - pas d'ozone, aérosols, CH4, N2O ou microphysique nuageuse.
 
 Ces absences sont des choix du modèle 3. Elles ne doivent pas être corrigées
@@ -308,7 +308,7 @@ en réutilisant les anciennes formules dans la théorie.
 ## Validation
 
 Le paquet conserve des flux ERA5 mensuels pour comparer les ordres de grandeur.
-Le court-onde est volontairement calé sur une transmissivité mensuelle moyenne.
-Le long-onde reste un modèle effectif CO2 + H2O. La validation du modèle 3
+Le flux shortwave est volontairement calé sur une transmissivité mensuelle moyenne.
+Le traitement longwave reste un modèle effectif CO2 + H2O. La validation du modèle 3
 s'appuie donc sur des comparaisons grille par grille avec ERA5, sans cas local
 nommé dans la théorie.

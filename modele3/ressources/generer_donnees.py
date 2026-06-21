@@ -444,9 +444,9 @@ def ecrire_paquet(sortie_dir, tableaux, metadata, overwrite):
         "## Contenu\n\n"
         "Le `.npz` contient seulement les champs necessaires au calcul normal :\n"
         "coordonnees, poids de surface, pression de surface, albedo, transmissivite\n"
-        "court-onde mensuelle, champs surface utiles, flux ERA5 de validation et\n"
-        "couches pretraitees. Les facteurs de quantification, unites et sources\n"
-        "sont dans `metadata.json`.\n",
+        "shortwave mensuelle, champs surface utiles, flux ERA5 de validation et couches\n"
+        "pretraitees. Les facteurs de quantification, unites et sources sont dans\n"
+        "`metadata.json`.\n",
         encoding="utf-8",
     )
     return npz_path
@@ -478,7 +478,7 @@ def generer(args):
         longitudes,
         args.allow_fallbacks,
     )
-    _message("Calcul transmissivite court-onde mensuelle")
+    _message("Calcul transmissivite shortwave mensuelle")
     sw_toa_moyen = calculer_sw_toa_moyen_mensuel(latitudes)
     transmissivite_sw, diagnostics_transmissivite = calculer_transmissivite_sw(
         flux["era5_sw_down_surface_w_m2"],
@@ -523,7 +523,7 @@ def generer(args):
         "conventions": {
             "longitude_deg": LONGITUDE_CONVENTION,
             "albedo_nearest_neighbor": "longitudes source et cible normalisees -180..180",
-            "court_onde_mensuel": "transmissivite et SW_TOA moyennes sur le mois complet",
+            "shortwave_mensuel": "transmissivite et SW_TOA moyennes sur le mois complet",
         },
         "diagnostics_generation": {
             "transmissivite_sw": diagnostics_transmissivite,
@@ -566,8 +566,8 @@ def generer(args):
         },
         "notes": [
             "Les CSV d'albedo sont lus depuis ressources/albedo, copie racine des donnees utiles du modele 0.",
-            "Le modele 3 n'utilise pas de coefficient nuageux court-onde ou long-onde.",
-            "transmissivite_sw_mensuelle corrige le court-onde surface avec ERA5 et une moyenne mensuelle coherente de S0*cos(i).",
+            "Le modele 3 n'utilise pas de coefficient nuageux shortwave ou longwave.",
+            "transmissivite_sw_mensuelle corrige le flux shortwave de surface avec ERA5 et une moyenne mensuelle coherente de S0*cos(i).",
             "Les poids_surface sont normalises pour sommer a 1 sur la grille.",
         ],
     }

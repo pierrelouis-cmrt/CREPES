@@ -54,7 +54,7 @@ def _donnees_test(transmissivite=0.60):
     }
 
 
-def tester_court_onde_unique_transmissivite():
+def tester_shortwave_unique_transmissivite():
     donnees = _donnees_test()
     resultat = calculer_colonne_radiative(donnees, moyenne_journaliere_sw=True)
     attendu = (
@@ -65,11 +65,11 @@ def tester_court_onde_unique_transmissivite():
     assert abs(resultat["SW_absorbe_surface"] - attendu) < 1e-9
 
 
-def tester_court_onde_mensuel_utilise_moyenne_paquet():
+def tester_shortwave_mensuel_utilise_moyenne_paquet():
     donnees = _donnees_test()
     donnees["surface"]["sw_toa_moyen_mensuel_w_m2"] = 321.5
     resultat = calculer_colonne_radiative(donnees, moyenne_journaliere_sw=True)
-    assert resultat["mode_court_onde"] == "moyenne_mensuelle_paquet"
+    assert resultat["mode_shortwave"] == "moyenne_mensuelle_paquet"
     assert resultat["SW_TOA_local"] == 321.5
     assert resultat["SW_down_surface"] == 321.5 * donnees["surface"]["transmissivite_sw_mensuelle"]
 
@@ -214,8 +214,8 @@ def tester_appel_en_boucle_sur_plusieurs_colonnes():
 
 
 def main():
-    tester_court_onde_unique_transmissivite()
-    tester_court_onde_mensuel_utilise_moyenne_paquet()
+    tester_shortwave_unique_transmissivite()
+    tester_shortwave_mensuel_utilise_moyenne_paquet()
     tester_emissivite_constante()
     tester_nuages_lw_absents_des_opacites()
     tester_couche_non_positive_refusee_au_calcul()

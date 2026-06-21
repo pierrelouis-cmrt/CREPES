@@ -86,9 +86,9 @@ Physiquement :
 
 - l'atmosphère radiative est approximee par des champs mensuels fixes pendant la
   simulation ;
-- le court-onde garde le cycle jour/nuit via la géométrie solaire, mais utilise
+- le flux shortwave garde le cycle jour/nuit via la géométrie solaire, mais utilise
   une transmissivité mensuelle ;
-- le long-onde montant et la convection suivent la température de surface en
+- le flux longwave montant et la convection suivent la température de surface en
   temps réel ;
 - c'est une approximation contrôlée du moteur classique, pas une référence
   exacte colonne par colonne.
@@ -118,7 +118,7 @@ Par défaut, le modèle produit un diagnostic mensuel global :
 - grille complète 5 degrés, donc `36 x 72` cellules ;
 - 12 cartes, une par mois ;
 - chaque carte applique un seul pas implicite `dt` depuis l'état initial du
-  mois avec un court-onde journalier moyen ;
+  mois avec un flux shortwave journalier moyen ;
 - ce n'est pas une intégration complète de chaque mois ;
 - fichier écrit dans `modele4/sorties/simulation_modele4.npz` ;
 - barre de progression active.
@@ -200,8 +200,8 @@ Le script commence par appeler le modèle 3 pour pré-calculer les champs
 mensuels réutilisés :
 
 - albédo de surface ;
-- transmissivité court-onde ;
-- long-onde descendant absorbé par la surface ;
+- transmissivité shortwave ;
+- flux longwave descendant absorbé par la surface ;
 - température d'air ;
 - flux latent ;
 - capacité thermique.

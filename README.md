@@ -59,9 +59,9 @@ Ajouts/corrections par rapport au modèle 2.5 :
 - Opacité H2O effective additionnée à l'opacité CO2 avant transmission.
 - Émissivité constante `0.98`.
 - Albédo de surface lu depuis `ressources/albedo/albedo01.csv` à `albedo12.csv`.
-- Transmissivité court-onde mensuelle :
+- Transmissivité shortwave mensuelle :
   `ERA5 SW_down / moyenne_mensuelle(S0 * max(cos(i), 0))`.
-- Suppression des corrections nuageuses arbitraires court-onde et long-onde.
+- Suppression des corrections nuageuses arbitraires shortwave et longwave.
 - Le code 3 lit les copies racine dans `ressources/albedo/`, pas
   `modele0_maintenance/`.
 

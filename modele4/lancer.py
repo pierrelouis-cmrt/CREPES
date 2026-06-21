@@ -216,7 +216,7 @@ MOTEURS = (
         ),
         physique=(
             "atmosphere radiative mensuelle approximee pendant la simulation",
-            "cycle jour/nuit conserve pour le court-onde",
+            "cycle jour/nuit conserve pour le flux shortwave",
             "LW montant et convection suivent T_surface en temps reel",
         ),
         usage=(

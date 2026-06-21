@@ -140,7 +140,7 @@ def comparaison_validation(resultat, validation_flux):
     return comparaison
 
 
-def calculer_flux_court_onde(
+def calculer_flux_shortwave(
     surface,
     jour_annee,
     heure_solaire,
@@ -151,24 +151,24 @@ def calculer_flux_court_onde(
     if moyenne_journaliere_sw:
         if utiliser_moyenne_mensuelle and sw_toa_mensuel is not None:
             sw_toa_local = sw_toa_mensuel
-            mode_court_onde = "moyenne_mensuelle_paquet"
+            mode_shortwave = "moyenne_mensuelle_paquet"
         else:
             sw_toa_local = physique.flux_solaire_moyen_journalier(
                 surface["latitude_deg"],
                 jour_annee,
             )
-            mode_court_onde = "moyenne_journaliere_jour_representatif"
+            mode_shortwave = "moyenne_journaliere_jour_representatif"
     else:
         sw_toa_local = physique.flux_solaire_incident(
             surface["latitude_deg"],
             jour_annee,
             heure_solaire,
         )
-        mode_court_onde = "instantane_jour_representatif"
+        mode_shortwave = "instantane_jour_representatif"
 
     albedo_surface = physique.fraction(surface.get("albedo_surface"), defaut=0.30)
     transmissivite_sw = physique.fraction(surface["transmissivite_sw_mensuelle"], defaut=0.0)
-    # Le court-onde descend jusqu'a la surface puis l'albedo en renvoie une partie.
+    # Le flux shortwave descend jusqu'a la surface puis l'albedo en renvoie une partie.
     sw_down_surface = sw_toa_local * transmissivite_sw
     sw_absorbe_surface = sw_down_surface * (1.0 - albedo_surface)
 
@@ -178,7 +178,7 @@ def calculer_flux_court_onde(
         "SW_absorbe_surface": sw_absorbe_surface,
         "albedo_surface": albedo_surface,
         "transmissivite_sw_mensuelle": transmissivite_sw,
-        "mode_court_onde": mode_court_onde,
+        "mode_shortwave": mode_shortwave,
     }
 
 
@@ -210,7 +210,7 @@ def calculer_colonne_radiative(
     diagnostics_bandes = []
 
     for bande in bandes:
-        # Chaque bande long-onde est propagee vers le sommet puis vers la surface.
+        # Chaque bande longwave est propagee vers le sommet puis vers la surface.
         flux_surface_bande = emissivite_surface * physique.flux_corps_noir_dans_bande(
             temperature_surface_k,
             bande["lambda_min_um"],
@@ -249,14 +249,14 @@ def calculer_colonne_radiative(
     olr = max(0.0, flux_surface_total - flux_surface_bandes) + flux_sommet_bandes
     lw_down_absorbe_surface = emissivite_surface * lw_down_surface
 
-    court_onde = calculer_flux_court_onde(
+    shortwave = calculer_flux_shortwave(
         surface,
         jour_annee,
         heure_solaire,
         moyenne_journaliere_sw,
         utiliser_moyenne_mensuelle=jour_representatif_mois,
     )
-    sw_absorbe_surface = court_onde["SW_absorbe_surface"]
+    sw_absorbe_surface = shortwave["SW_absorbe_surface"]
 
     resultat = {
         "lat_deg": surface["latitude_deg"],
@@ -265,11 +265,11 @@ def calculer_colonne_radiative(
         "jour_annee": jour_annee,
         "heure_solaire": heure_solaire,
         "moyenne_journaliere_sw": moyenne_journaliere_sw,
-        "mode_court_onde": court_onde["mode_court_onde"],
+        "mode_shortwave": shortwave["mode_shortwave"],
         "temperature_surface_k": temperature_surface_k,
         "co2_ppm": co2_ppm,
-        "SW_TOA_local": court_onde["SW_TOA_local"],
-        "SW_down_surface": court_onde["SW_down_surface"],
+        "SW_TOA_local": shortwave["SW_TOA_local"],
+        "SW_down_surface": shortwave["SW_down_surface"],
         "SW_absorbe_surface": sw_absorbe_surface,
         "LW_up_surface": flux_surface_total,
         "LW_down_surface": lw_down_surface,
@@ -278,9 +278,9 @@ def calculer_colonne_radiative(
         "flux_net_radiatif_surface": (
             sw_absorbe_surface + lw_down_absorbe_surface - flux_surface_total
         ),
-        "albedo_surface": court_onde["albedo_surface"],
+        "albedo_surface": shortwave["albedo_surface"],
         "sw_toa_moyen_mensuel_w_m2": surface.get("sw_toa_moyen_mensuel_w_m2"),
-        "transmissivite_sw_mensuelle": court_onde["transmissivite_sw_mensuelle"],
+        "transmissivite_sw_mensuelle": shortwave["transmissivite_sw_mensuelle"],
         "emissivite_surface": emissivite_surface,
         "sources": {
             "albedo_surface": surface.get("source_albedo_surface", "inconnue"),

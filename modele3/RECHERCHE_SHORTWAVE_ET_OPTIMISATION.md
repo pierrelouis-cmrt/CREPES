@@ -1,6 +1,6 @@
-# Recherche court-onde et optimisation pour le modèle 4
+# Recherche shortwave et optimisation pour le modèle 4
 
-Objectif : documenter la correction du biais court-onde du modèle 3 sans
+Objectif : documenter la correction du biais du flux shortwave du modèle 3 sans
 ajouter un coefficient arbitraire. La solution reste compatible avec le paquet
 compact du modèle 3 et assez simple pour un projet de fin d'année.
 
@@ -8,8 +8,8 @@ compact du modèle 3 et assez simple pour un projet de fin d'année.
 
 Le paquet compact du modèle 3 contient maintenant :
 
-- `era5_sw_down_surface_w_m2` : flux court-onde descendant moyen à la surface ;
-- `era5_sw_net_surface_w_m2` : flux court-onde net moyen à la surface ;
+- `era5_sw_down_surface_w_m2` : flux shortwave descendant moyen à la surface ;
+- `era5_sw_net_surface_w_m2` : flux shortwave net moyen à la surface ;
 - `albedo_surface` : albédo mensuel de surface ;
 
 Le biais corrigé venait de l'ancienne formule de travail :
@@ -51,7 +51,7 @@ https://confluence.ecmwf.int/display/CKB/ERA5%3A+data+documentation
 ```
 
 Conclusion pour le projet : les champs ERA5 du paquet sont des forçages
-court-onde de surface directement utilisables, pas seulement des diagnostics.
+de flux shortwave de surface directement utilisables, pas seulement des diagnostics.
 
 ### Constante solaire S0
 
@@ -76,7 +76,7 @@ https://arxiv.org/abs/1605.09788
 
 FAO-56 rappelle que le rayonnement solaire atteignant la surface dépend de la
 position du soleil, de la turbidité atmosphérique et des nuages. Il donne le
-bilan court-onde net de surface sous la forme :
+bilan shortwave net de surface sous la forme :
 
 ```text
 R_ns = (1 - alpha) * R_s
@@ -118,14 +118,14 @@ https://asdc.larc.nasa.gov/project/CERES/CERES_EBAF-TOA_Edition4.2.1
 
 Conclusion pour le projet : `albedo_nuages_effectif` doit rester un diagnostic
 ou une source de comparaison TOA. Il ne doit pas être le facteur principal du
-court-onde surface dans le modèle 4.
+flux shortwave de surface dans le modèle 4.
 
 ### NASA POWER
 
 NASA POWER documente que ses données solaires sont dérivées d'observations
 satellitaires et de modèles d'assimilation, avec des produits globaux continus.
 Les CSV d'albédo utilisés dans le projet viennent historiquement de rapports
-de flux court-onde surface.
+de flux shortwave de surface.
 
 Sources :
 
@@ -138,7 +138,7 @@ Conclusion pour le projet : l'albédo mensuel de surface est une entrée valable
 pour `R_ns = (1 - alpha) * R_s`, mais il ne suffit pas à lui seul à représenter
 la transmission atmosphérique.
 
-## Recommandation court-onde
+## Recommandation shortwave
 
 ### Choix par défaut pour le modèle 4
 
@@ -161,7 +161,7 @@ SW_absorbe_surface(t) =
 
 Raisons :
 
-- formule physique standard du bilan court-onde net ;
+- formule physique standard du bilan shortwave net ;
 - conserve le calcul solaire historique du projet ;
 - garde le cycle jour/nuit et la saisonnalité venant de `S0*cos(i)` ;
 - utilise ERA5 seulement pour représenter une transmission atmosphérique
@@ -187,8 +187,8 @@ SW_absorbe_surface = colonne.validation_flux["era5_sw_net_surface_w_m2"]
 ```
 
 Ces deux modes sont utiles pour vérifier les ordres de grandeur, mais ils
-affaiblissent l'enjeu du projet si on les utilise comme seul court-onde dans la
-boucle temporelle.
+affaiblissent l'enjeu du projet si on les utilise comme seul flux shortwave
+dans la boucle temporelle.
 
 ### Mode à éviter par défaut
 
@@ -206,18 +206,18 @@ doit pas piloter la température du modèle 4.
 
 ## Implémentation simple conseillée
 
-Le modèle 3 doit fournir un helper court-onde propre et le modèle 4 doit
+Le modèle 3 doit fournir une fonction auxiliaire shortwave propre et le modèle 4 doit
 l'utiliser dans sa boucle. Principe :
 
 1. Pré-calculer une moyenne mensuelle de `S0 * max(cos(i), 0)` sur la grille.
 2. Construire `tau_SW_mensuel` depuis `era5_sw_down_surface_w_m2`.
 3. À chaque pas du modèle 4, recalculer `S0 * max(cos(i(t)), 0)`.
 4. Appliquer `tau_SW_mensuel` puis l'albédo de surface.
-5. Appeler `calculer_colonne_radiative` pour obtenir le long-onde :
+5. Appeler `calculer_colonne_radiative` pour obtenir les flux longwave :
    `LW_down_absorbe_surface`, `LW_up_surface`, diagnostics CO2/H2O.
 
 ```python
-def court_onde_surface_modele4(colonne, jour_annee, heure_solaire):
+def shortwave_surface_modele4(colonne, jour_annee, heure_solaire):
     surface = colonne["surface"]
     sw_toa = flux_solaire_incident(
         surface["latitude_deg"],
@@ -283,7 +283,7 @@ intégrale numérique identique des milliers de fois.
 Pour le modèle 4, le meilleur compromis rigueur/simplicité est :
 
 ```text
-court-onde par défaut =
+flux shortwave par défaut =
     S0*cos(i,t) * transmissivite_SW_mensuelle_ERA5 * (1 - albedo_surface)
 
 mode forçage simple =

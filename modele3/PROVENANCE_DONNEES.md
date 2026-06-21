@@ -25,7 +25,7 @@ modele3/ressources/generer_donnees.py
 Les CSV d'albédo sont des copies racine de ressources historiquement produites
 pour le modèle 0. Le code 3 ne lit pas `modele0_maintenance/`.
 
-## Transmissivité court-onde
+## Transmissivité shortwave
 
 ```text
 SW_TOA_moyen_mensuel =

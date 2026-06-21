@@ -44,9 +44,9 @@ Le modèle 3 fournit les trois flux radiatifs :
 Le modèle 4 ne décrit pas ici le calcul interne de ces flux radiatifs. Il les
 consomme comme flux de colonne locale, puis résout le bilan de surface.
 
-## Court-onde de surface
+## Shortwave de surface
 
-Le terme court-onde utilisé dans le bilan est :
+Le flux shortwave utilisé dans le bilan est :
 
 ```text
 SW_absorbe_surface = SW_down_surface * (1 - albedo_surface)
@@ -61,11 +61,11 @@ SW_down_surface = tau_SW_mensuel * S0 * max(cos(i), 0)
 ```
 
 Le modèle 4 ne réintègre pas l'ancien albédo nuageux du modèle 0. L'effet moyen
-de l'atmosphère sur le court-onde est déjà porté par `tau_SW_mensuel`.
+de l'atmosphère sur le flux shortwave est déjà porté par `tau_SW_mensuel`.
 
-## Long-onde de surface
+## Longwave de surface
 
-Le bilan utilise deux termes long-onde :
+Le bilan utilise deux termes longwave :
 
 ```text
 LW_down_absorbe_surface
@@ -291,7 +291,7 @@ reconstruits dynamiquement par une circulation globale.
 
 Le mode CLI `diagnostic-mensuel` produit 12 cartes, une par mois. Chaque carte
 part de l'état initial du mois dans le paquet du modèle 3, puis applique un seul
-pas implicite `dt_s` avec un court-onde journalier moyen. Les cartes sont donc
+pas implicite `dt_s` avec un flux shortwave journalier moyen. Les cartes sont donc
 des diagnostics saisonniers indépendants :
 
 ```text
@@ -342,10 +342,10 @@ Puis il met à jour toute la grille en une seule opération `numpy`.
 
 Physiquement, les conséquences sont les suivantes :
 
-- le cycle jour/nuit du court-onde est conservé par `cos(i(t))` ;
-- l'atténuation court-onde reste mensuelle via `tau_SW_mensuel` ;
-- le long-onde descendant reste celui pré-calculé pour le mois ;
-- le long-onde montant suit bien `T_surface(t)` via `sigma T^4` ;
+- le cycle jour/nuit du flux shortwave est conservé par `cos(i(t))` ;
+- l'atténuation shortwave reste mensuelle via `tau_SW_mensuel` ;
+- le flux longwave descendant reste celui pré-calculé pour le mois ;
+- le flux longwave montant suit bien `T_surface(t)` via `sigma T^4` ;
 - la convection suit aussi `T_surface(t)` ;
 - la réponse complète de la colonne atmosphérique au changement de surface
   n'est pas recalculée à chaque pas.
@@ -389,7 +389,7 @@ Ce paquet donne :
 - latitudes et longitudes ;
 - profils atmosphériques mensuels prétraités pour les colonnes ;
 - albédo de surface ;
-- transmissivité court-onde mensuelle ;
+- transmissivité shortwave mensuelle ;
 - température de peau et température 2 m pour l'initialisation et la convection ;
 - fraction terre/mer et neige/glace ;
 - flux ERA5 utiles à la validation.
@@ -401,7 +401,7 @@ La V1 doit être jugée progressivement :
 - stabilité numérique sur une cellule ;
 - stabilité sur une petite grille ;
 - comparaison de `T_surface` avec `skin_temperature_k` ;
-- comparaison du court-onde net avec les flux ERA5 stockés ;
+- comparaison du flux shortwave net avec les flux ERA5 stockés ;
 - comportement saisonnier nord/sud ;
 - différences terre/océan et neige/glace.
 

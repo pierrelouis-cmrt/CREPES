@@ -32,6 +32,6 @@ reste présente dans une source future.
 
 Le `.npz` contient seulement les champs nécessaires au calcul normal :
 coordonnées, poids de surface, pression de surface, albédo, transmissivité
-court-onde mensuelle, champs surface utiles, flux ERA5 de validation et
-couches prétraitées. Les facteurs de quantification, unités et sources
-sont dans `metadata.json`.
+shortwave mensuelle, champs surface utiles, flux ERA5 de validation et couches
+prétraitées. Les facteurs de quantification, unités et sources sont dans
+`metadata.json`.

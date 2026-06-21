@@ -2,7 +2,7 @@
 
 Ce module ne lit aucun fichier. Il contient les constantes, la geometrie
 solaire, Planck, les masses colonne et les opacites infrarouges CO2 + H2O.
-Les nuages ne creent pas d'opacite long-onde implicite.
+Les nuages ne creent pas d'opacite longwave implicite.
 """
 
 from __future__ import annotations

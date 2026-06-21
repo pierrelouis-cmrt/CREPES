@@ -319,7 +319,7 @@ def simuler_diagnostic_mensuel(paquet, config=None, mois=MOIS_DEFAUT):
     """Calcule des diagnostics mensuels independants, a un pas implicite.
 
     Chaque carte part de l'etat initial du mois et applique un seul pas de duree
-    ``dt_s`` avec un court-onde journalier moyen. Ce mode donne une lecture
+    ``dt_s`` avec un flux shortwave journalier moyen. Ce mode donne une lecture
     saisonniere rapide des flux de surface, mais ne simule pas un mois complet.
     """
 

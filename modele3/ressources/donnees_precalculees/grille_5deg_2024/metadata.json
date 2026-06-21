@@ -16,7 +16,7 @@
   "conventions": {
     "longitude_deg": "-180..180",
     "albedo_nearest_neighbor": "longitudes source et cible normalisees -180..180",
-    "court_onde_mensuel": "transmissivite et SW_TOA moyennes sur le mois complet"
+    "shortwave_mensuel": "transmissivite et SW_TOA moyennes sur le mois complet"
   },
   "diagnostics_generation": {
     "transmissivite_sw": {
@@ -192,8 +192,8 @@
   },
   "notes": [
     "Les CSV d'albedo sont lus depuis ressources/albedo, copie racine des donnees utiles du modele 0.",
-    "Le modele 3 n'utilise pas de coefficient nuageux court-onde ou long-onde.",
-    "transmissivite_sw_mensuelle corrige le court-onde surface avec ERA5 et une moyenne mensuelle coherente de S0*cos(i).",
+    "Le modele 3 n'utilise pas de coefficient nuageux shortwave ou longwave.",
+    "transmissivite_sw_mensuelle corrige le flux shortwave de surface avec ERA5 et une moyenne mensuelle coherente de S0*cos(i).",
     "Quatre couches nulles du paquet initial ont ete marquees manquantes; le chargeur trace toute couche non positive restante.",
     "Les poids_surface sont normalises pour sommer a 1 sur la grille."
   ]

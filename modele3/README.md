@@ -55,7 +55,7 @@ calculer_colonne_radiative(donnees_colonne, temperature_surface_k, co2_ppm)
 
 ## Physique conservée
 
-Short-wave :
+Shortwave :
 
 ```text
 SW_TOA_local = S0 * max(cos(i), 0)
@@ -69,7 +69,7 @@ le modèle utilise `sw_toa_moyen_mensuel_w_m2`, calcule sur le mois complet dans
 le paquet. Sans moyenne journalière, le calcul reste instantané sur le jour
 milieu de mois, qui est seulement un jour représentatif.
 
-Long-wave :
+Longwave :
 
 ```text
 LW_up_surface = 0.98 * sigma * T_surface^4
@@ -77,7 +77,7 @@ tau_total = tau_CO2 + tau_H2O
 transmission = exp(-1.66 * tau_total)
 ```
 
-Il n'y a pas de mode court-onde alternatif ni de coefficient nuageux radiatif.
+Il n'y a pas de mode shortwave alternatif ni de coefficient nuageux radiatif.
 
 ## Données
 
@@ -89,7 +89,7 @@ modele3/ressources/donnees_precalculees/grille_5deg_2024/
 
 Il contient la grille globale 5 degrés, les champs surface utiles, les couches
 verticales prétraitées, les flux ERA5 de validation, l'albédo de surface et la
-transmissivité court-onde mensuelle.
+transmissivité shortwave mensuelle.
 
 Les longitudes du paquet sont en convention `-180..180`. Les CSV d'albédo sont
 normalisés dans cette même convention avant sélection au plus proche, afin de
