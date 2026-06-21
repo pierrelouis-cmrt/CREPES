@@ -155,6 +155,24 @@ transmission = exp(-1.66 * tau_total)
 emissivite_couche = 1 - transmission
 ```
 
+### Sections efficaces implicites
+
+Le modele ne stocke pas de section efficace spectrale explicite
+`sigma(lambda, T, p)`. Dans un calcul spectroscopique complet, la profondeur
+optique serait de la forme :
+
+```text
+tau_lambda = integrale(n_gaz * sigma_lambda(T, p) * ds)
+```
+
+Ici cette physique est condensee dans les coefficients de bande `a_CO2_bande`
+et `a_H2O_bande`. Ces coefficients donnent directement une profondeur optique
+effective pour une colonne de reference, puis le modele la remet a l'echelle
+avec la concentration de CO2, l'epaisseur de pression ou la masse de vapeur
+d'eau. La section efficace est donc implicite dans `a_bande` ; ce n'est pas une
+surface moleculaire unique, ni une grandeur a extrapoler hors du domaine de
+calibration du modele.
+
 Le facteur diffusif herite du noyau precedent reste :
 
 ```text

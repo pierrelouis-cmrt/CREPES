@@ -13,7 +13,7 @@ import json
 import os
 import sys
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
@@ -66,6 +66,12 @@ class SortieModele4:
     temps_s: np.ndarray
     mois: np.ndarray
     metadata: dict
+    jours_fichier: np.ndarray = field(
+        default_factory=lambda: np.array([], dtype=np.float64),
+    )
+    heures_fichier: np.ndarray = field(
+        default_factory=lambda: np.array([], dtype=np.float64),
+    )
 
     @property
     def nombre_images(self) -> int:
@@ -163,6 +169,16 @@ def charger_sortie_npz(
             )
 
         temps_s = _axe_temps(npz, valeurs.shape[0])
+        jours_fichier = (
+            np.asarray(npz["jours"], dtype=np.float64)
+            if "jours" in npz.files and npz["jours"].shape == (valeurs.shape[0],)
+            else np.array([], dtype=np.float64)
+        )
+        heures_fichier = (
+            np.asarray(npz["heures"], dtype=np.float64)
+            if "heures" in npz.files and npz["heures"].shape == (valeurs.shape[0],)
+            else np.array([], dtype=np.float64)
+        )
         mois = (
             np.asarray(npz["mois"], dtype=np.int16)
             if "mois" in npz.files and npz["mois"].shape == (valeurs.shape[0],)
@@ -174,6 +190,10 @@ def charger_sortie_npz(
     if not np.array_equal(ordre_temps, np.arange(temps_s.size)):
         valeurs = valeurs[ordre_temps, :, :]
         temps_s = temps_s[ordre_temps]
+        if jours_fichier.shape == ordre_temps.shape:
+            jours_fichier = jours_fichier[ordre_temps]
+        if heures_fichier.shape == ordre_temps.shape:
+            heures_fichier = heures_fichier[ordre_temps]
         if mois.shape == ordre_temps.shape:
             mois = mois[ordre_temps]
 
@@ -185,6 +205,8 @@ def charger_sortie_npz(
         latitudes=latitudes,
         longitudes=longitudes,
         temps_s=temps_s,
+        jours_fichier=jours_fichier,
+        heures_fichier=heures_fichier,
         mois=mois,
         metadata=metadata,
     )
@@ -296,6 +318,52 @@ def indice_pour_jour_heure(sortie: SortieModele4, jour: int, heure: int) -> int:
     return int(np.nanargmin(np.abs(sortie.temps_s - cible_s)))
 
 
+def indice_pour_temps_s(sortie: SortieModele4, temps_s: float) -> int:
+    return int(np.nanargmin(np.abs(sortie.temps_s - float(temps_s))))
+
+
+def _valeurs_uniques(valeurs: np.ndarray) -> np.ndarray:
+    valeurs_finies = np.asarray(valeurs, dtype=np.float64)
+    valeurs_finies = valeurs_finies[np.isfinite(valeurs_finies)]
+    if valeurs_finies.size == 0:
+        return np.array([], dtype=np.float64)
+    return np.unique(np.round(valeurs_finies, 6))
+
+
+def _resolution_horaire(sortie: SortieModele4) -> bool:
+    if sortie.nombre_images <= 1:
+        return False
+    if (
+        sortie.heures_fichier.shape == (sortie.nombre_images,)
+        and _valeurs_uniques(sortie.heures_fichier).size > 1
+    ):
+        return True
+    secondes_dans_jour = np.mod(sortie.temps_s, 86400.0)
+    return _valeurs_uniques(secondes_dans_jour).size > 1
+
+
+def _mode_slider_temps(sortie: SortieModele4) -> str | None:
+    if sortie.nombre_images <= 1:
+        return None
+    if _resolution_horaire(sortie):
+        return "heure"
+    if _valeurs_uniques(np.floor(sortie.temps_s / 86400.0)).size > 1:
+        return "jour"
+    return None
+
+
+def _heures_ecoulees(sortie: SortieModele4) -> np.ndarray:
+    return np.asarray(sortie.temps_s, dtype=np.float64) / 3600.0
+
+
+def _valeur_slider_initiale(valeurs: np.ndarray, cible: float) -> float:
+    valeurs = np.asarray(valeurs, dtype=np.float64)
+    valeurs = valeurs[np.isfinite(valeurs)]
+    if valeurs.size == 0:
+        return float(cible)
+    return float(valeurs[np.nanargmin(np.abs(valeurs - cible))])
+
+
 def _libelle_temps(sortie: SortieModele4, indice: int) -> str:
     temps = float(sortie.temps_s[indice])
     jour = int(np.floor(temps / 86400.0))
@@ -303,16 +371,19 @@ def _libelle_temps(sortie: SortieModele4, indice: int) -> str:
     morceaux = [f"jour {jour}", f"heure {heure:g}"]
     if sortie.mois.shape == (sortie.nombre_images,):
         morceaux.append(f"mois {int(sortie.mois[indice])}")
+    if _resolution_horaire(sortie):
+        heure_ecoulee = temps / 3600.0
+        morceaux.append(f"heure ecoulee {heure_ecoulee:g}")
     return ", ".join(morceaux)
 
 
-def _titre(sortie: SortieModele4, jour: int, heure: int, indice: int) -> str:
+def _titre(sortie: SortieModele4, demande: str, indice: int) -> str:
     modele = sortie.metadata.get("modele", "modele4")
     mode = sortie.metadata.get("mode_sortie")
     suffixe_mode = f" - {mode}" if mode else ""
     return (
         f"Temperature de surface - {sortie.chemin.name} - {modele}{suffixe_mode}\n"
-        f"demande: jour {jour}, heure {heure} | image: {_libelle_temps(sortie, indice)}"
+        f"demande: {demande} | image: {_libelle_temps(sortie, indice)}"
     )
 
 
@@ -331,17 +402,25 @@ def creer_planisphere(
     vmin: float | None = None,
     vmax: float | None = None,
 ):
-    """Cree une figure planisphere avec sliders jour/heure et contours."""
+    """Cree une figure planisphere avec le slider temporel utile et les contours."""
 
     jour = max(0, min(int(jour), max(1, sortie.jour_max)))
     heure = max(0, min(int(heure), 23))
-    indice = indice_pour_jour_heure(sortie, jour, heure)
+    mode_slider = _mode_slider_temps(sortie)
+    if mode_slider == "heure":
+        heures = _heures_ecoulees(sortie)
+        heure_initiale = _valeur_slider_initiale(heures, jour * 24.0 + heure)
+        indice = indice_pour_temps_s(sortie, heure_initiale * 3600.0)
+        demande = f"heure {heure_initiale:g}"
+    else:
+        indice = indice_pour_jour_heure(sortie, jour, heure)
+        demande = f"jour {jour}" if mode_slider == "jour" else _libelle_temps(sortie, indice)
     tranche, unite = _tranche_affichee(sortie, indice)
     bas, haut = _bornes_couleur(sortie, vmin, vmax)
     limites = _extent(sortie.longitudes, sortie.latitudes)
 
     fig, ax = plt.subplots(figsize=(14, 8))
-    plt.subplots_adjust(bottom=0.22, top=0.88)
+    plt.subplots_adjust(bottom=0.16 if mode_slider else 0.10, top=0.88)
     image = ax.imshow(
         tranche,
         origin="lower",
@@ -359,38 +438,58 @@ def creer_planisphere(
     ax.set_xlim(limites[0], limites[1])
     ax.set_ylim(limites[2], limites[3])
     ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.4, zorder=2)
-    titre = ax.set_title(_titre(sortie, jour, heure, indice), fontsize=13)
+    titre = ax.set_title(_titre(sortie, demande, indice), fontsize=13)
     colorbar = fig.colorbar(image, ax=ax, orientation="vertical", fraction=0.03, pad=0.04)
     colorbar.set_label(_libelle_colorbar(sortie, unite))
 
-    axe_jour = fig.add_axes([0.2, 0.10, 0.6, 0.03])
-    slider_jour = Slider(
-        axe_jour,
-        "Jour",
-        0,
-        max(1, sortie.jour_max),
-        valinit=jour,
-        valstep=1,
-    )
-    axe_heure = fig.add_axes([0.2, 0.05, 0.6, 0.03])
-    slider_heure = Slider(axe_heure, "Heure", 0, 23, valinit=heure, valstep=1)
-
-    def rafraichir(_):
-        jour_courant = int(slider_jour.val)
-        heure_courante = int(slider_heure.val)
-        indice_courant = indice_pour_jour_heure(
-            sortie,
-            jour_courant,
-            heure_courante,
+    sliders = []
+    if mode_slider == "jour":
+        axe_jour = fig.add_axes([0.2, 0.06, 0.6, 0.03])
+        slider_jour = Slider(
+            axe_jour,
+            "Jour",
+            0,
+            max(1, sortie.jour_max),
+            valinit=jour,
+            valstep=1,
         )
-        nouvelle_tranche, _ = _tranche_affichee(sortie, indice_courant)
-        image.set_data(nouvelle_tranche)
-        titre.set_text(_titre(sortie, jour_courant, heure_courante, indice_courant))
-        fig.canvas.draw_idle()
 
-    slider_jour.on_changed(rafraichir)
-    slider_heure.on_changed(rafraichir)
-    fig._modele4_sliders = (slider_jour, slider_heure)
+        def rafraichir_jour(_):
+            jour_courant = int(slider_jour.val)
+            indice_courant = indice_pour_jour_heure(sortie, jour_courant, 0)
+            nouvelle_tranche, _ = _tranche_affichee(sortie, indice_courant)
+            image.set_data(nouvelle_tranche)
+            titre.set_text(_titre(sortie, f"jour {jour_courant}", indice_courant))
+            fig.canvas.draw_idle()
+
+        slider_jour.on_changed(rafraichir_jour)
+        sliders.append(slider_jour)
+    elif mode_slider == "heure":
+        heures = _heures_ecoulees(sortie)
+        heures_disponibles = _valeurs_uniques(heures)
+        heure_min = float(np.nanmin(heures_disponibles))
+        heure_max = float(np.nanmax(heures_disponibles))
+        axe_heure = fig.add_axes([0.2, 0.06, 0.6, 0.03])
+        slider_heure = Slider(
+            axe_heure,
+            "Heure",
+            heure_min,
+            heure_max,
+            valinit=heure_initiale,
+            valstep=heures_disponibles,
+        )
+
+        def rafraichir_heure(_):
+            heure_courante = float(slider_heure.val)
+            indice_courant = indice_pour_temps_s(sortie, heure_courante * 3600.0)
+            nouvelle_tranche, _ = _tranche_affichee(sortie, indice_courant)
+            image.set_data(nouvelle_tranche)
+            titre.set_text(_titre(sortie, f"heure {heure_courante:g}", indice_courant))
+            fig.canvas.draw_idle()
+
+        slider_heure.on_changed(rafraichir_heure)
+        sliders.append(slider_heure)
+    fig._modele4_sliders = tuple(sliders)
 
     if sauvegarde:
         sauvegarde = Path(sauvegarde)
