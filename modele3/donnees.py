@@ -19,7 +19,7 @@ DOSSIER_PAQUET_DEFAUT = (
 )
 FICHIER_NPZ_DEFAUT = "donnees_colonnes_5deg_2024.npz"
 EMISSIVITE_SURFACE = physique.EMISSIVITE_SURFACE_CONSTANTE
-ALBEDO_SURFACE_SECOURS = 0.30
+ALBEDO_SURFACE_SECOURS = physique.ALBEDO_SURFACE_SECOURS
 
 
 def _float_ou_none(valeur):
@@ -141,7 +141,23 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
         return _extraire_mensuel(donnees[nom], indice_lat, indice_lon, mois, jour_annee)
 
     pression_surface_hpa = float(mensuel("pression_surface_hpa"))
-    albedo_surface = physique.fraction(mensuel("albedo_surface"), defaut=ALBEDO_SURFACE_SECOURS)
+    snow_ice_fraction = None
+    if "snow_ice_fraction" in donnees:
+        snow_ice_fraction = _float_ou_none(mensuel("snow_ice_fraction"))
+        if snow_ice_fraction is not None:
+            snow_ice_fraction = physique.fraction(snow_ice_fraction)
+    albedo_brut = mensuel("albedo_surface")
+    albedo_surface = physique.albedo_surface_corrige_neige_glace(
+        albedo_brut,
+        snow_ice_fraction,
+    )
+    source_albedo_surface = _source_variable(paquet, "albedo_surface")
+    if (
+        physique.fraction(albedo_brut, defaut=ALBEDO_SURFACE_SECOURS) <= 0.0
+        and snow_ice_fraction is not None
+        and snow_ice_fraction > physique.SEUIL_FRACTION_NEIGE_GLACE_ALBEDO
+    ):
+        source_albedo_surface += " + correction zero neige/glace"
     transmissivite_sw = physique.fraction(mensuel("transmissivite_sw_mensuelle"), defaut=0.0)
     sw_toa_moyen = _float_ou_none(mensuel("sw_toa_moyen_mensuel_w_m2"))
 
@@ -156,7 +172,7 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
         "sw_toa_moyen_mensuel_w_m2": sw_toa_moyen,
         "transmissivite_sw_mensuelle": transmissivite_sw,
         "emissivite_surface": EMISSIVITE_SURFACE,
-        "source_albedo_surface": _source_variable(paquet, "albedo_surface"),
+        "source_albedo_surface": source_albedo_surface,
         "source_transmissivite_sw_mensuelle": _source_variable(
             paquet,
             "transmissivite_sw_mensuelle",
@@ -171,10 +187,13 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
         "skin_temperature_k",
     ):
         if nom in donnees:
-            valeur = _float_ou_none(mensuel(nom))
-            if nom.endswith("fraction"):
-                valeur = None if valeur is None else physique.fraction(valeur)
-            surface[nom] = valeur
+            if nom == "snow_ice_fraction":
+                surface[nom] = snow_ice_fraction
+            else:
+                valeur = _float_ou_none(mensuel(nom))
+                if nom.endswith("fraction"):
+                    valeur = None if valeur is None else physique.fraction(valeur)
+                surface[nom] = valeur
 
     couches = []
     pression_bas = mensuel("pression_bas_couche_hpa")
