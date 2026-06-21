@@ -214,7 +214,6 @@ def simulate_radiative_transfer(CO2_fraction, z_max = 80000, delta_z = 10, lambd
 
     return lambda_range, z_range, upward_flux, optical_thickness, earth_flux
 
-<<<<<<< Updated upstream
 def plot_temperature_altitude(z_max=80000, delta_z=100):
     z_range = np.arange(0, z_max + delta_z, delta_z)
     temperatures = temperature(z_range)
@@ -231,16 +230,3 @@ if __name__ == "__main__":
     print(simulate_radiative_transfer(0.00042))
     plot_temperature_altitude()
     plt.show()
-=======
-
-
-
-
-CO2_fraction = 420e-6  # 420 ppm, concentration actuelle
-
-lambda_range, z_range, upward_flux, optical_thickness, earth_flux = simulate_radiative_transfer(CO2_fraction)
-
-print(f"Flux surface    : {earth_flux.sum():.2f} W/m²")
-print(f"Flux sortant TOA: {upward_flux[-1,:].sum():.2f} W/m²")
-print(f"Effet de serre  : {earth_flux.sum() - upward_flux[-1,:].sum():.2f} W/m²")
->>>>>>> Stashed changes

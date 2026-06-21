@@ -98,7 +98,6 @@ def _selection_grille(ds, latitudes, longitudes):
         longitudes_selection = np.asarray(longitudes, dtype=float) % 360.0
     else:
         longitudes_selection = normaliser_longitudes_180(longitudes)
-    # On ramene les fichiers source sur la grille compacte du modele.
     return ds.sel(latitude=latitudes, longitude=longitudes_selection, method="nearest")
 
 
@@ -123,6 +122,30 @@ def trouver_fichiers_era5(ressources_dir):
 
 def _borne_fraction(tableau, maximum=1.0):
     return np.clip(np.nan_to_num(tableau, nan=0.0), 0.0, maximum).astype(np.float32)
+
+
+def corriger_albedo_neige_glace(albedo_surface, snow_ice_fraction):
+    """Remplace les albedos nuls sur neige/glace par un repli physique simple."""
+
+    albedo = _borne_fraction(albedo_surface)
+    neige_glace = _borne_fraction(snow_ice_fraction)
+    masque = (albedo <= 0.0) & (
+        neige_glace > physique.SEUIL_FRACTION_NEIGE_GLACE_ALBEDO
+    )
+    fallback = physique.ALBEDO_SURFACE_SECOURS + neige_glace * (
+        physique.ALBEDO_NEIGE_GLACE_SECOURS - physique.ALBEDO_SURFACE_SECOURS
+    )
+    corrige = np.where(masque, fallback, albedo).astype(np.float32)
+    valeurs_corrigees = corrige[masque]
+    diagnostics = {
+        "zeros_neige_glace_corriges": int(np.count_nonzero(masque)),
+        "seuil_fraction_neige_glace": physique.SEUIL_FRACTION_NEIGE_GLACE_ALBEDO,
+        "albedo_surface_secours": physique.ALBEDO_SURFACE_SECOURS,
+        "albedo_neige_glace_secours": physique.ALBEDO_NEIGE_GLACE_SECOURS,
+        "fallback_min": float(valeurs_corrigees.min()) if valeurs_corrigees.size else None,
+        "fallback_max": float(valeurs_corrigees.max()) if valeurs_corrigees.size else None,
+    }
+    return corrige, diagnostics
 
 
 def _ouvrir_selection_surface(fichier, latitudes, longitudes, annee):
@@ -264,7 +287,6 @@ def calculer_sw_toa_moyen_mensuel(latitudes, nombre_pas_horaires=96):
 def calculer_transmissivite_sw(era5_sw_down_surface, sw_toa_moyen_mensuel):
     denominateur = sw_toa_moyen_mensuel[:, :, None]
     avec_soleil = denominateur > 1e-6
-    # La transmissivite SW compare ERA5 au soleil disponible en haut.
     brut = np.divide(
         era5_sw_down_surface,
         denominateur,
@@ -354,7 +376,6 @@ def charger_profils_et_couches(fichier_profil, surface, latitudes, longitudes, a
                     indice_couche = physique.PRESSION_BORDS_REFERENCE_HPA.index(p_haut)
                     t_moy = _moyenne_profile(p_levels, temperature[mois, :, i, j], p_bas, p_haut)
                     q_moy = _moyenne_profile(p_levels, humidite[mois, :, i, j], p_bas, p_haut)
-                    # On garde seulement les couches avec temperature et humidite exploitables.
                     if not math.isfinite(t_moy) or not math.isfinite(q_moy):
                         continue
                     delta_p_pa = (p_bas - p_haut) * 100.0
@@ -434,19 +455,22 @@ def ecrire_paquet(sortie_dir, tableaux, metadata, overwrite):
         "| Surface | ERA5 single levels, `ressources/**/*.nc` | Selection au plus proche sur grille 5 degres. |\n"
         "| Flux de validation | ERA5 flux moyens | Stockes pour comparaison, jamais pour recalibrer. |\n"
         "| Transmissivite SW | Geometrie solaire 3 + ERA5 `avg_sdswrf` | `ERA5 SW_down / moyenne_mensuelle(S0*cos(i))`, borne `[0, 1]`. |\n"
-        "| Albedo surface | `ressources/albedo/albedo01.csv` ... `albedo12.csv` | Longitudes normalisees -180..180, selection mensuelle au plus proche. |\n"
+        "| Albedo surface | `ressources/albedo/albedo01.csv` ... `albedo12.csv` | Longitudes normalisees -180..180, selection mensuelle au plus proche, puis correction des zeros sur neige/glace. |\n"
         "\n"
         "Les fichiers `ressources/albedo/*` sont des copies racine des donnees utiles\n"
         "historiquement presentes dans le modele 0. Le code 3 ne lit pas le dossier\n"
-        "`modele0_maintenance/`.\n\n"
+        "`modele0_maintenance/`. Les valeurs d'albedo nulles sur des mailles\n"
+        "neige/glace viennent surtout de mois polaires ou le rapport source\n"
+        "`SW_UP / SW_DOWN` n'est pas observable ; elles sont remplacees par un\n"
+        "melange simple entre `0.30` et `0.65` selon la fraction neige/glace.\n\n"
         "Les couches verticales dont l'epaisseur serait inferieure a 0.1 hPa sont\n"
         "ignorees avant stockage pour eviter des couches nulles apres quantification.\n\n"
         "## Contenu\n\n"
         "Le `.npz` contient seulement les champs necessaires au calcul normal :\n"
         "coordonnees, poids de surface, pression de surface, albedo, transmissivite\n"
-        "shortwave mensuelle, champs surface utiles, flux ERA5 de validation et couches\n"
-        "pretraitees. Les facteurs de quantification, unites et sources sont dans\n"
-        "`metadata.json`.\n",
+        "court-onde mensuelle, champs surface utiles, flux ERA5 de validation et\n"
+        "couches pretraitees. Les facteurs de quantification, unites et sources\n"
+        "sont dans `metadata.json`.\n",
         encoding="utf-8",
     )
     return npz_path
@@ -478,11 +502,15 @@ def generer(args):
         longitudes,
         args.allow_fallbacks,
     )
-    _message("Calcul transmissivite shortwave mensuelle")
+    _message("Calcul transmissivite court-onde mensuelle")
     sw_toa_moyen = calculer_sw_toa_moyen_mensuel(latitudes)
     transmissivite_sw, diagnostics_transmissivite = calculer_transmissivite_sw(
         flux["era5_sw_down_surface_w_m2"],
         sw_toa_moyen,
+    )
+    albedo_surface, diagnostics_albedo = corriger_albedo_neige_glace(
+        albedo_surface,
+        surface["snow_ice_fraction"],
     )
     _message("Construction des couches pretraitees")
     couches = charger_profils_et_couches(fichier_profil, surface, latitudes, longitudes, args.annee)
@@ -527,6 +555,7 @@ def generer(args):
         },
         "diagnostics_generation": {
             "transmissivite_sw": diagnostics_transmissivite,
+            "albedo_surface": diagnostics_albedo,
             "couches_verticales": diagnostics_couches,
         },
         "sources_fichiers": {
@@ -553,7 +582,7 @@ def generer(args):
                 "masse_air_couche_kg_m2": "delta_p / g",
                 "humidite_specifique_couche_kgkg": "ERA5 q moyenne par couche",
                 "masse_h2o_couche_kg_m2": "q * delta_p / g",
-                "albedo_surface": "ressources/albedo/albedo01.csv..albedo12.csv, longitudes normalisees -180..180",
+                "albedo_surface": "ressources/albedo/albedo01.csv..albedo12.csv, longitudes normalisees -180..180 + correction zero neige/glace",
                 "sw_toa_moyen_mensuel_w_m2": "geometrie solaire modele 3, S0=1361 W m-2",
                 "transmissivite_sw_mensuelle": "ERA5 avg_sdswrf / sw_toa_moyen_mensuel_w_m2",
                 "land_fraction": "ERA5 lsm",
@@ -566,8 +595,10 @@ def generer(args):
         },
         "notes": [
             "Les CSV d'albedo sont lus depuis ressources/albedo, copie racine des donnees utiles du modele 0.",
-            "Le modele 3 n'utilise pas de coefficient nuageux shortwave ou longwave.",
-            "transmissivite_sw_mensuelle corrige le flux shortwave de surface avec ERA5 et une moyenne mensuelle coherente de S0*cos(i).",
+            "Les albedos nuls sur neige/glace sont remplaces par un repli physique 0.30..0.65, car le rapport SW_UP/SW_DOWN source est non observable en nuit polaire.",
+            "Le modele 3 n'utilise pas de coefficient nuageux court-onde ou long-onde.",
+            "transmissivite_sw_mensuelle corrige le court-onde surface avec ERA5, sans remplacer S0*cos(i).",
+            "Les couches verticales <0.1 hPa sont ignorees avant stockage.",
             "Les poids_surface sont normalises pour sommer a 1 sur la grille.",
         ],
     }

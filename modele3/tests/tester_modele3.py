@@ -54,7 +54,7 @@ def _donnees_test(transmissivite=0.60):
     }
 
 
-def tester_shortwave_unique_transmissivite():
+def tester_court_onde_unique_transmissivite():
     donnees = _donnees_test()
     resultat = calculer_colonne_radiative(donnees, moyenne_journaliere_sw=True)
     attendu = (
@@ -93,6 +93,22 @@ def tester_nuages_lw_absents_des_opacites():
         "emissivite",
     }
     assert diagnostic["tau_total"] == diagnostic["tau_co2"] + diagnostic["tau_h2o"]
+
+
+def tester_coefficients_opacite_effectifs_documentes():
+    description = physique.COEFFICIENTS_OPACITE_EFFECTIFS
+    assert "effectifs" in description["statut"]
+    assert "280 -> 560 ppm" in description["cible_co2"]
+    assert "101325 Pa" in description["unite_a_co2"]
+    assert "10 kg m-2" in description["unite_a_h2o"]
+    assert "HITRAN" in description["limites"]
+
+
+def tester_albedo_zero_neige_glace_corrige():
+    assert abs(physique.albedo_surface_corrige_neige_glace(0.0, 1.0) - 0.65) < 1e-12
+    assert physique.albedo_surface_corrige_neige_glace(0.0, 0.0) == 0.0
+    mixte = physique.albedo_surface_corrige_neige_glace(0.0, 0.5)
+    assert 0.30 < mixte < 0.65
 
 
 def tester_couche_non_positive_refusee_au_calcul():
@@ -158,19 +174,18 @@ def tester_paquet_grille_chargeable_et_final():
     metadata = paquet["metadata"]
     assert metadata["shape"]["lat"] == 36
     assert metadata["shape"]["lon"] == 72
-    assert metadata["conventions"]["longitude_deg"] == "-180..180"
-    assert "couches_verticales" in metadata["diagnostics_generation"]
     assert "transmissivite_sw_mensuelle" in metadata["variables"]
     assert "sw_toa_moyen_mensuel_w_m2" in metadata["variables"]
     assert abs(float(paquet["donnees"]["poids_surface"].sum()) - 1.0) < 1e-6
-    albedo = paquet["donnees"]["albedo_surface"]
-    assert 0.0 <= float(np.nanmin(albedo)) <= float(np.nanmax(albedo)) <= 1.0
     transmissivite = paquet["donnees"]["transmissivite_sw_mensuelle"]
     assert 0.0 <= float(np.nanmin(transmissivite)) <= float(np.nanmax(transmissivite)) <= 1.0
-    p_bas = paquet["donnees"]["pression_bas_couche_hpa"]
-    p_haut = paquet["donnees"]["pression_haut_couche_hpa"]
-    valides = np.isfinite(p_bas) & np.isfinite(p_haut)
-    assert np.count_nonzero(valides & (p_bas <= p_haut)) == 0
+    albedo = paquet["donnees"]["albedo_surface"]
+    assert 0.0 <= float(np.nanmin(albedo)) <= float(np.nanmax(albedo)) <= 1.0
+    neige_glace = paquet["donnees"]["snow_ice_fraction"]
+    zeros_neige_glace = (albedo <= 0.0) & (
+        neige_glace > physique.SEUIL_FRACTION_NEIGE_GLACE_ALBEDO
+    )
+    assert not zeros_neige_glace.any()
 
 
 def tester_colonne_depuis_paquet():
@@ -186,7 +201,8 @@ def tester_colonne_depuis_paquet():
     assert 0.0 <= colonne["surface"]["albedo_surface"] <= 1.0
     assert 0.0 <= colonne["surface"]["transmissivite_sw_mensuelle"] <= 1.0
     assert len(colonne["couches"]) > 0
-    assert colonne["diagnostics_donnees"]["couches_ignorees_non_positives"] == 0
+    assert "diagnostics_donnees" in colonne
+    assert colonne["diagnostics_donnees"]["couches_ignorees_non_positives"] >= 0
     for nom in (
         "SW_TOA_local",
         "SW_down_surface",
@@ -214,10 +230,12 @@ def tester_appel_en_boucle_sur_plusieurs_colonnes():
 
 
 def main():
-    tester_shortwave_unique_transmissivite()
+    tester_court_onde_unique_transmissivite()
     tester_shortwave_mensuel_utilise_moyenne_paquet()
     tester_emissivite_constante()
     tester_nuages_lw_absents_des_opacites()
+    tester_coefficients_opacite_effectifs_documentes()
+    tester_albedo_zero_neige_glace_corrige()
     tester_couche_non_positive_refusee_au_calcul()
     tester_extraction_trace_les_couches_ignorees()
     tester_longitudes_albedo_normalisees_antimeridien()

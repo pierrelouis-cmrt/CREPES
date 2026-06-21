@@ -166,7 +166,10 @@ def calculer_flux_shortwave(
         )
         mode_shortwave = "instantane_jour_representatif"
 
-    albedo_surface = physique.fraction(surface.get("albedo_surface"), defaut=0.30)
+    albedo_surface = physique.albedo_surface_corrige_neige_glace(
+        surface.get("albedo_surface"),
+        surface.get("snow_ice_fraction"),
+    )
     transmissivite_sw = physique.fraction(surface["transmissivite_sw_mensuelle"], defaut=0.0)
     # Le flux shortwave descend jusqu'a la surface puis l'albedo en renvoie une partie.
     sw_down_surface = sw_toa_local * transmissivite_sw

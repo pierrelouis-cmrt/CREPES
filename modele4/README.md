@@ -1,16 +1,15 @@
-# Modèle 4 - grille de surface pédagogique forcée par le modèle 3
+# Modele 4 - grille de surface couplee au modele 3
 
-Le modèle 4 fait évoluer une température de surface sur la grille globale
-5 degrés préparée pour le modèle 3. Chaque cellule est indépendante : il n'y a
-pas encore de transport horizontal, de circulation atmosphérique ou d'océan
-dynamique. C'est un modèle de surface pédagogique forcé par les flux de colonne
-du modèle 3, pas un modèle climatique complet.
+Le modele 4 fait evoluer une temperature de surface sur la grille globale
+5 degres preparee pour le modele 3. Chaque cellule est independante : il n'y a
+pas encore de transport horizontal, de circulation atmospherique ou d'ocean
+dynamique.
 
-## Rôle
+## Role
 
-Le modèle 4 ne recode pas la colonne radiative. Pour chaque cellule et chaque
-pas de temps, il appelle le modèle 3, récupère les flux radiatifs de surface et
-intègre le bilan d'énergie :
+Le modele 4 ne recode pas la colonne radiative. Pour chaque cellule et chaque
+pas de temps, il appelle le modele 3, recupere les flux radiatifs de surface et
+integre le bilan d'energie :
 
 ```text
 C_surface dT_surface/dt =
@@ -21,91 +20,88 @@ C_surface dT_surface/dt =
   - Q_convection
 ```
 
-Les termes `Q_convection` et la capacité surfacique reprennent les idées et
-constantes du modèle 0, mais dans des fonctions isolées et testables.
-`Q_latent` est seulement une paramétrisation annuelle moyenne par type de zone :
-elle retire de l'énergie à la surface, mais ne simule pas une évaporation
-interactive ni un bilan hydrologique.
+Les termes `Q_latent`, `Q_convection` et la capacite surfacique reprennent les
+idees et constantes du modele 0, mais dans des fonctions isolees et testables.
 
 ## Structure
 
 ```text
 modele4/
-  modele4.py               # moteur, CLI, intégration temporelle
-  surface.py               # capacité, chaleur latente, convection
-  tests/tester_modele4.py  # tests numériques minimaux
+  modele4.py               # moteur, CLI, integration temporelle
+  surface.py               # capacite, chaleur latente, convection
+  tests/tester_modele4.py  # tests numeriques minimaux
   tests/tester_rapide.py   # tests du moteur rapide
-  rapide.py                # moteur rapide vectorisé, sortie 4h par défaut
+  rapide.py                # moteur rapide vectorise, sortie 4h par defaut
   lancer.py                # TUI pour choisir le moteur et lancer les cas courants
   README.md
   THEORIE.md
   plan.md
 ```
 
-## Deux scripts, deux rôles
+## Deux scripts, deux roles
 
-Le modèle 4 a volontairement deux scripts d'exécution. Ils résolvent le même
-bilan de surface, mais pas avec le même niveau de recalcul radiatif.
+Le modele 4 a volontairement deux scripts d'execution. Ils resolvent le meme
+bilan de surface, mais pas avec le meme niveau de recalcul radiatif.
 
 ### `modele4.py` : moteur classique
 
-Rôle : référence physique et numérique.
+Role : reference physique et numerique.
 
 Techniquement :
 
-- il appelle le modèle 3 dans la boucle de calcul ;
+- il appelle le modele 3 dans la boucle de calcul ;
 - en mode `temporel`, chaque cellule et chaque pas de temps repassent par la
   colonne radiative locale ;
-- il résout le bilan d'énergie avec un schéma implicite et des itérations de
+- il resout le bilan d'energie avec un schema implicite et des iterations de
   Newton ;
 - il est plus lent, surtout sur la grille globale.
 
 Physiquement :
 
-- les flux radiatifs de surface sont recalculés avec la température de surface
+- les flux radiatifs de surface sont recalcules avec la temperature de surface
   courante ;
-- c'est le moteur à utiliser pour vérifier une petite experience, comparer au
-  moteur rapide, ou garder une référence plus proche du couplage avec le modèle
+- c'est le moteur a utiliser pour verifier une petite experience, comparer au
+  moteur rapide, ou garder une reference plus proche du couplage avec le modele
   3 ;
-- il reste un modèle local : pas de transport horizontal, pas d'océan dynamique,
-  pas de recalcul complet de l'atmosphère 3D.
+- il reste un modele local : pas de transport horizontal, pas d'ocean dynamique,
+  pas de recalcul complet de l'atmosphere 3D.
 
 ### `rapide.py` : moteur rapide
 
-Rôle : moteur pratique pour les essais courants et les longues simulations.
+Role : moteur pratique pour les essais courants et les longues simulations.
 
 Techniquement :
 
-- il appelle le modèle 3 au début pour pré-calculer des champs mensuels ;
-- ensuite, la boucle temporelle est vectorisée avec `numpy` sur toute la grille ;
-- il ne rappelle plus le modèle 3 à chaque pas ;
-- il écrit par défaut une carte toutes les 4 heures ;
+- il appelle le modele 3 au debut pour pre-calculer des champs mensuels ;
+- ensuite, la boucle temporelle est vectorisee avec `numpy` sur toute la grille ;
+- il ne rappelle plus le modele 3 a chaque pas ;
+- il ecrit par defaut une carte toutes les 4 heures ;
 - il est beaucoup plus rapide que le moteur classique.
 
 Physiquement :
 
-- l'atmosphère radiative est approximee par des champs mensuels fixes pendant la
+- l'atmosphere radiative est approximee par des champs mensuels fixes pendant la
   simulation ;
-- le flux shortwave garde le cycle jour/nuit via la géométrie solaire, mais utilise
-  une transmissivité mensuelle ;
-- le flux longwave montant et la convection suivent la température de surface en
-  temps réel ;
-- c'est une approximation contrôlée du moteur classique, pas une référence
+- le court-onde garde le cycle jour/nuit via la geometrie solaire, mais utilise
+  une transmissivite mensuelle ;
+- le long-onde montant et la convection suivent la temperature de surface en
+  temps reel ;
+- c'est une approximation controlee du moteur classique, pas une reference
   exacte colonne par colonne.
 
-### Choix recommandé
+### Choix recommande
 
-- Pour travailler, tester des paramètres ou lancer une simulation longue :
+- Pour travailler, tester des parametres ou lancer une simulation longue :
   utiliser `modele4.rapide`.
-- Pour vérifier la physique locale, comparer les résultats ou valider une
+- Pour verifier la physique locale, comparer les resultats ou valider une
   modification : utiliser `modele4.modele4` sur une petite grille.
-- Pour une première utilisation : lancer le TUI.
+- Pour une premiere utilisation : lancer le TUI.
 
 ```bash
 ./.venv/bin/python -m modele4.lancer
 ```
 
-## Exécution directe
+## Execution directe
 
 Depuis la racine du projet, cette commande suffit :
 
@@ -113,14 +109,11 @@ Depuis la racine du projet, cette commande suffit :
 ./.venv/bin/python -m modele4.modele4
 ```
 
-Par défaut, le modèle produit un diagnostic mensuel global :
+Par defaut, le modele produit une sortie mensuelle globale :
 
-- grille complète 5 degrés, donc `36 x 72` cellules ;
+- grille complete 5 degres, donc `36 x 72` cellules ;
 - 12 cartes, une par mois ;
-- chaque carte applique un seul pas implicite `dt` depuis l'état initial du
-  mois avec un flux shortwave journalier moyen ;
-- ce n'est pas une intégration complète de chaque mois ;
-- fichier écrit dans `modele4/sorties/simulation_modele4.npz` ;
+- fichier ecrit dans `modele4/sorties/simulation_modele4.npz` ;
 - barre de progression active.
 
 La variable principale a alors la forme :
@@ -149,9 +142,9 @@ Depuis la racine du projet :
   --output /tmp/modele4_test.npz
 ```
 
-`0.020833333333333332` jour correspond à un seul pas de 1800 s.
+`0.020833333333333332` jour correspond a un seul pas de 1800 s.
 
-Lancer une petite grille de développement :
+Lancer une petite grille de developpement :
 
 ```bash
 ./.venv/bin/python -m modele4.modele4 \
@@ -162,7 +155,7 @@ Lancer une petite grille de développement :
   --output modele4/sorties/simulation_dev.npz
 ```
 
-Lancer la grille complète 5 degrés :
+Lancer la grille complete 5 degres :
 
 ```bash
 ./.venv/bin/python -m modele4.modele4 \
@@ -171,43 +164,43 @@ Lancer la grille complète 5 degrés :
   --output modele4/sorties/simulation_globale_1j.npz
 ```
 
-La grille complète appelle beaucoup de colonnes radiatives. Pour développer, il
-est préférable de commencer avec `--max-latitudes` et `--max-longitudes`.
+La grille complete appelle beaucoup de colonnes radiatives. Pour developper, il
+est preferable de commencer avec `--max-latitudes` et `--max-longitudes`.
 
 ## Moteur rapide
 
-Le moteur rapide est séparé du moteur complet :
+Le moteur rapide est separe du moteur complet :
 
 ```bash
 ./.venv/bin/python -m modele4.rapide
 ```
 
-Par défaut il simule toute la grille pendant `1 jour`, avec `dt = 1800 s`, et
-écrit une carte toutes les `4 heures` :
+Par defaut il simule toute la grille pendant `1 jour`, avec `dt = 1800 s`, et
+ecrit une carte toutes les `4 heures` :
 
 ```text
 temperature_surface_k[temps_4h, latitude, longitude]
 shape = (7, 36, 72)
 ```
 
-Les sorties correspondent à :
+Les sorties correspondent a :
 
 ```text
 0h, 4h, 8h, 12h, 16h, 20h, 24h
 ```
 
-Le script commence par appeler le modèle 3 pour pré-calculer les champs
-mensuels réutilisés :
+Le script commence par appeler le modele 3 pour pre-calculer les champs
+mensuels reutilises :
 
-- albédo de surface ;
-- transmissivité shortwave ;
-- flux longwave descendant absorbé par la surface ;
-- température d'air ;
+- albedo de surface ;
+- transmissivite court-onde ;
+- long-onde descendant absorbe par la surface ;
+- temperature d'air ;
 - flux latent ;
-- capacité thermique.
+- capacite thermique.
 
-Ensuite, la boucle temporelle est vectorisée avec `numpy` sur toute la grille.
-Elle ne rappelle plus le modèle 3 à chaque pas de temps.
+Ensuite, la boucle temporelle est vectorisee avec `numpy` sur toute la grille.
+Elle ne rappelle plus le modele 3 a chaque pas de temps.
 
 Exemples :
 
@@ -227,37 +220,38 @@ Exemples :
 
 Options principales du moteur rapide :
 
-- `--jours` : durée de simulation, `1` par défaut.
-- `--dt` : pas de temps interne, `1800 s` par défaut.
-- `--sortie-heures` : fréquence de sauvegarde, `4 h` par défaut.
+- `--jours` : duree de simulation, `1` par defaut.
+- `--dt` : pas de temps interne, `1800 s` par defaut.
+- `--sortie-heures` : frequence de sauvegarde, `4 h` par defaut.
 - `--output` : fichier `.npz` de sortie.
 - `--max-latitudes`, `--max-longitudes` : sous-grille de test.
-- `--convection`, `--facteur-latent`, `--vent`, `--co2` : mêmes rôles que dans
+- `--convection`, `--facteur-latent`, `--vent`, `--co2` : memes roles que dans
   le moteur complet.
-- `--rzsm-csv` : source RZSM du modèle 0, chargée par défaut pour la capacité
-  surfacique ; les constantes ne servent que si RZSM manque.
+- `--rzsm-csv` : source RZSM du modele 0, chargee par defaut pour la capacite
+  des terres non enneigees/glacees ; l'ocean et la glace/neige ont une inertie
+  de surface explicite.
 
 ## Options principales
 
-- `--mode` : `diagnostic-mensuel` par défaut pour 12 cartes à un pas,
-  `mensuel` comme alias historique, ou `temporel` pour une intégration
-  pas-à-pas.
-- `--jours` : durée de simulation en jours.
-- `--dt` : pas de temps en secondes, `1800` par défaut.
-- `--co2` : concentration CO2 transmise au modèle 3.
-- `--temperature-initiale` : valeur imposée partout ; sinon le modèle utilise
+- `--mode` : `mensuel` par defaut pour 12 cartes globales, ou `temporel` pour
+  une integration pas-a-pas.
+- `--jours` : duree de simulation en jours.
+- `--dt` : pas de temps en secondes, `1800` par defaut.
+- `--co2` : concentration CO2 transmise au modele 3.
+- `--temperature-initiale` : valeur imposee partout ; sinon le modele utilise
   `skin_temperature_k`, puis `temperature_2m_k`, puis `288.15 K`.
-- `--frequence-sortie-pas` : fréquence d'écriture de `T_surface`.
+- `--frequence-sortie-pas` : frequence d'ecriture de `T_surface`.
 - `--convection` : `aucune`, `forcee`, `naturelle`, ou `toutes`.
-- `--facteur-latent` : multiplicateur du flux latent ; `0` le désactive.
-- `--vent` : vent constant en m/s pour la convection forcée.
-- `--max-latitudes`, `--max-longitudes` : sous-grille rapide de développement.
-- `--rzsm-csv` : CSV RZSM du modèle 0 pour utiliser la capacité thermique
-  issue de l'humidité du sol. Par défaut, le modèle charge
+- `--facteur-latent` : multiplicateur du flux latent ; `0` le desactive.
+- `--vent` : vent constant en m/s pour la convection forcee.
+- `--max-latitudes`, `--max-longitudes` : sous-grille rapide de developpement.
+- `--rzsm-csv` : CSV RZSM du modele 0 pour utiliser la capacite thermique
+  issue de l'humidite du sol sur les terres non enneigees/glacees. Par defaut,
+  le modele charge
   `modele0_maintenance/ressources/capacite_humidite/average_rzsm_tout.csv`.
-  Si la source ou une valeur locale manque, il retombe seulement alors sur
-  `CP_SEC`.
-- `--no-progress` : désactive la barre de progression console.
+  Si la source ou une valeur locale manque, `CP_SEC` sert seulement pour la
+  part terrestre ; l'ocean et la glace/neige gardent leurs capacites propres.
+- `--no-progress` : desactive la barre de progression console.
 
 Exemple avec un CSV RZSM explicite :
 
@@ -269,13 +263,25 @@ Exemple avec un CSV RZSM explicite :
   --output modele4/sorties/simulation_dev_rzsm.npz
 ```
 
+## Capacite thermique de surface
+
+La capacite des terres non enneigees/glacees reprend la formule RZSM et les
+constantes de `modele0_maintenance/codes_python/physique/capacite_surface.py`.
+Si RZSM manque localement, seule cette part terrestre retombe sur le sol sec.
+
+L'ocean utilise une couche active simple de `1 m` d'eau et la glace/neige une
+couche active simple de `1 m` de glace compacte (`rho_ice = 917 kg m-3`). C'est
+un ordre de grandeur pedagogique : assez grand pour eviter qu'ocean ou glace
+se comportent comme du sol sec, mais encore volontairement loin d'un ocean
+dynamique ou d'un modele vertical de glace.
+
 ## Sortie NPZ
 
 Le fichier `.npz` contient :
 
-- `temperature_surface_k[mois, lat, lon]` en mode diagnostic mensuel ;
+- `temperature_surface_k[mois, lat, lon]` en mode mensuel ;
 - `temperature_surface_k[temps, lat, lon]` en mode temporel ;
-- `mois` : `1..12` en mode diagnostic mensuel ;
+- `mois` : `1..12` en mode mensuel ;
 - `temps_s` ;
 - `lat_deg`, `lon_deg` ;
 - `capacite_surface_j_m2_k` ;
@@ -295,21 +301,16 @@ Le fichier `.npz` contient :
 ./.venv/bin/python modele4/tests/tester_rapide.py
 ```
 
-Les tests vérifient les briques de surface, les signes de flux, une simulation
-courte sur une cellule, une cohérence complet/rapide sur un petit cas et
-l'écriture du fichier `.npz`.
+Les tests verifient les briques de surface, une simulation courte sur une
+cellule et l'ecriture du fichier `.npz`.
 
 ## Limites de la V1
 
 - Pas de transport horizontal.
-- Mode `diagnostic-mensuel` : 12 diagnostics saisonniers à un pas ; pour une
-  vraie intégration temporelle, utiliser `--mode temporel` ou `modele4.rapide`.
-- Flux latent : paramétrisation annuelle moyenne par continent/océan, constante
-  dans le temps ; ce n'est pas une évaporation interactive.
-- Pas de capacité RZSM prétraitée dans le paquet compact ; le modèle 4 charge
-  le CSV RZSM du modèle 0 à l'exécution et utilise `CP_SEC` seulement en
-  fallback si cette source ou la valeur locale manque.
-- Pas de diffusion du sol : le module du modèle 0 est conservé mais pas branché,
-  car son interprétation en flux de surface est encore ambigu.
-- Pas de recalcul des profils atmosphériques quand `T_surface` change.
-- Pas d'océan dynamique.
+- Pas de capacite RZSM pretraitee dans le paquet compact ; le modele 4 charge
+  le CSV RZSM du modele 0 a l'execution pour les terres non
+  enneigees/glacees. Le fallback `CP_SEC` ne concerne que cette part terrestre.
+- Pas de diffusion du sol : le module du modele 0 est conserve mais pas branche,
+  car son interpretation en flux de surface est encore ambigu.
+- Pas de recalcul des profils atmospheriques quand `T_surface` change.
+- Pas d'ocean dynamique.

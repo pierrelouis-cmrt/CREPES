@@ -12,17 +12,19 @@ from dataclasses import dataclass
 from functools import lru_cache
 from math import isfinite
 from pathlib import Path
-import warnings
 
 import numpy as np
 
 
 RHO_W = 1000.0
+RHO_ICE = 917.0
 RHO_BULK = 2600.0
 CP_SEC = 0.8
 CP_WATER = 4.187
 CP_ICE = 2.09
 EPAISSEUR_ACTIVE_M = 0.5
+EPAISSEUR_OCEAN_M = 1.0
+EPAISSEUR_GLACE_NEIGE_M = 1.0
 
 DELTA_HVAP = 2_453_000.0
 RHO_EAU = 1000.0
@@ -74,14 +76,6 @@ except ImportError:  # pragma: no cover - dependance optionnelle
 
 _CACHE_RZSM = {}
 _CACHE_DETECTEURS_CONTINENT = {}
-_WARNINGS_EMISES = set()
-
-
-def _avertir_une_fois(cle, message):
-    if cle in _WARNINGS_EMISES:
-        return
-    _WARNINGS_EMISES.add(cle)
-    warnings.warn(message, RuntimeWarning, stacklevel=3)
 
 
 @dataclass(frozen=True)
@@ -128,6 +122,24 @@ def capacite_depuis_rzsm(rzsm):
     return capacite
 
 
+def capacite_sol_sec():
+    """Capacite minimale de sol sec en J m-2 K-1."""
+
+    return CP_SEC * 1000.0 * RHO_BULK * EPAISSEUR_ACTIVE_M
+
+
+def capacite_ocean_surface():
+    """Capacite simple d'une couche oceanique active de surface."""
+
+    return CP_WATER * 1000.0 * RHO_W * EPAISSEUR_OCEAN_M
+
+
+def capacite_glace_neige_surface():
+    """Capacite simple d'une couche active de glace ou neige compacte."""
+
+    return CP_ICE * 1000.0 * RHO_ICE * EPAISSEUR_GLACE_NEIGE_M
+
+
 def _moyenne_par_bins_modele0(latitudes, longitudes, valeurs):
     """Reproduit le regrillage 1 degre du modele 0 sans dependance SciPy."""
 
@@ -171,13 +183,6 @@ def charger_grille_rzsm(csv_path):
     if cle_cache in _CACHE_RZSM:
         return _CACHE_RZSM[cle_cache]
     if not csv_path.exists():
-        _avertir_une_fois(
-            ("rzsm_manquant", str(csv_path)),
-            (
-                "CSV RZSM introuvable; la capacite thermique retombera sur CP_SEC "
-                f"pour les cellules concernees: {csv_path}"
-            ),
-        )
         return None
 
     table = np.genfromtxt(csv_path, delimiter=",", names=True)
@@ -220,57 +225,52 @@ def rzsm_plus_proche(grille_rzsm, lat_deg, lon_deg):
 def capacite_surface(surface, rzsm=None):
     """Retourne C en J m-2 K-1 pour une cellule du modele 4.
 
-    Le modele 0 utilisait directement la capacite RZSM locale quand elle etait
-    disponible. La constante seche n'est utilisee qu'en fallback si la valeur
-    RZSM manque.
+    La terre non enneigee reprend la capacite RZSM du modele 0 quand elle est
+    disponible. Si RZSM manque localement, on garde le fallback de sol sec du
+    modele 0. Les fractions ocean et glace/neige du paquet modele 3 recoivent
+    une inertie propre afin d'eviter qu'elles soient traitees comme du sol sec
+    ou comme une humidite de sol.
     """
 
-    # L'humidite du sol donne l'inertie de surface quand elle est disponible.
-    if rzsm is not None:
-        rzsm = _float_fini(rzsm)
-    if rzsm is not None:
-        return capacite_depuis_rzsm(rzsm)
-    return CP_SEC * 1000.0 * RHO_BULK * EPAISSEUR_ACTIVE_M
+    fraction_terre = fraction(surface.get("land_fraction"), defaut=1.0)
+    fraction_glace_neige = fraction(surface.get("snow_ice_fraction"), defaut=0.0)
+    fraction_non_glace = 1.0 - fraction_glace_neige
+    fraction_ocean = 1.0 - fraction_terre
+
+    rzsm_valide = _float_fini(rzsm)
+    if rzsm_valide is None:
+        capacite_terre = capacite_sol_sec()
+    else:
+        capacite_terre = capacite_depuis_rzsm(rzsm_valide)
+
+    return (
+        fraction_glace_neige * capacite_glace_neige_surface()
+        + fraction_non_glace * fraction_terre * capacite_terre
+        + fraction_non_glace * fraction_ocean * capacite_ocean_surface()
+    )
 
 
 def source_capacite_surface(rzsm_csv=None):
     if rzsm_csv is not None and Path(rzsm_csv).exists():
-        return f"modele0 RZSM {rzsm_csv}; fallback CP_SEC seulement si valeur manquante"
-    return "modele0 CP_SEC fallback; RZSM indisponible"
+        return (
+            f"modele0 RZSM {rzsm_csv} pour terres non glacees; "
+            "ocean 1 m eau; glace/neige 1 m glace; sol sec si RZSM manque"
+        )
+    return (
+        "surface par fractions; sol sec pour terres sans RZSM; "
+        "ocean/glace/neige explicites"
+    )
 
 
 def creer_detecteur_continent(shapefile_path=SHAPEFILE_CONTINENTS_MODELE0):
     """Cree le detecteur continent/ocean du modele 0."""
 
     shapefile_path = Path(shapefile_path)
-    if not GEOPANDAS_DISPONIBLE:
-        _avertir_une_fois(
-            "geopandas_indisponible",
-            (
-                "geopandas/shapely indisponibles; le flux latent utilisera le "
-                "fallback ocean pour les cellules sans detecteur continent."
-            ),
-        )
-        return None
-    if not shapefile_path.exists():
-        _avertir_une_fois(
-            ("shapefile_continent_manquant", str(shapefile_path)),
-            (
-                "Shapefile continent introuvable; le flux latent utilisera le "
-                f"fallback ocean: {shapefile_path}"
-            ),
-        )
+    if not GEOPANDAS_DISPONIBLE or not shapefile_path.exists():
         return None
     try:
         monde = gpd.read_file(shapefile_path).to_crs(epsg=4326)
-    except Exception as exc:
-        _avertir_une_fois(
-            ("shapefile_continent_illisible", str(shapefile_path)),
-            (
-                "Lecture du shapefile continent impossible; le flux latent utilisera "
-                f"le fallback ocean: {shapefile_path} ({exc})"
-            ),
-        )
+    except Exception:
         return None
 
     monde_valide = monde[monde.geometry.notna()]
@@ -296,13 +296,6 @@ def _detecteur_continent(shapefile_path=SHAPEFILE_CONTINENTS_MODELE0):
 def _continent_point_cache(shapefile_key, lat_deg, lon_deg):
     detecteur = _detecteur_continent(Path(shapefile_key))
     if detecteur is None:
-        _avertir_une_fois(
-            ("detecteur_continent_absent", shapefile_key),
-            (
-                "Detecteur continent indisponible; le flux latent annuel moyen "
-                "utilise explicitement la valeur ocean par defaut."
-            ),
-        )
         return "Océan"
     return detecteur(lat_deg, lon_deg)
 
@@ -317,13 +310,8 @@ def continent_point(lat_deg, lon_deg, shapefile_path=SHAPEFILE_CONTINENTS_MODELE
 
 def source_flux_latent(shapefile_path=SHAPEFILE_CONTINENTS_MODELE0):
     if GEOPANDAS_DISPONIBLE and Path(shapefile_path).exists():
-        return (
-            f"{STATUT_FLUX_LATENT}; zones depuis modele0 continents {shapefile_path}"
-        )
-    return (
-        f"{STATUT_FLUX_LATENT}; fallback ocean explicite, detecteur continent "
-        "indisponible"
-    )
+        return f"modele0 continents {shapefile_path}"
+    return "modele0 fallback ocean; detecteur continent indisponible"
 
 
 def flux_latent_moyen(
@@ -332,13 +320,8 @@ def flux_latent_moyen(
     detecteur_continent=None,
     shapefile_path=SHAPEFILE_CONTINENTS_MODELE0,
 ):
-    """Flux latent pedagogique annuel moyen, positif en perte de surface.
+    """Flux latent annuel moyen du modele 0, positif en perte de surface."""
 
-    Ce terme reprend les hauteurs annuelles par continent du modele 0. Il ne
-    simule pas une evaporation instantanee ni un cycle hydrologique interactif.
-    """
-
-    # Perte moyenne du bilan de surface, gardee simple et constante.
     facteur = max(0.0, _float_fini(facteur, 0.0))
     if facteur == 0.0:
         return 0.0
@@ -409,7 +392,6 @@ def flux_convection_naturelle(temperature_surface_k, temperature_air_k):
 def flux_convection(temperature_surface_k, temperature_air_k, config):
     """Flux convectif total selon le mode choisi."""
 
-    # L'air emporte de la chaleur si la surface est plus chaude que lui.
     mode = config.mode_convection
     if mode == "aucune":
         return 0.0

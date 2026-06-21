@@ -13,23 +13,19 @@
     "valeur": 0.98,
     "source": "constante_modele3"
   },
-  "conventions": {
-    "longitude_deg": "-180..180",
-    "albedo_nearest_neighbor": "longitudes source et cible normalisees -180..180",
-    "shortwave_mensuel": "transmissivite et SW_TOA moyennes sur le mois complet"
-  },
   "diagnostics_generation": {
     "transmissivite_sw": {
       "valeurs_bornees_min": 0,
       "valeurs_bornees_max": 15,
       "valeurs_sans_soleil": 28
     },
-    "couches_verticales": {
-      "epaisseur_min_hpa": 0.1,
-      "couches_valides": 306114,
-      "couches_nulles_ou_negatives": 0,
-      "couches_nulles_ou_negatives_corrigees_paquet": 4,
-      "delta_p_min_hpa": 0.1
+    "albedo_surface": {
+      "zeros_neige_glace_corriges": 1926,
+      "seuil_fraction_neige_glace": 0.05,
+      "albedo_surface_secours": 0.3,
+      "albedo_neige_glace_secours": 0.65,
+      "fallback_min": 0.320335,
+      "fallback_max": 0.65
     }
   },
   "sources_fichiers": {
@@ -59,7 +55,7 @@
       "scale_factor": 0.1,
       "offset": 0.0,
       "valeur_manquante": 65535,
-      "source": "pretraitement ERA5 pression_surface + bords 3, couches <0.1 hPa ignorees"
+      "source": "pretraitement ERA5 pression_surface + bords 3"
     },
     "pression_haut_couche_hpa": {
       "dtype_stocke": "uint16",
@@ -67,7 +63,7 @@
       "scale_factor": 0.1,
       "offset": 0.0,
       "valeur_manquante": 65535,
-      "source": "bords 3, couches <0.1 hPa ignorees"
+      "source": "bords 3"
     },
     "temperature_couche_k": {
       "dtype_stocke": "int16",
@@ -123,7 +119,7 @@
       "scale_factor": 0.0001,
       "offset": 0.0,
       "valeur_manquante": 65535,
-      "source": "ressources/albedo/albedo01.csv..albedo12.csv, longitudes normalisees -180..180"
+      "source": "ressources/albedo/albedo01.csv..albedo12.csv + correction zero neige/glace"
     },
     "sw_toa_moyen_mensuel_w_m2": {
       "dtype_stocke": "uint16",
@@ -192,9 +188,9 @@
   },
   "notes": [
     "Les CSV d'albedo sont lus depuis ressources/albedo, copie racine des donnees utiles du modele 0.",
-    "Le modele 3 n'utilise pas de coefficient nuageux shortwave ou longwave.",
-    "transmissivite_sw_mensuelle corrige le flux shortwave de surface avec ERA5 et une moyenne mensuelle coherente de S0*cos(i).",
-    "Quatre couches nulles du paquet initial ont ete marquees manquantes; le chargeur trace toute couche non positive restante.",
+    "Les albedos nuls sur neige/glace sont remplaces par un repli physique 0.30..0.65, car le rapport SW_UP/SW_DOWN source est non observable en nuit polaire.",
+    "Le modele 3 n'utilise pas de coefficient nuageux court-onde ou long-onde.",
+    "transmissivite_sw_mensuelle corrige le court-onde surface avec ERA5, sans remplacer S0*cos(i).",
     "Les poids_surface sont normalises pour sommer a 1 sur la grille."
   ]
 }
