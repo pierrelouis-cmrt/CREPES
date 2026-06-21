@@ -25,6 +25,7 @@ load_monthly_cloud_albedo_from_ceres = albedo_module.load_monthly_cloud_albedo_f
 create_continent_finder = latent_module.create_continent_finder
 continent_finder = latent_module.continent_finder
 
+# Ces constantes restent exposées ici pour les anciens notebooks et scripts.
 RHO_W = capacite_surface.RHO_W
 RHO_BULK = capacite_surface.RHO_BULK
 CP_SEC = capacite_surface.CP_SEC
@@ -41,6 +42,7 @@ def prepare_simulation_inputs(lat_deg, lon_deg, total_days, dt, sigma_q=3.0):
     """
     print("--- Preparation des parametres de simulation ---")
 
+    # Capacité, albédo et flux latent sont préparés une fois avant l'intégration.
     C_const, capacity_source = capacite_surface.compute_surface_capacity(lat_deg, lon_deg)
     print(
         f"Capacite thermique: {C_const:.2e} J m-2 K-1 "
@@ -48,6 +50,7 @@ def prepare_simulation_inputs(lat_deg, lon_deg, total_days, dt, sigma_q=3.0):
     )
 
     monthly_albedo_sol, latitudes, longitudes = load_albedo_series(ALBEDO_DIR)
+    # On reprend simplement la maille la plus proche des données Carcajous.
     lat_idx = lambda lat: int(np.abs(latitudes - lat).argmin())
     lon_idx = lambda lon: int(
         np.abs(longitudes - (((lon + 180) % 360) - 180)).argmin()
@@ -63,6 +66,7 @@ def prepare_simulation_inputs(lat_deg, lon_deg, total_days, dt, sigma_q=3.0):
     sign_daynight = np.empty(step_count)
     lat_rad = np.radians(lat_deg)
 
+    # Le flux latent historique est un flux moyen, modulé ici selon jour/nuit.
     for index in range(step_count):
         t_sec = index * dt
         jour, heure_solaire = get_time_variables(t_sec, lon_deg)

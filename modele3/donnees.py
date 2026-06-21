@@ -19,7 +19,8 @@ DOSSIER_PAQUET_DEFAUT = (
 )
 FICHIER_NPZ_DEFAUT = "donnees_colonnes_5deg_2024.npz"
 EMISSIVITE_SURFACE = physique.EMISSIVITE_SURFACE_CONSTANTE
-ALBEDO_SURFACE_SECOURS = 0.30
+ALBEDO_SURFACE_SECOURS = physique.ALBEDO_SURFACE_SECOURS
+LONGITUDE_CONVENTION = "-180..180"
 
 
 def _float_ou_none(valeur):
@@ -95,6 +96,15 @@ def _indice_plus_proche(valeurs, cible):
     return int(np.nanargmin(np.abs(valeurs - cible)))
 
 
+def _distance_longitude_deg(valeurs, cible):
+    valeurs = np.asarray(valeurs, dtype=float)
+    return np.abs(((valeurs - float(cible) + 180.0) % 360.0) - 180.0)
+
+
+def _indice_longitude_plus_proche(valeurs, cible):
+    return int(np.nanargmin(_distance_longitude_deg(valeurs, cible)))
+
+
 def _extraire_mensuel(tableau, indice_lat, indice_lon, mois=None, jour_annee=None):
     tableau = np.asarray(tableau)
     if tableau.ndim == 2:
@@ -126,7 +136,7 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
     latitudes = donnees["lat_deg"]
     longitudes = donnees["lon_deg"]
     indice_lat = _indice_plus_proche(latitudes, lat)
-    indice_lon = _indice_plus_proche(longitudes, lon)
+    indice_lon = _indice_longitude_plus_proche(longitudes, lon)
     latitude = float(latitudes[indice_lat])
     longitude = float(longitudes[indice_lon])
 
@@ -141,7 +151,23 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
         return _extraire_mensuel(donnees[nom], indice_lat, indice_lon, mois, jour_annee)
 
     pression_surface_hpa = float(mensuel("pression_surface_hpa"))
-    albedo_surface = physique.fraction(mensuel("albedo_surface"), defaut=ALBEDO_SURFACE_SECOURS)
+    snow_ice_fraction = None
+    if "snow_ice_fraction" in donnees:
+        snow_ice_fraction = _float_ou_none(mensuel("snow_ice_fraction"))
+        if snow_ice_fraction is not None:
+            snow_ice_fraction = physique.fraction(snow_ice_fraction)
+    albedo_brut = mensuel("albedo_surface")
+    albedo_surface = physique.albedo_surface_corrige_neige_glace(
+        albedo_brut,
+        snow_ice_fraction,
+    )
+    source_albedo_surface = _source_variable(paquet, "albedo_surface")
+    if (
+        physique.fraction(albedo_brut, defaut=ALBEDO_SURFACE_SECOURS) <= 0.0
+        and snow_ice_fraction is not None
+        and snow_ice_fraction > physique.SEUIL_FRACTION_NEIGE_GLACE_ALBEDO
+    ):
+        source_albedo_surface += " + correction zero neige/glace"
     transmissivite_sw = physique.fraction(mensuel("transmissivite_sw_mensuelle"), defaut=0.0)
     sw_toa_moyen = _float_ou_none(mensuel("sw_toa_moyen_mensuel_w_m2"))
 
@@ -156,7 +182,7 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
         "sw_toa_moyen_mensuel_w_m2": sw_toa_moyen,
         "transmissivite_sw_mensuelle": transmissivite_sw,
         "emissivite_surface": EMISSIVITE_SURFACE,
-        "source_albedo_surface": _source_variable(paquet, "albedo_surface"),
+        "source_albedo_surface": source_albedo_surface,
         "source_transmissivite_sw_mensuelle": _source_variable(
             paquet,
             "transmissivite_sw_mensuelle",
@@ -171,12 +197,24 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
         "skin_temperature_k",
     ):
         if nom in donnees:
-            valeur = _float_ou_none(mensuel(nom))
-            if nom.endswith("fraction"):
-                valeur = None if valeur is None else physique.fraction(valeur)
-            surface[nom] = valeur
+            if nom == "snow_ice_fraction":
+                surface[nom] = snow_ice_fraction
+            else:
+                valeur = _float_ou_none(mensuel(nom))
+                if nom.endswith("fraction"):
+                    valeur = None if valeur is None else physique.fraction(valeur)
+                surface[nom] = valeur
 
     couches = []
+    diagnostics_donnees = {
+        "convention_longitude": paquet["metadata"].get("conventions", {}).get(
+            "longitude_deg",
+            LONGITUDE_CONVENTION,
+        ),
+        "couches_ignorees_incompletes": 0,
+        "couches_ignorees_non_positives": 0,
+        "couches_non_positives_exemples": [],
+    }
     pression_bas = mensuel("pression_bas_couche_hpa")
     pression_haut = mensuel("pression_haut_couche_hpa")
     temperature = mensuel("temperature_couche_k")
@@ -187,7 +225,42 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
     for indice in range(len(pression_haut)):
         p_bas = _float_ou_none(pression_bas[indice])
         p_haut = _float_ou_none(pression_haut[indice])
-        if p_bas is None or p_haut is None or p_bas <= p_haut:
+        temperature_k = _float_ou_none(temperature[indice])
+        humidite_kgkg = _float_ou_none(humidite[indice])
+        masse_air_kg_m2 = _float_ou_none(masse_air[indice])
+        masse_h2o_kg_m2 = _float_ou_none(masse_h2o[indice])
+        if (
+            p_bas is None
+            or p_haut is None
+            or temperature_k is None
+            or humidite_kgkg is None
+            or masse_air_kg_m2 is None
+            or masse_h2o_kg_m2 is None
+        ):
+            diagnostics_donnees["couches_ignorees_incompletes"] += 1
+            continue
+        if p_bas <= p_haut:
+            diagnostics_donnees["couches_ignorees_non_positives"] += 1
+            if len(diagnostics_donnees["couches_non_positives_exemples"]) < 5:
+                diagnostics_donnees["couches_non_positives_exemples"].append(
+                    {
+                        "indice_source": int(indice),
+                        "pression_bas_hpa": p_bas,
+                        "pression_haut_hpa": p_haut,
+                    }
+                )
+            continue
+        if masse_air_kg_m2 <= 0.0:
+            diagnostics_donnees["couches_ignorees_non_positives"] += 1
+            if len(diagnostics_donnees["couches_non_positives_exemples"]) < 5:
+                diagnostics_donnees["couches_non_positives_exemples"].append(
+                    {
+                        "indice_source": int(indice),
+                        "pression_bas_hpa": p_bas,
+                        "pression_haut_hpa": p_haut,
+                        "masse_air_kg_m2": masse_air_kg_m2,
+                    }
+                )
             continue
         couches.append(
             {
@@ -196,10 +269,10 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
                 "pression_haut_hpa": p_haut,
                 "pression_bas_pa": p_bas * 100.0,
                 "pression_haut_pa": p_haut * 100.0,
-                "temperature_k": float(temperature[indice]),
-                "humidite_specifique_kgkg": max(0.0, float(humidite[indice])),
-                "masse_air_kg_m2": max(0.0, float(masse_air[indice])),
-                "masse_h2o_kg_m2": max(0.0, float(masse_h2o[indice])),
+                "temperature_k": temperature_k,
+                "humidite_specifique_kgkg": max(0.0, humidite_kgkg),
+                "masse_air_kg_m2": masse_air_kg_m2,
+                "masse_h2o_kg_m2": max(0.0, masse_h2o_kg_m2),
             }
         )
 
@@ -220,6 +293,7 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
         "surface": surface,
         "couches": couches,
         "validation_flux": validation_flux,
+        "diagnostics_donnees": diagnostics_donnees,
         "source": f"paquet {paquet['npz_path'].name}",
         "indices_grille": {"lat": indice_lat, "lon": indice_lon},
     }

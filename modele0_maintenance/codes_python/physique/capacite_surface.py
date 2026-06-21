@@ -20,6 +20,7 @@ try:
 except ImportError:
     SCIPY_AVAILABLE = False
 
+# Constantes historiques utilisées pour convertir humidité du sol en capacité.
 RHO_W = 1000.0
 RHO_BULK = 2600.0
 CP_SEC = 0.8
@@ -32,6 +33,7 @@ _RZSM_CACHE = None
 
 def compute_cp_from_rzsm(rzsm: np.ndarray) -> np.ndarray:
     """Calcule c_p en kJ kg-1 K-1 depuis l'humidite RZSM."""
+    # Dans ces données, 0.9 sert de convention pratique pour la glace.
     is_ice = np.isclose(rzsm, 0.9)
     rzsm_clipped = np.clip(rzsm, 1e-6, 0.999)
     w = (RHO_W * rzsm_clipped) / (
@@ -56,6 +58,7 @@ def load_and_grid_rzsm_data(csv_path: Path = RZSM_CSV):
     grid_res = 1.0
     lon_bins = np.arange(-180, 180 + grid_res, grid_res)
     lat_bins = np.arange(-90, 90 + grid_res, grid_res)
+    # Les points RZSM épars sont moyennés sur une grille régulière de 1 degré.
     statistic, _, _, _ = binned_statistic_2d(
         x=df["lon"],
         y=df["lat"],
@@ -73,6 +76,7 @@ def _rzsm_value_at(lat_deg, lon_deg, csv_path: Path = RZSM_CSV):
     grid, lat_bins, lon_bins = load_and_grid_rzsm_data(csv_path)
     if grid is None:
         return np.nan
+    # Même logique que pour l'albédo: on prend la maille la plus proche.
     lat_idx = min(np.abs(lat_bins - lat_deg).argmin(), grid.shape[0] - 1)
     lon_idx = min(
         np.abs(lon_bins - (((lon_deg + 180) % 360) - 180)).argmin(),
@@ -88,4 +92,5 @@ def compute_surface_capacity(lat_deg, lon_deg):
         cp_kj = compute_cp_from_rzsm(np.array([rzsm_val]))[0]
         return (cp_kj * 1000.0) * RHO_BULK * EPAISSEUR_ACTIVE, "Carcajous RZSM"
 
+    # Si la donnée locale manque, on garde une surface sèche minimale.
     return (CP_SEC * 1000.0) * RHO_BULK * EPAISSEUR_ACTIVE, "Carcajous CP_SEC fallback"

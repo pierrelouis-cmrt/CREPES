@@ -29,6 +29,10 @@ def tester_sortie_4h_par_defaut_sur_point():
     temperatures = resultat["temperature_surface_k"]
     assert temperatures.shape == (7, 1, 1)
     assert np.isfinite(temperatures).all()
+    assert temperatures.min() > 150.0
+    assert temperatures.max() < 350.0
+    assert np.isfinite(resultat["capacite_surface_j_m2_k"]).all()
+    assert (resultat["capacite_surface_j_m2_k"] > 0.0).all()
     assert resultat["heures"].tolist() == [0.0, 4.0, 8.0, 12.0, 16.0, 20.0, 0.0]
     assert resultat["mois_precalcules"].tolist() == [1]
     assert resultat["metadata"]["modele"] == "modele4_rapide"
@@ -64,4 +68,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

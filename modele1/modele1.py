@@ -26,6 +26,7 @@ CONSTANTE_BOLTZMANN = 1.380649e-23  # J K-1
 # Paramètres du modèle 1
 # =========================
 
+# Valeurs fixes utilisées pour garder ce modèle volontairement simple.
 IRRADIANCE_SOLAIRE = 1360.0  # W m-2, symbole S_0 dans le README
 ALBEDO_SURFACE = 0.30
 FLUX_SOLAIRE_MOYEN_GLOBAL_ABSORBE = (
@@ -59,6 +60,7 @@ class BandeSpectrale:
     absorbance: float
 
 
+# La colonne d'air est découpée en trois couches de même température.
 COUCHES_ATMOSPHERE = (
     CoucheAtmospherique(
         "couche_1",
@@ -83,13 +85,14 @@ COUCHES_ATMOSPHERE = (
     ),
 )
 
+# Chaque bande représente une zone où le CO2 absorbe l'infrarouge.
 BANDES_CO2 = (
     BandeSpectrale("CO2_15um", 14.25, 15.75, 1.0),
     BandeSpectrale("CO2_4_3um", 4.2, 4.35, 3.25),
 )
 
 
-def luminance_spectrale_planck(longueur_onde_m: float, temperature_k: float) -> float: #details par bande d'absorption de sigmaT4 => loi de Planck
+def luminance_spectrale_planck(longueur_onde_m: float, temperature_k: float) -> float:
     """Luminance spectrale de Planck B_lambda par unité d'angle solide."""
 
     exposant = (
@@ -103,7 +106,7 @@ def luminance_spectrale_planck(longueur_onde_m: float, temperature_k: float) -> 
         * VITESSE_LUMIERE**2
         / longueur_onde_m**5
         / (exp(exposant) - 1.0)
-    )# sortie fct = luminance specteale de Planck en W m-3 par angle solide, pour une longueur d'onde et une température données
+    )
 
 
 def flux_bande_corps_noir(
@@ -116,17 +119,18 @@ def flux_bande_corps_noir(
 
     longueur_onde_min_m = longueur_onde_min_um * 1e-6
     longueur_onde_max_m = longueur_onde_max_um * 1e-6
-    pas_m = (longueur_onde_max_m - longueur_onde_min_m) / nombre_pas # pas d'intégration en mètre
+    pas_m = (longueur_onde_max_m - longueur_onde_min_m) / nombre_pas
 
     somme = 0.0
     for indice in range(nombre_pas):
-        longueur_onde_m = longueur_onde_min_m + (indice + 0.5) * pas_m # flux hémisphérique = intégrale de la luminance spectrale de Planck sur les longueurs d'ondes de la bande, multipliée par pi pour intégrer sur les angles solides
-        somme += pi * luminance_spectrale_planck(longueur_onde_m, temperature_k) * pas_m 
+        # On prend le milieu de chaque petit intervalle de longueur d'onde.
+        longueur_onde_m = longueur_onde_min_m + (indice + 0.5) * pas_m
+        somme += pi * luminance_spectrale_planck(longueur_onde_m, temperature_k) * pas_m
 
-    return somme # retourne le flux hémisphérique de corps noir en W m-2 pour une température et une bande spectrale données (ici le flux d'une couche)(appeler plus tard layer_emession)
+    return somme
 
 
-def transmission_depuis_absorbance(absorbance: float) -> float: # fct de transmission à partir de l'absorbance, selon la convention RADIS, prepare pr la formule d'émissivitée
+def transmission_depuis_absorbance(absorbance: float) -> float:
     """Convention RADIS : transmission = exp(-absorbance)."""
 
     return exp(-absorbance)
@@ -135,7 +139,7 @@ def transmission_depuis_absorbance(absorbance: float) -> float: # fct de transmi
 def emissivite_depuis_absorbance(absorbance: float) -> float:
     """À l'équilibre, émissivité = absorptivité = 1 - transmission."""
 
-    return -expm1(-absorbance) # expm1(x) = exp(x) - 1, donc 1 - exp(-absorbance) = 1 - transmission = émissivité
+    return -expm1(-absorbance)
 
 
 def propager_flux_montant(
@@ -144,13 +148,14 @@ def propager_flux_montant(
     transmission: float,
     emissivite: float,
     couches: tuple[CoucheAtmospherique, ...],
-) -> float: #  layers est un tuple (une structure de données immuable et ordonnée en Python)(ici les 3 couches)
+) -> float:
     """Propage un flux IR montant à travers toutes les couches."""
 
     flux = flux_entrant
     for _couche in couches:
+        # À chaque couche, une partie traverse et une partie est réémise.
         flux = transmission * flux + emissivite * emission_couche
-    return flux # retourne le flux montant après avoir traversé toutes les couches
+    return flux
 
 
 def propager_flux_descendant(
@@ -163,14 +168,14 @@ def propager_flux_descendant(
 
     flux = 0.0
     for _couche in reversed(couches):
+        # Même calcul que vers le haut, mais en partant du sommet.
         flux = transmission * flux + emissivite * emission_couche
-    return flux # retourne le flux descendant à la surface après avoir traversé toutes les couches
+    return flux
 
-#ici calcule du bilan des flux de chaque bande avec : la prod du corps noir, l'emissivité de la bande et la transsmission 
 def calculer_flux(
     couches: tuple[CoucheAtmospherique, ...] = COUCHES_ATMOSPHERE,
     bandes: tuple[BandeSpectrale, ...] = BANDES_CO2,
-) -> tuple[float, float]: 
+) -> tuple[float, float]:
     """Retourne l'OLR au sommet et le flux IR descendant à la surface."""
 
     if len(couches) != NOMBRE_COUCHES:
@@ -182,6 +187,7 @@ def calculer_flux(
     flux_descendant_surface = 0.0
 
     for bande in bandes:
+        # On calcule séparément ce que la surface et les couches émettent dans cette bande.
         flux_bande_surface = flux_bande_corps_noir(
             TEMPERATURE_SURFACE_K,
             bande.longueur_onde_min_um,
@@ -196,6 +202,7 @@ def calculer_flux(
         transmission = transmission_depuis_absorbance(bande.absorbance)
         emissivite = emissivite_depuis_absorbance(bande.absorbance)
 
+        # Les bandes absorbantes sont propagées couche par couche.
         flux_bandes_absorbantes_surface += flux_bande_surface
         flux_bandes_absorbantes_sommet += propager_flux_montant(
             flux_bande_surface,
@@ -211,6 +218,7 @@ def calculer_flux(
             couches,
         )
 
+    # Le reste du rayonnement sort directement, sans absorption par le CO2.
     flux_transparent_surface = flux_total_surface - flux_bandes_absorbantes_surface
     flux_sommet_atmosphere = flux_transparent_surface + flux_bandes_absorbantes_sommet
 
@@ -220,6 +228,7 @@ def calculer_flux(
 def principal() -> None:
     flux_sommet_atmosphere, flux_descendant_surface = calculer_flux()
 
+    # Affichage compact pour comparer facilement les sorties du modèle.
     print(
         "flux_infrarouge_sortant_sommet_atmosphere_W_m2 "
         f"= {flux_sommet_atmosphere:.6f}"

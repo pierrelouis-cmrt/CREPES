@@ -2,7 +2,7 @@
 
 Ce module ne lit aucun fichier. Il contient les constantes, la geometrie
 solaire, Planck, les masses colonne et les opacites infrarouges CO2 + H2O.
-Les nuages ne creent pas d'opacite long-onde implicite.
+Les nuages ne creent pas d'opacite longwave implicite.
 """
 
 from __future__ import annotations
@@ -26,6 +26,30 @@ CO2_DEFAUT_PPM = 420.0
 FACTEUR_DIFFUSIF = 1.66
 ECHELLE_OPACITE_CO2 = 0.0327228010
 MASSE_H2O_REFERENCE_KG_M2 = 10.0
+ALBEDO_SURFACE_SECOURS = 0.30
+ALBEDO_NEIGE_GLACE_SECOURS = 0.65
+SEUIL_FRACTION_NEIGE_GLACE_ALBEDO = 0.05
+
+COEFFICIENTS_OPACITE_EFFECTIFS = {
+    "statut": "coefficients effectifs pedagogiques, pas des sections efficaces spectrales",
+    "origine": (
+        "noyau long-onde du modele 2.5 pour CO2; ajout modele 3 pour H2O "
+        "a partir des masses colonne ERA5"
+    ),
+    "cible_co2": "ordre de grandeur du forcage relatif 280 -> 560 ppm conserve du modele 2.5",
+    "unite_a_co2": (
+        "profondeur optique effective sans dimension pour CO2=280 ppm "
+        "et delta_p=101325 Pa"
+    ),
+    "unite_a_h2o": (
+        "profondeur optique effective sans dimension pour "
+        f"{MASSE_H2O_REFERENCE_KG_M2:g} kg m-2 de vapeur d'eau"
+    ),
+    "limites": (
+        "valable pour comparer des colonnes pedagogiques CO2 + H2O; ne remplace pas "
+        "HITRAN, correlated-k, ni une dependance fine en temperature/pression"
+    ),
+}
 
 PRESSION_BORDS_REFERENCE_HPA = [
     850.0,
@@ -155,6 +179,24 @@ def fraction(valeur, defaut=0.0, maximum=1.0):
     if valeur is None:
         valeur = defaut
     return borner(valeur, 0.0, maximum)
+
+
+def albedo_surface_corrige_neige_glace(albedo_surface, snow_ice_fraction=None):
+    """Corrige le cas source non observable: albedo nul sur neige/glace.
+
+    Les CSV historiques viennent d'un rapport SW_UP/SW_DOWN. En nuit polaire,
+    le rapport peut produire 0 alors que l'albedo physique d'une surface
+    neigeuse ou glacee reste eleve. La correction reste limitee aux mailles ou
+    la fraction neige/glace est explicitement non nulle.
+    """
+
+    albedo = fraction(albedo_surface, defaut=ALBEDO_SURFACE_SECOURS)
+    neige_glace = fraction(snow_ice_fraction, defaut=0.0)
+    if albedo > 0.0 or neige_glace <= SEUIL_FRACTION_NEIGE_GLACE_ALBEDO:
+        return albedo
+    return ALBEDO_SURFACE_SECOURS + neige_glace * (
+        ALBEDO_NEIGE_GLACE_SECOURS - ALBEDO_SURFACE_SECOURS
+    )
 
 
 def mois_depuis_jour_annee(jour_annee):
@@ -295,6 +337,7 @@ def flux_lw_surface(temperature_surface_k, emissivite_surface=EMISSIVITE_SURFACE
 
 
 def tau_co2(couche, bande):
+    # Le CO2 depend de la concentration et de l'epaisseur de la couche.
     return (
         bande["a_co2"]
         * (couche["co2_ppm"] / CO2_REFERENCE_PPM)
@@ -303,6 +346,7 @@ def tau_co2(couche, bande):
 
 
 def tau_h2o(couche, bande):
+    # La vapeur d'eau depend surtout de la masse d'eau presente dans la colonne.
     return bande["a_h2o"] * (couche["masse_h2o_kg_m2"] / MASSE_H2O_REFERENCE_KG_M2)
 
 
@@ -313,6 +357,7 @@ def transmission_depuis_tau(tau_total):
 def opacites_couche_bande(couche, bande):
     opacite_co2 = tau_co2(couche, bande)
     opacite_h2o = tau_h2o(couche, bande)
+    # Les deux opacites sont additionnees avant de calculer la transmission.
     tau_total = opacite_co2 + opacite_h2o
     transmission = transmission_depuis_tau(tau_total)
     return {

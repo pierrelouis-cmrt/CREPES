@@ -111,6 +111,7 @@ class BandeSpectrale:
 
 
 BANDES_CO2_BASE = (
+    # Les bandes sont separees en coeur et ailes pour garder une opacite simple.
     # Bande de flexion v2 autour de 15 um : coeur tres opaque + ailes actives.
     BandeSpectrale("CO2_15um_aile_gauche_externe", 13.00, 14.00, 0.32, "15 um", "aile"),
     BandeSpectrale("CO2_15um_aile_gauche_interne", 14.00, 14.60, 3.50, "15 um", "aile"),
@@ -217,6 +218,7 @@ def co2_moyen_ppm_par_couche(
 
     pressions_pa = profil["pression_pa"]
     co2_ppm = profil["co2_ppm"]
+    # La masse d'air d'une tranche suit surtout la difference de pression.
     poids_delta_p = pressions_pa[:-1] - pressions_pa[1:]
     co2_milieu_ppm = 0.5 * (co2_ppm[:-1] + co2_ppm[1:])
     return float(np.sum(co2_milieu_ppm * poids_delta_p) / np.sum(poids_delta_p))
@@ -237,6 +239,7 @@ def creer_couches_atmospheriques(
         zip(pressions_bords_pa[:-1], pressions_bords_pa[1:]),
         start=1,
     ):
+        # Chaque paire de pressions devient une couche du bas vers le sommet.
         altitude_bas_m = altitude_depuis_pression(float(pression_bas_pa))
         altitude_haut_m = altitude_depuis_pression(float(pression_haut_pa))
         temperature_moyenne_k = temperature_moyenne_altitude(
@@ -304,6 +307,7 @@ def propager_flux_montant(
 
     flux = flux_surface_bande
     for couche in couches:
+        # A chaque couche, une part traverse et le reste est remplace par son emission.
         tau = calculer_profondeur_optique(couche, bande)
         transmission = transmission_depuis_tau(tau, facteur_diffusif)
         emissivite = emissivite_depuis_transmission(transmission)
@@ -326,6 +330,7 @@ def propager_flux_descendant(
 
     flux = 0.0
     for couche in reversed(couches):
+        # Meme bilan que vers le haut, mais en repartant du sommet de l'atmosphere.
         tau = calculer_profondeur_optique(couche, bande)
         transmission = transmission_depuis_tau(tau, facteur_diffusif)
         emissivite = emissivite_depuis_transmission(transmission)

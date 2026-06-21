@@ -127,6 +127,26 @@ Cette partie remplace l'ancien court-onde simplifie. Il n'y a plus de mode
 court-onde alternatif dans le modele 3, et il n'y a plus d'albedo nuageux
 effectif multiplie explicitement dans la formule.
 
+### Albedo neige/glace en nuit polaire
+
+Les CSV d'albedo herites du modele 0 viennent d'un rapport mensuel
+`SW_UP / SW_DOWN`. Lorsque `SW_DOWN` est nul ou quasi nul pendant la nuit
+polaire, l'albedo n'est pas observable par ce rapport. Les CSV peuvent alors
+porter `0`, ce qui serait physiquement faux pour une maille neigeuse ou glacee
+et peut contaminer une interpolation journaliere autour des mois polaires.
+
+Le modele 3 garde une correction limitee au paquet de donnees :
+
+```text
+si albedo_surface == 0 et snow_ice_fraction > 0.05 :
+    albedo_surface =
+        0.30 + snow_ice_fraction * (0.65 - 0.30)
+```
+
+`0.30` est le repli de surface general deja utilise par le modele. `0.65`
+represente une surface dominee par neige/glace a l'echelle pedagogique du
+modele. La correction n'est pas appliquee aux surfaces sans neige/glace.
+
 ## Long-onde
 
 La surface emet selon Stefan-Boltzmann :
@@ -154,6 +174,37 @@ tau_total = tau_CO2 + tau_H2O
 transmission = exp(-1.66 * tau_total)
 emissivite_couche = 1 - transmission
 ```
+
+### Sections efficaces implicites
+
+Le modele ne stocke pas de section efficace spectrale explicite
+`sigma(lambda, T, p)`. Dans un calcul spectroscopique complet, la profondeur
+optique serait de la forme :
+
+```text
+tau_lambda = integrale(n_gaz * sigma_lambda(T, p) * ds)
+```
+
+Ici cette physique est condensee dans les coefficients de bande `a_CO2_bande`
+et `a_H2O_bande`. Ces coefficients donnent directement une profondeur optique
+effective pour une colonne de reference, puis le modele la remet a l'echelle
+avec la concentration de CO2, l'epaisseur de pression ou la masse de vapeur
+d'eau. La section efficace est donc implicite dans `a_bande` ; ce n'est pas une
+surface moleculaire unique, ni une grandeur a extrapoler hors du domaine de
+calibration du modele.
+
+Les unites et references internes sont :
+
+| Coefficient | Unite dans le modele | Origine projet | Cible / role |
+| --- | --- | --- | --- |
+| `a_CO2_bande` | profondeur optique effective sans dimension pour `CO2 = 280 ppm` et `delta_p = 101325 Pa` | noyau long-onde du modele 2.5, repris dans le modele 3 | conserver l'ordre de grandeur pedagogique du forcage relatif `280 -> 560 ppm` |
+| `a_H2O_bande` | profondeur optique effective sans dimension pour `10 kg m-2` de vapeur d'eau | ajout modele 3 branche sur les masses H2O issues d'ERA5 | representer les grandes bandes H2O : 6.3 um, fenetre 8-13 um, far-IR |
+
+Dans `physique.py`, `ECHELLE_OPACITE_CO2 = 0.0327228010` est donc un facteur
+d'echelle effectif du noyau CO2, pas une section efficace. De meme, les valeurs
+H2O `25.60`, `0.48` et `14.40` fixent des profondeurs optiques de grandes
+bandes pour une masse colonne de reference ; elles ne codent pas des raies
+spectrales individuelles.
 
 Le facteur diffusif herite du noyau precedent reste :
 

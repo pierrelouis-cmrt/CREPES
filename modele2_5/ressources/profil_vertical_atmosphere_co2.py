@@ -32,11 +32,13 @@ def calculer_profil(
         pression_surface_pa,
         temperature_surface_k,
     )
+    # Le CO2 suit ici un profil simple : valeur de surface plus gradient lineaire.
     co2_ppm = co2_surface_ppm + gradient_ppm_par_km * altitude_m / 1000.0
     if np.any(co2_ppm <= 0.0):
         raise ValueError("Le profil de CO2 devient nul ou negatif.")
 
     fraction_molaire_co2 = co2_ppm * 1e-6
+    # La concentration en molecules vient de p = n kB T sur la pression partielle.
     return {
         "altitude_km": altitude_m / 1000.0,
         "temperature_k": temperature_k,

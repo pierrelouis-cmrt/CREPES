@@ -12,6 +12,8 @@ Projet Climat, Groupe D, 2026
 | `modele2_5/`           | Itération du modèle 2 : 10 couches en pression, profil standard, bandes CO2 découpées et tests. |
 | `modele3/`             | Colonne radiative finale pour le modèle 4, avec paquet `.npz` compact et provenances explicites. |
 | `modele4/`             | Grille de température de surface couplée au modèle 3 et aux termes de surface du modèle 0.       |
+| `modele5/`             | Grille modèle 4 rapide avec échanges radiatifs horizontaux entre colonnes voisines.              |
+| `planisphere.py`       | Visualisation racine des sorties `.npz` des modèles 4 et 5.                                      |
 
 ## Résumé rapide des modèles
 
@@ -40,7 +42,7 @@ Ajouts par rapport au modèle 2 :
 
 - 10 couches en niveaux de pression.
 - Profil de température standard 1976.
-- Découpage CO2 en sous-bandes coeur/ailes.
+- Découpage CO2 en sous-bandes cœur/ailes.
 - Facteur diffusif `D = 1,66`.
 - Calibration sur le forçage `280 -> 560 ppm`.
 - Tests numériques séparés.
@@ -57,9 +59,9 @@ Ajouts/corrections par rapport au modèle 2.5 :
 - Opacité H2O effective additionnée à l'opacité CO2 avant transmission.
 - Émissivité constante `0.98`.
 - Albédo de surface lu depuis `ressources/albedo/albedo01.csv` à `albedo12.csv`.
-- Transmissivité court-onde mensuelle :
+- Transmissivité shortwave mensuelle :
   `ERA5 SW_down / moyenne_mensuelle(S0 * max(cos(i), 0))`.
-- Suppression des corrections nuageuses arbitraires court-onde et long-onde.
+- Suppression des corrections nuageuses arbitraires shortwave et longwave.
 - Le code 3 lit les copies racine dans `ressources/albedo/`, pas
   `modele0_maintenance/`.
 
@@ -74,6 +76,22 @@ Première grille de surface couplée :
 - Capacité thermique, flux latent et convection repris/clarifiés depuis le
   modèle 0.
 - Intégration temporelle Backward Euler.
+- Modèle de surface pédagogique forcé par les flux du modèle 3 : pas de
+  circulation, pas d'océan dynamique, pas de modèle climatique complet.
+
+### Modèle 5
+
+Ajouts par rapport au modèle 4 rapide :
+
+- Échanges radiatifs horizontaux infrarouges entre colonnes voisines.
+- Échange calculé couche par couche et bande par bande avec les opacités CO2 +
+  H2O du modèle 3.
+- Géométrie sphérique des mailles et conservation de la puissance échangée aux
+  interfaces.
+- Terme `Q_horizontal` ajouté au bilan de surface.
+- Paramètre `--facteur-horizontal` pour isoler l'effet du couplage horizontal.
+- Paramètre `--couplage-couches` pour relier une anomalie de surface à
+  l'émission latérale des couches.
 
 ## Modèle 0
 
@@ -159,7 +177,7 @@ Documentation détaillée :
 
 ## Modèle 4
 
-Lancer la sortie mensuelle globale par défaut :
+Lancer le diagnostic mensuel global par défaut :
 
 ```bash
 ./.venv/bin/python -m modele4.modele4
@@ -188,3 +206,46 @@ Documentation détaillée :
 
 - `modele4/README.md`
 - `modele4/THEORIE.md`
+
+## Modèle 5
+
+Lancer le modèle couplé horizontal, sortie toutes les 4 heures par défaut :
+
+```bash
+./.venv/bin/python -m modele5.modele5
+```
+
+Lancer une petite grille de développement :
+
+```bash
+./.venv/bin/python -m modele5.modele5 --jours 1 --max-latitudes 4 --max-longitudes 8 --output modele5/sorties/simulation_dev.npz
+```
+
+Comparer au modèle 4 rapide sans échange horizontal :
+
+```bash
+./.venv/bin/python -m modele5.modele5 --facteur-horizontal 0 --output modele5/sorties/simulation_sans_horizontal.npz
+```
+
+Lancer les tests :
+
+```bash
+./.venv/bin/python modele5/tests/tester_modele5.py
+```
+
+Documentation détaillée :
+
+- `modele5/README.md`
+
+## Visualisation
+
+Afficher une sortie `.npz` des modèles 4 ou 5 depuis la racine :
+
+```bash
+./.venv/bin/python planisphere.py
+```
+
+Sans argument, le script propose les fichiers présents dans `modele4/sorties/`
+et `modele5/sorties/`. L'ancien chemin
+`modele4/visualisation/planisphere.py` reste utilisable et délègue au script
+racine.

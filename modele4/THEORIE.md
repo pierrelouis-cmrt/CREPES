@@ -89,10 +89,17 @@ C = cp * rho_bulk * e
 avec :
 
 - `rho_bulk = 2600 kg m-3` ;
+- `rho_w = 1000 kg m-3` ;
+- `rho_ice = 917 kg m-3` ;
 - `e = 0.5 m` ;
 - `cp_sec = 0.8 kJ kg-1 K-1` ;
 - `cp_water = 4.187 kJ kg-1 K-1` ;
 - `cp_ice = 2.09 kJ kg-1 K-1`.
+
+Provenance : `rho_w`, `rho_bulk`, `e`, `cp_sec`, `cp_water` et `cp_ice`
+sont repris de `modele0_maintenance/codes_python/physique/capacite_surface.py`.
+La valeur `rho_ice = 917 kg m-3` est la densite usuelle de la glace pure,
+ajoutee ici pour ne pas traiter les cellules glace/neige comme du sol humide.
 
 Quand l'humidite RZSM etait disponible, le modele 0 calculait d'abord une
 capacite calorifique effective :
@@ -105,18 +112,38 @@ C = cp * rho_bulk * e
 
 Le paquet compact actuel ne contient pas RZSM. Le modele 4 charge donc par
 defaut le CSV RZSM conserve dans `modele0_maintenance/`, le regrille a 1 degre
-comme le modele 0, puis prend la valeur locale la plus proche. Quand RZSM est
-disponible, la capacite est directement :
+comme le modele 0, puis prend la valeur locale la plus proche.
+
+Dans le modele 4, cette capacite RZSM est appliquee a la fraction de terre non
+enneigee/glacee. Les fractions `land_fraction` et `snow_ice_fraction` viennent
+du paquet modele 3. La capacite finale reste volontairement simple :
 
 ```text
-C_surface = C_RZSM
+C_surface =
+    f_glace_neige * C_glace_neige
+  + (1 - f_glace_neige) * f_terre * C_terre
+  + (1 - f_glace_neige) * (1 - f_terre) * C_ocean
 ```
 
-Les constantes ne servent qu'en fallback si la source RZSM ou la valeur locale
-manque :
+avec :
 
 ```text
-C_surface = cp_sec * rho_bulk * e
+C_terre = C_RZSM si RZSM est fini, sinon cp_sec * rho_bulk * 0.5 m
+C_ocean = cp_water * rho_w * 1 m
+C_glace_neige = cp_ice * rho_ice * 1 m
+```
+
+L'epaisseur active `1 m` pour l'ocean et la glace/neige est un choix d'ordre de
+grandeur pedagogique. Elle donne a l'eau et a la glace une inertie de surface
+plus plausible qu'un fallback de sol sec, sans pretendre representer une couche
+melangee oceanique ni la diffusion verticale complete. Le modele reste local :
+ce parametre sert seulement a stabiliser et hierarchiser la reponse thermique.
+
+Le fallback sec ne concerne donc plus l'ocean : il sert seulement pour la part
+terrestre quand la source RZSM ou la valeur locale manque.
+
+```text
+C_sec = cp_sec * rho_bulk * e
 ```
 
 ## Chaleur latente
@@ -243,10 +270,49 @@ d(LW_up_surface)/dT = 4 * emissivite_surface * sigma * T^3
 
 et une derivee numerique pour la convection.
 
-## Moteur rapide
+## Deux moteurs de calcul
+
+Le modele 4 existe sous deux moteurs :
+
+- `modele4.py`, appele ici moteur classique ;
+- `rapide.py`, appele ici moteur rapide.
+
+Ils partagent la meme variable prognostique `T_surface` et le meme bilan
+d'energie de surface. La difference importante n'est donc pas l'equation
+globale, mais la maniere dont les flux radiatifs sont recalcules pendant la
+simulation.
+
+### Moteur classique : reference locale
+
+Le moteur classique appelle la colonne radiative du modele 3 dans la boucle de
+calcul. En mode temporel, pour chaque cellule et chaque pas de temps, il
+reconstruit une colonne locale et demande au modele 3 les flux de surface avec
+la temperature de surface courante.
+
+Techniquement, il utilise :
+
+- une boucle explicite sur les latitudes et longitudes selectionnees ;
+- un appel au modele 3 pour la cellule traitee ;
+- un schema implicite Backward Euler ;
+- des iterations de Newton pour trouver `T_surface(t + dt)`.
+
+Physiquement, cela signifie que le couplage radiatif local est le plus direct
+possible dans cette V1. Les flux utilises dans le bilan sont ceux de la colonne
+locale au moment du calcul. Ce moteur sert donc de reference pour :
+
+- tester une cellule ;
+- tester une petite grille ;
+- comparer une modification du modele ;
+- mesurer l'ecart introduit par le moteur rapide.
+
+Il n'est pas pour autant un modele climatique complet. Les cellules restent
+independantes et les profils atmospheriques du paquet compact ne sont pas
+reconstruits dynamiquement par une circulation globale.
+
+### Moteur rapide : approximation vectorisee
 
 Le moteur rapide conserve la meme equation de bilan, mais change
-l'organisation du calcul.
+l'organisation physique et numerique du calcul.
 
 Le moteur complet appelle une colonne du modele 3 dans la boucle temporelle. Le
 moteur rapide appelle le modele 3 seulement en phase de pre-calcul mensuel pour
@@ -261,6 +327,10 @@ Q_latent[mois, lat, lon]
 C_surface[mois, lat, lon]
 ```
 
+Ces champs mensuels sont ensuite consideres fixes pendant les pas de temps du
+mois correspondant. Le moteur rapide ne redemande donc pas au modele 3 comment
+la colonne radiative reagit a chaque nouvelle temperature de surface.
+
 Pendant la boucle temporelle, le moteur rapide calcule directement :
 
 ```text
@@ -274,6 +344,16 @@ LW_up_surface(T) =
 ```
 
 Puis il met a jour toute la grille en une seule operation `numpy`.
+
+Physiquement, les consequences sont les suivantes :
+
+- le cycle jour/nuit du court-onde est conserve par `cos(i(t))` ;
+- l'attenuation court-onde reste mensuelle via `tau_SW_mensuel` ;
+- le long-onde descendant reste celui pre-calcule pour le mois ;
+- le long-onde montant suit bien `T_surface(t)` via `sigma T^4` ;
+- la convection suit aussi `T_surface(t)` ;
+- la reponse complete de la colonne atmospherique au changement de surface
+  n'est pas recalculee a chaque pas.
 
 Pour eviter une boucle de Newton par cellule, la mise a jour rapide utilise une
 linearisation semi-implicite :
@@ -291,6 +371,15 @@ D = d(LW_up_surface)/dT + h_convection
 Ce schema garde le refroidissement thermique principal stabilise sans rendre le
 code difficile a lire. C'est une approximation du moteur complet, pas un
 remplacement exact colonne par colonne.
+
+### Regle d'usage
+
+Le moteur rapide est le moteur de travail courant : il est adapte aux grilles
+globales, aux tests de parametres et aux simulations longues.
+
+Le moteur classique est le moteur de reference : il est adapte aux petites
+grilles et aux validations, parce qu'il garde le recalcul radiatif local dans la
+boucle de calcul.
 
 ## Donnees d'entree
 

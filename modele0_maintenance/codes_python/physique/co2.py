@@ -120,6 +120,7 @@ from radis.misc.warning import LinestrengthCutoffWarning
 
 
 
+# Fichier exploratoire historique: RADIS est appelé dès l'import du module.
 def make_cross_section_CO2_all_bands():
     warnings.filterwarnings("ignore", category=LinestrengthCutoffWarning)
     #d'après:  https://acces.ens-lyon.fr/acces/thematiques/CCCIC/ressources/irspco2
@@ -153,6 +154,7 @@ def make_cross_section_CO2_all_bands():
     return interp1d(wavelengths[sort_idx], sigmas[sort_idx],
                     kind="linear", bounds_error=False, fill_value=0.0)
 
+# Section efficace interpolée sur les bandes CO2 utiles au transfert radiatif.
 cross_section_CO2 = make_cross_section_CO2_all_bands()
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -179,6 +181,7 @@ def simulate_radiative_transfer(CO2_fraction, z_max = 80000, delta_z = 10, lambd
     #print(f"Total earth surface flux in wavelength range: {earth_flux.sum():.2f} W/m^2")
 
     flux_in = earth_flux
+    # On empile les couches: chaque sortie devient l'entrée de la couche suivante.
     for i, z in enumerate(z_range):
         # Pour chaque couche de l'atmosphère :
         # Densité de molécules de CO2
@@ -211,7 +214,6 @@ def simulate_radiative_transfer(CO2_fraction, z_max = 80000, delta_z = 10, lambd
 
     return lambda_range, z_range, upward_flux, optical_thickness, earth_flux
 
-<<<<<<< Updated upstream
 def plot_temperature_altitude(z_max=80000, delta_z=100):
     z_range = np.arange(0, z_max + delta_z, delta_z)
     temperatures = temperature(z_range)
@@ -228,16 +230,3 @@ if __name__ == "__main__":
     print(simulate_radiative_transfer(0.00042))
     plot_temperature_altitude()
     plt.show()
-=======
-
-
-
-
-CO2_fraction = 420e-6  # 420 ppm, concentration actuelle
-
-lambda_range, z_range, upward_flux, optical_thickness, earth_flux = simulate_radiative_transfer(CO2_fraction)
-
-print(f"Flux surface    : {earth_flux.sum():.2f} W/m²")
-print(f"Flux sortant TOA: {upward_flux[-1,:].sum():.2f} W/m²")
-print(f"Effet de serre  : {earth_flux.sum() - upward_flux[-1,:].sum():.2f} W/m²")
->>>>>>> Stashed changes

@@ -52,6 +52,7 @@ def calibrer_echelle(cible_w_m2: float, tolerance_w_m2: float) -> tuple[float, f
     bas = 0.0
     haut = 1.0
     forcage_haut = forcage_pour_echelle(haut)
+    # On agrandit d'abord l'intervalle jusqu'a encadrer la cible.
     while forcage_haut < cible_w_m2:
         haut *= 2.0
         forcage_haut = forcage_pour_echelle(haut)
@@ -60,6 +61,7 @@ def calibrer_echelle(cible_w_m2: float, tolerance_w_m2: float) -> tuple[float, f
 
     meilleur = haut
     meilleur_forcage = forcage_haut
+    # La dichotomie ajuste ensuite seulement le facteur multiplicatif.
     for _ in range(80):
         milieu = 0.5 * (bas + haut)
         forcage = forcage_pour_echelle(milieu)
@@ -106,6 +108,7 @@ def main() -> None:
     print()
     print("contributions_diagnostic")
     print("selection, forcage_280_560_ppm_W_m2")
+    # Ces selections montrent quelles familles de bandes portent le forcage.
     selections = {
         "toutes_sous_bandes": bandes,
         "15_um_total": filtrer_bandes(bandes, famille="15 um"),

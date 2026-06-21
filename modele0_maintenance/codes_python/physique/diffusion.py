@@ -13,6 +13,7 @@ _T_STATE_BY_CELL = {}
 
 
 def _cell_key(lat, lon):
+    # Les coordonnées sont arrondies pour éviter des clés presque identiques.
     return (round(float(lat), 4), round(float(lon), 4))
 
 
@@ -33,6 +34,7 @@ def puissance_cond(T_surf, temps, lat, long):
     deep_temperature = 288
 
     dx = depth / (node_count - 1)
+    # Pas de temps choisi pour garder le schéma explicite stable.
     dt = 0.25 * dx**2 / diffusion_coeff
     steps = int(np.ceil(temps / dt))
     key = _cell_key(lat, long)
@@ -42,6 +44,7 @@ def puissance_cond(T_surf, temps, lat, long):
     else:
         profile = _T_STATE_BY_CELL[key].copy()
 
+    # Le bas reste au réservoir profond; la surface suit T_surf.
     profile[0], profile[-1] = deep_temperature, T_surf
     flux = np.zeros(steps + 1)
     flux[0] = -conductivity * (profile[1] - profile[0]) / dx
@@ -59,5 +62,5 @@ def puissance_cond(T_surf, temps, lat, long):
         flux[step] = -conductivity * (profile[1] - profile[0]) / dx
 
     _T_STATE_BY_CELL[key] = profile.copy()
+    # On renvoie le flux moyen sur l'intervalle demandé.
     return flux.mean()
-
