@@ -82,6 +82,22 @@ def tester_nuages_lw_absents_des_opacites():
     assert diagnostic["tau_total"] == diagnostic["tau_co2"] + diagnostic["tau_h2o"]
 
 
+def tester_coefficients_opacite_effectifs_documentes():
+    description = physique.COEFFICIENTS_OPACITE_EFFECTIFS
+    assert "effectifs" in description["statut"]
+    assert "280 -> 560 ppm" in description["cible_co2"]
+    assert "101325 Pa" in description["unite_a_co2"]
+    assert "10 kg m-2" in description["unite_a_h2o"]
+    assert "HITRAN" in description["limites"]
+
+
+def tester_albedo_zero_neige_glace_corrige():
+    assert abs(physique.albedo_surface_corrige_neige_glace(0.0, 1.0) - 0.65) < 1e-12
+    assert physique.albedo_surface_corrige_neige_glace(0.0, 0.0) == 0.0
+    mixte = physique.albedo_surface_corrige_neige_glace(0.0, 0.5)
+    assert 0.30 < mixte < 0.65
+
+
 def tester_paquet_grille_chargeable_et_final():
     paquet = charger_paquet_grille()
     metadata = paquet["metadata"]
@@ -92,6 +108,12 @@ def tester_paquet_grille_chargeable_et_final():
     assert abs(float(paquet["donnees"]["poids_surface"].sum()) - 1.0) < 1e-6
     transmissivite = paquet["donnees"]["transmissivite_sw_mensuelle"]
     assert 0.0 <= float(transmissivite.min()) <= float(transmissivite.max()) <= 1.0
+    albedo = paquet["donnees"]["albedo_surface"]
+    neige_glace = paquet["donnees"]["snow_ice_fraction"]
+    zeros_neige_glace = (albedo <= 0.0) & (
+        neige_glace > physique.SEUIL_FRACTION_NEIGE_GLACE_ALBEDO
+    )
+    assert not zeros_neige_glace.any()
 
 
 def tester_colonne_depuis_paquet():
@@ -126,6 +148,8 @@ def main():
     tester_court_onde_unique_transmissivite()
     tester_emissivite_constante()
     tester_nuages_lw_absents_des_opacites()
+    tester_coefficients_opacite_effectifs_documentes()
+    tester_albedo_zero_neige_glace_corrige()
     tester_paquet_grille_chargeable_et_final()
     tester_colonne_depuis_paquet()
     tester_appel_en_boucle_sur_plusieurs_colonnes()

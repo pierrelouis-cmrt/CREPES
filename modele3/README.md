@@ -70,6 +70,23 @@ transmission = exp(-1.66 * tau_total)
 
 Il n'y a pas de mode court-onde alternatif ni de coefficient nuageux radiatif.
 
+Les coefficients CO2/H2O utilises dans `physique.py` sont des coefficients
+effectifs de profondeur optique, pas des constantes spectroscopiques. Leur
+unite est sans dimension :
+
+- `a_CO2` vaut pour une colonne de reference `CO2 = 280 ppm` et
+  `delta_p = 101325 Pa`, puis il est remis a l'echelle par `CO2_ppm / 280` et
+  `delta_p / 101325`.
+- `a_H2O` vaut pour `10 kg m-2` de vapeur d'eau, puis il est remis a l'echelle
+  par la masse de vapeur d'eau ERA5 de la couche.
+- La cible CO2 conserve l'ordre de grandeur pedagogique du doublement
+  `280 -> 560 ppm` herite du modele 2.5. Les coefficients H2O ajoutent une
+  opacite simple par grandes bandes, sans raies fines.
+
+Ces nombres ne remplacent pas HITRAN, correlated-k ou une dependance fine en
+temperature/pression ; ils servent a garder un noyau CO2 + H2O clair et
+defendable pour le projet.
+
 ## Donnees
 
 Le paquet compact versionne est dans :
@@ -81,6 +98,12 @@ modele3/ressources/donnees_precalculees/grille_5deg_2024/
 Il contient la grille globale 5 degres, les champs surface utiles, les couches
 verticales pretraitees, les flux ERA5 de validation, l'albedo de surface et la
 transmissivite court-onde mensuelle.
+
+Les CSV historiques d'albedo viennent d'un rapport de flux solaire
+`SW_UP / SW_DOWN`. En nuit polaire, ce rapport peut donner `0` alors que la
+surface neige/glace reste reflechissante. Le paquet corrige donc uniquement les
+mailles `albedo_surface == 0` avec `snow_ice_fraction > 0.05`, par un melange
+simple entre l'albedo de secours `0.30` et une valeur neige/glace `0.65`.
 
 Regenerer le paquet :
 

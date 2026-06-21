@@ -122,7 +122,10 @@ def calculer_flux_court_onde(surface, jour_annee, heure_solaire, moyenne_journal
             heure_solaire,
         )
 
-    albedo_surface = physique.fraction(surface.get("albedo_surface"), defaut=0.30)
+    albedo_surface = physique.albedo_surface_corrige_neige_glace(
+        surface.get("albedo_surface"),
+        surface.get("snow_ice_fraction"),
+    )
     transmissivite_sw = physique.fraction(surface["transmissivite_sw_mensuelle"], defaut=0.0)
     sw_down_surface = sw_toa_local * transmissivite_sw
     sw_absorbe_surface = sw_down_surface * (1.0 - albedo_surface)

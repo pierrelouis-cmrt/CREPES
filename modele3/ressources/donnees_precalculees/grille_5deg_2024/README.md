@@ -17,11 +17,14 @@ est la source normale du calcul 3 et l'entree grille du modele 4.
 | Surface | ERA5 single levels, `ressources/**/*.nc` | Selection au plus proche sur grille 5 degres. |
 | Flux de validation | ERA5 flux moyens | Stockes pour comparaison, jamais pour recalibrer. |
 | Transmissivite SW | Geometrie solaire 3 + ERA5 `avg_sdswrf` | `ERA5 SW_down / moyenne_mensuelle(S0*cos(i))`, borne `[0, 1]`. |
-| Albedo surface | `ressources/albedo/albedo01.csv` ... `albedo12.csv` | Selection mensuelle au plus proche. |
+| Albedo surface | `ressources/albedo/albedo01.csv` ... `albedo12.csv` | Selection mensuelle au plus proche, puis correction des zeros sur neige/glace. |
 
 Les fichiers `ressources/albedo/*` sont des copies racine des donnees utiles
 historiquement presentes dans le modele 0. Le code 3 ne lit pas le dossier
-`modele0_maintenance/`.
+`modele0_maintenance/`. Les valeurs d'albedo nulles sur des mailles
+neige/glace viennent surtout de mois polaires ou le rapport source
+`SW_UP / SW_DOWN` n'est pas observable ; elles sont remplacees par un melange
+simple entre `0.30` et `0.65` selon la fraction neige/glace.
 
 ## Contenu
 
