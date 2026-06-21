@@ -89,10 +89,17 @@ C = cp * rho_bulk * e
 avec :
 
 - `rho_bulk = 2600 kg m-3` ;
+- `rho_w = 1000 kg m-3` ;
+- `rho_ice = 917 kg m-3` ;
 - `e = 0.5 m` ;
 - `cp_sec = 0.8 kJ kg-1 K-1` ;
 - `cp_water = 4.187 kJ kg-1 K-1` ;
 - `cp_ice = 2.09 kJ kg-1 K-1`.
+
+Provenance : `rho_w`, `rho_bulk`, `e`, `cp_sec`, `cp_water` et `cp_ice`
+sont repris de `modele0_maintenance/codes_python/physique/capacite_surface.py`.
+La valeur `rho_ice = 917 kg m-3` est la densite usuelle de la glace pure,
+ajoutee ici pour ne pas traiter les cellules glace/neige comme du sol humide.
 
 Quand l'humidite RZSM etait disponible, le modele 0 calculait d'abord une
 capacite calorifique effective :
@@ -105,18 +112,38 @@ C = cp * rho_bulk * e
 
 Le paquet compact actuel ne contient pas RZSM. Le modele 4 charge donc par
 defaut le CSV RZSM conserve dans `modele0_maintenance/`, le regrille a 1 degre
-comme le modele 0, puis prend la valeur locale la plus proche. Quand RZSM est
-disponible, la capacite est directement :
+comme le modele 0, puis prend la valeur locale la plus proche.
+
+Dans le modele 4, cette capacite RZSM est appliquee a la fraction de terre non
+enneigee/glacee. Les fractions `land_fraction` et `snow_ice_fraction` viennent
+du paquet modele 3. La capacite finale reste volontairement simple :
 
 ```text
-C_surface = C_RZSM
+C_surface =
+    f_glace_neige * C_glace_neige
+  + (1 - f_glace_neige) * f_terre * C_terre
+  + (1 - f_glace_neige) * (1 - f_terre) * C_ocean
 ```
 
-Les constantes ne servent qu'en fallback si la source RZSM ou la valeur locale
-manque :
+avec :
 
 ```text
-C_surface = cp_sec * rho_bulk * e
+C_terre = C_RZSM si RZSM est fini, sinon cp_sec * rho_bulk * 0.5 m
+C_ocean = cp_water * rho_w * 1 m
+C_glace_neige = cp_ice * rho_ice * 1 m
+```
+
+L'epaisseur active `1 m` pour l'ocean et la glace/neige est un choix d'ordre de
+grandeur pedagogique. Elle donne a l'eau et a la glace une inertie de surface
+plus plausible qu'un fallback de sol sec, sans pretendre representer une couche
+melangee oceanique ni la diffusion verticale complete. Le modele reste local :
+ce parametre sert seulement a stabiliser et hierarchiser la reponse thermique.
+
+Le fallback sec ne concerne donc plus l'ocean : il sert seulement pour la part
+terrestre quand la source RZSM ou la valeur locale manque.
+
+```text
+C_sec = cp_sec * rho_bulk * e
 ```
 
 ## Chaleur latente

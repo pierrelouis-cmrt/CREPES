@@ -23,8 +23,9 @@ def tester_capacite_surface_finie():
         "snow_ice_fraction": 0.0,
     }
     capacite = surface.capacite_surface(cellule)
-    attendu = surface.CP_SEC * 1000.0 * surface.RHO_BULK * surface.EPAISSEUR_ACTIVE_M
+    attendu = surface.capacite_sol_sec()
     assert abs(capacite - attendu) < 1e-6
+    assert 5e5 < capacite < 2e6
 
 
 def tester_capacite_depuis_rzsm_modifie_le_sol():
@@ -37,13 +38,34 @@ def tester_capacite_depuis_rzsm_modifie_le_sol():
     assert capacite_humide > capacite_seche
 
 
-def tester_capacite_rzsm_sans_melange_surface():
+def tester_capacite_rzsm_nan_retombe_sur_sol_sec():
     cellule = {
+        "land_fraction": 1.0,
+        "snow_ice_fraction": 0.0,
+    }
+    capacite = surface.capacite_surface(cellule, rzsm=np.nan)
+    assert abs(capacite - surface.capacite_sol_sec()) < 1e-6
+
+
+def tester_capacite_ocean_ignore_rzsm_et_reste_plausible():
+    cellule_ocean = {
         "land_fraction": 0.0,
+        "snow_ice_fraction": 0.0,
+    }
+    capacite = surface.capacite_surface(cellule_ocean, rzsm=0.35)
+    assert abs(capacite - surface.capacite_ocean_surface()) < 1e-6
+    assert capacite > 3.0 * surface.capacite_sol_sec()
+    assert 3e6 < capacite < 1e7
+
+
+def tester_capacite_glace_neige_prioritaire_sur_rzsm():
+    cellule_glace = {
+        "land_fraction": 1.0,
         "snow_ice_fraction": 1.0,
     }
-    capacite = surface.capacite_surface(cellule, rzsm=0.35)
-    assert abs(capacite - surface.capacite_depuis_rzsm(0.35)) < 1e-6
+    capacite = surface.capacite_surface(cellule_glace, rzsm=0.35)
+    assert abs(capacite - surface.capacite_glace_neige_surface()) < 1e-6
+    assert surface.capacite_sol_sec() < capacite < surface.capacite_ocean_surface()
 
 
 def tester_grille_rzsm_modele0_bins_1_degre():
@@ -107,6 +129,8 @@ def tester_simulation_courte_point():
     assert temperatures.shape == (2, 1, 1)
     assert np.isfinite(temperatures).all()
     assert resultat["capacite_surface_j_m2_k"].shape == (1, 1)
+    assert np.isfinite(resultat["capacite_surface_j_m2_k"]).all()
+    assert (resultat["capacite_surface_j_m2_k"] > 0.0).all()
     assert "flux_net_surface" in resultat["diagnostics_moyens"]
 
 
@@ -149,7 +173,9 @@ def tester_simulation_mensuelle_point():
 def main():
     tester_capacite_surface_finie()
     tester_capacite_depuis_rzsm_modifie_le_sol()
-    tester_capacite_rzsm_sans_melange_surface()
+    tester_capacite_rzsm_nan_retombe_sur_sol_sec()
+    tester_capacite_ocean_ignore_rzsm_et_reste_plausible()
+    tester_capacite_glace_neige_prioritaire_sur_rzsm()
     tester_grille_rzsm_modele0_bins_1_degre()
     tester_flux_latent_par_continent_sans_moyenne()
     tester_flux_convection_signe()
