@@ -17,11 +17,14 @@ import numpy as np
 
 
 RHO_W = 1000.0
+RHO_ICE = 917.0
 RHO_BULK = 2600.0
 CP_SEC = 0.8
 CP_WATER = 4.187
 CP_ICE = 2.09
 EPAISSEUR_ACTIVE_M = 0.5
+EPAISSEUR_OCEAN_M = 1.0
+EPAISSEUR_GLACE_NEIGE_M = 1.0
 
 DELTA_HVAP = 2_453_000.0
 RHO_EAU = 1000.0
@@ -115,6 +118,24 @@ def capacite_depuis_rzsm(rzsm):
     return capacite
 
 
+def capacite_sol_sec():
+    """Capacite minimale de sol sec en J m-2 K-1."""
+
+    return CP_SEC * 1000.0 * RHO_BULK * EPAISSEUR_ACTIVE_M
+
+
+def capacite_ocean_surface():
+    """Capacite simple d'une couche oceanique active de surface."""
+
+    return CP_WATER * 1000.0 * RHO_W * EPAISSEUR_OCEAN_M
+
+
+def capacite_glace_neige_surface():
+    """Capacite simple d'une couche active de glace ou neige compacte."""
+
+    return CP_ICE * 1000.0 * RHO_ICE * EPAISSEUR_GLACE_NEIGE_M
+
+
 def _moyenne_par_bins_modele0(latitudes, longitudes, valeurs):
     """Reproduit le regrillage 1 degre du modele 0 sans dependance SciPy."""
 
@@ -200,22 +221,41 @@ def rzsm_plus_proche(grille_rzsm, lat_deg, lon_deg):
 def capacite_surface(surface, rzsm=None):
     """Retourne C en J m-2 K-1 pour une cellule du modele 4.
 
-    Le modele 0 utilisait directement la capacite RZSM locale quand elle etait
-    disponible. La constante seche n'est utilisee qu'en fallback si la valeur
-    RZSM manque.
+    La terre non enneigee reprend la capacite RZSM du modele 0 quand elle est
+    disponible. Si RZSM manque localement, on garde le fallback de sol sec du
+    modele 0. Les fractions ocean et glace/neige du paquet modele 3 recoivent
+    une inertie propre afin d'eviter qu'elles soient traitees comme du sol sec
+    ou comme une humidite de sol.
     """
 
-    if rzsm is not None:
-        rzsm = _float_fini(rzsm)
-    if rzsm is not None:
-        return capacite_depuis_rzsm(rzsm)
-    return CP_SEC * 1000.0 * RHO_BULK * EPAISSEUR_ACTIVE_M
+    fraction_terre = fraction(surface.get("land_fraction"), defaut=1.0)
+    fraction_glace_neige = fraction(surface.get("snow_ice_fraction"), defaut=0.0)
+    fraction_non_glace = 1.0 - fraction_glace_neige
+    fraction_ocean = 1.0 - fraction_terre
+
+    rzsm_valide = _float_fini(rzsm)
+    if rzsm_valide is None:
+        capacite_terre = capacite_sol_sec()
+    else:
+        capacite_terre = capacite_depuis_rzsm(rzsm_valide)
+
+    return (
+        fraction_glace_neige * capacite_glace_neige_surface()
+        + fraction_non_glace * fraction_terre * capacite_terre
+        + fraction_non_glace * fraction_ocean * capacite_ocean_surface()
+    )
 
 
 def source_capacite_surface(rzsm_csv=None):
     if rzsm_csv is not None and Path(rzsm_csv).exists():
-        return f"modele0 RZSM {rzsm_csv}; fallback CP_SEC seulement si valeur manquante"
-    return "modele0 CP_SEC fallback; RZSM indisponible"
+        return (
+            f"modele0 RZSM {rzsm_csv} pour terres non glacees; "
+            "ocean 1 m eau; glace/neige 1 m glace; sol sec si RZSM manque"
+        )
+    return (
+        "surface par fractions; sol sec pour terres sans RZSM; "
+        "ocean/glace/neige explicites"
+    )
 
 
 def creer_detecteur_continent(shapefile_path=SHAPEFILE_CONTINENTS_MODELE0):
