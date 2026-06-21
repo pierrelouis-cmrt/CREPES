@@ -12,6 +12,8 @@ Projet Climat, Groupe D, 2026
 | `modele2_5/`           | Itération du modèle 2 : 10 couches en pression, profil standard, bandes CO2 découpées et tests. |
 | `modele3/`             | Colonne radiative finale pour le modèle 4, avec paquet `.npz` compact et provenances explicites. |
 | `modele4/`             | Grille de température de surface couplée au modèle 3 et aux termes de surface du modèle 0.       |
+| `modele5/`             | Grille modèle 4 rapide avec échanges radiatifs horizontaux entre colonnes voisines.              |
+| `planisphere.py`       | Visualisation racine des sorties `.npz` des modèles 4 et 5.                                      |
 
 ## Résumé rapide des modèles
 
@@ -74,6 +76,20 @@ Première grille de surface couplée :
 - Capacité thermique, flux latent et convection repris/clarifiés depuis le
   modèle 0.
 - Intégration temporelle Backward Euler.
+
+### Modèle 5
+
+Ajouts par rapport au modèle 4 rapide :
+
+- Échanges radiatifs horizontaux infrarouges entre colonnes voisines.
+- Échange calculé couche par couche et bande par bande avec les opacités CO2 +
+  H2O du modèle 3.
+- Géométrie sphérique des mailles et conservation de la puissance échangée aux
+  interfaces.
+- Terme `Q_horizontal` ajouté au bilan de surface.
+- Paramètre `--facteur-horizontal` pour isoler l'effet du couplage horizontal.
+- Paramètre `--couplage-couches` pour relier une anomalie de surface à
+  l'émission latérale des couches.
 
 ## Modèle 0
 
@@ -188,3 +204,46 @@ Documentation détaillée :
 
 - `modele4/README.md`
 - `modele4/THEORIE.md`
+
+## Modèle 5
+
+Lancer le modèle couplé horizontal, sortie toutes les 4 heures par défaut :
+
+```bash
+./.venv/bin/python -m modele5.modele5
+```
+
+Lancer une petite grille de développement :
+
+```bash
+./.venv/bin/python -m modele5.modele5 --jours 1 --max-latitudes 4 --max-longitudes 8 --output modele5/sorties/simulation_dev.npz
+```
+
+Comparer au modèle 4 rapide sans échange horizontal :
+
+```bash
+./.venv/bin/python -m modele5.modele5 --facteur-horizontal 0 --output modele5/sorties/simulation_sans_horizontal.npz
+```
+
+Lancer les tests :
+
+```bash
+./.venv/bin/python modele5/tests/tester_modele5.py
+```
+
+Documentation détaillée :
+
+- `modele5/README.md`
+
+## Visualisation
+
+Afficher une sortie `.npz` des modèles 4 ou 5 depuis la racine :
+
+```bash
+./.venv/bin/python planisphere.py
+```
+
+Sans argument, le script propose les fichiers présents dans `modele4/sorties/`
+et `modele5/sorties/`. L'ancien chemin
+`modele4/visualisation/planisphere.py` reste utilisable et délègue au script
+racine.

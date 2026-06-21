@@ -1,9 +1,9 @@
-"""Planisphere interactive pour les sorties NPZ du modele 4.
+"""Planisphere interactive pour les sorties NPZ des modeles 4 et 5.
 
-Le script lit les fichiers produits par ``modele4.modele4`` et
-``modele4.rapide`` sans modifier leur format. Quand aucun fichier n'est passe
-en argument, un petit TUI liste les ``.npz`` disponibles dans
-``modele4/sorties``.
+Le script lit les fichiers produits par ``modele4.modele4``,
+``modele4.rapide`` et ``modele5.modele5`` sans modifier leur format. Quand
+aucun fichier n'est passe en argument, un petit TUI liste les ``.npz``
+disponibles dans ``modele4/sorties`` et ``modele5/sorties``.
 """
 
 from __future__ import annotations
@@ -41,10 +41,10 @@ except ImportError:
     SHAPEFILE_DISPONIBLE = False
 
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-MODELE4_DIR = SCRIPT_DIR.parent
-PROJET_DIR = MODELE4_DIR.parent
-SORTIES_DEFAUT = MODELE4_DIR / "sorties"
+PROJET_DIR = Path(__file__).resolve().parent
+MODELE4_DIR = PROJET_DIR / "modele4"
+MODELE5_DIR = PROJET_DIR / "modele5"
+SORTIES_DEFAUT = (MODELE4_DIR / "sorties", MODELE5_DIR / "sorties")
 COASTLINE_SHP = (
     PROJET_DIR
     / "modele0_maintenance"
@@ -56,7 +56,7 @@ COASTLINE_SHP = (
 
 @dataclass(frozen=True)
 class SortieModele4:
-    """Tableaux necessaires a l'affichage d'une sortie modele 4."""
+    """Tableaux necessaires a l'affichage d'une sortie modele 4 ou 5."""
 
     chemin: Path
     variable_nom: str
@@ -489,7 +489,7 @@ def creer_planisphere(
 
         slider_heure.on_changed(rafraichir_heure)
         sliders.append(slider_heure)
-    fig._modele4_sliders = tuple(sliders)
+    fig._planisphere_sliders = tuple(sliders)
 
     if sauvegarde:
         sauvegarde = Path(sauvegarde)
@@ -498,6 +498,13 @@ def creer_planisphere(
     if afficher:
         plt.show()
     return fig, ax
+
+
+def _chemin_affiche(chemin: Path) -> str:
+    try:
+        return str(chemin.relative_to(PROJET_DIR))
+    except ValueError:
+        return str(chemin)
 
 
 def _resumer_npz(chemin: Path, variable_nom: str) -> str:
@@ -518,33 +525,46 @@ def _resumer_npz(chemin: Path, variable_nom: str) -> str:
     taille_mo = chemin.stat().st_size / (1024.0 * 1024.0)
     modifie = datetime.fromtimestamp(chemin.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
     return (
-        f"{chemin.name} | {modele} {mode} | {variable_nom}{shape} | "
+        f"{_chemin_affiche(chemin)} | {modele} {mode} | {variable_nom}{shape} | "
         f"{duree} | {taille_mo:.1f} Mo | modifie {modifie}"
     )
 
 
-def fichiers_npz_disponibles(dossier: Path) -> list[Path]:
-    dossier = Path(dossier)
-    if not dossier.exists():
-        return []
+def _normaliser_dossiers(dossiers: Path | str | list[Path] | tuple[Path, ...]) -> list[Path]:
+    if isinstance(dossiers, (str, Path)):
+        return [Path(dossiers)]
+    return [Path(dossier) for dossier in dossiers]
+
+
+def fichiers_npz_disponibles(dossiers: Path | str | list[Path] | tuple[Path, ...]) -> list[Path]:
+    fichiers = []
+    for dossier in _normaliser_dossiers(dossiers):
+        if dossier.exists():
+            fichiers.extend(dossier.glob("*.npz"))
     return sorted(
-        dossier.glob("*.npz"),
+        fichiers,
         key=lambda chemin: chemin.stat().st_mtime,
         reverse=True,
     )
 
 
-def choisir_fichier_tui(dossier: Path, variable_nom: str, interactif: bool = True) -> Path:
-    fichiers = fichiers_npz_disponibles(dossier)
+def choisir_fichier_tui(
+    dossiers: Path | str | list[Path] | tuple[Path, ...],
+    variable_nom: str,
+    interactif: bool = True,
+) -> Path:
+    dossiers = _normaliser_dossiers(dossiers)
+    fichiers = fichiers_npz_disponibles(dossiers)
     if not fichiers:
-        raise FileNotFoundError(f"Aucun fichier .npz trouve dans {dossier}")
+        dossiers_lisibles = ", ".join(str(dossier) for dossier in dossiers)
+        raise FileNotFoundError(f"Aucun fichier .npz trouve dans: {dossiers_lisibles}")
 
     if not interactif or not sys.stdin.isatty():
         choix = fichiers[0]
-        print(f"Selection automatique: {choix}")
+        print(f"Selection automatique: {_chemin_affiche(choix)}")
         return choix
 
-    print(f"Fichiers NPZ disponibles dans {dossier}:")
+    print("Fichiers NPZ disponibles:")
     for indice, chemin in enumerate(fichiers, start=1):
         print(f"  {indice}. {_resumer_npz(chemin, variable_nom)}")
 
@@ -564,19 +584,23 @@ def choisir_fichier_tui(dossier: Path, variable_nom: str, interactif: bool = Tru
 
 def construire_parseur() -> argparse.ArgumentParser:
     parseur = argparse.ArgumentParser(
-        description="Planisphere interactive pour les sorties NPZ du modele 4",
+        description="Planisphere interactive pour les sorties NPZ des modeles 4 et 5",
     )
     parseur.add_argument(
         "--fichier",
         type=Path,
         default=None,
-        help="Fichier .npz a ouvrir. Si absent, le TUI liste modele4/sorties.",
+        help="Fichier .npz a ouvrir. Si absent, le TUI liste les sorties disponibles.",
     )
     parseur.add_argument(
         "--sorties",
         type=Path,
-        default=SORTIES_DEFAUT,
-        help="Dossier contenant les .npz proposes par le TUI.",
+        nargs="*",
+        default=None,
+        help=(
+            "Dossiers contenant les .npz proposes par le TUI. "
+            "Defaut: modele4/sorties et modele5/sorties."
+        ),
     )
     parseur.add_argument("--variable", default="temperature_surface_k")
     parseur.add_argument("--jour", type=int, default=0)
@@ -595,9 +619,10 @@ def construire_parseur() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = construire_parseur().parse_args()
+    dossiers_sorties = args.sorties if args.sorties else SORTIES_DEFAUT
     try:
         chemin = args.fichier or choisir_fichier_tui(
-            args.sorties,
+            dossiers_sorties,
             args.variable,
             interactif=not args.no_tui,
         )

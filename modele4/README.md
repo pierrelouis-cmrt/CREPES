@@ -32,9 +32,73 @@ modele4/
   tests/tester_modele4.py  # tests numeriques minimaux
   tests/tester_rapide.py   # tests du moteur rapide
   rapide.py                # moteur rapide vectorise, sortie 4h par defaut
+  lancer.py                # TUI pour choisir le moteur et lancer les cas courants
   README.md
   THEORIE.md
   plan.md
+```
+
+## Deux scripts, deux roles
+
+Le modele 4 a volontairement deux scripts d'execution. Ils resolvent le meme
+bilan de surface, mais pas avec le meme niveau de recalcul radiatif.
+
+### `modele4.py` : moteur classique
+
+Role : reference physique et numerique.
+
+Techniquement :
+
+- il appelle le modele 3 dans la boucle de calcul ;
+- en mode `temporel`, chaque cellule et chaque pas de temps repassent par la
+  colonne radiative locale ;
+- il resout le bilan d'energie avec un schema implicite et des iterations de
+  Newton ;
+- il est plus lent, surtout sur la grille globale.
+
+Physiquement :
+
+- les flux radiatifs de surface sont recalcules avec la temperature de surface
+  courante ;
+- c'est le moteur a utiliser pour verifier une petite experience, comparer au
+  moteur rapide, ou garder une reference plus proche du couplage avec le modele
+  3 ;
+- il reste un modele local : pas de transport horizontal, pas d'ocean dynamique,
+  pas de recalcul complet de l'atmosphere 3D.
+
+### `rapide.py` : moteur rapide
+
+Role : moteur pratique pour les essais courants et les longues simulations.
+
+Techniquement :
+
+- il appelle le modele 3 au debut pour pre-calculer des champs mensuels ;
+- ensuite, la boucle temporelle est vectorisee avec `numpy` sur toute la grille ;
+- il ne rappelle plus le modele 3 a chaque pas ;
+- il ecrit par defaut une carte toutes les 4 heures ;
+- il est beaucoup plus rapide que le moteur classique.
+
+Physiquement :
+
+- l'atmosphere radiative est approximee par des champs mensuels fixes pendant la
+  simulation ;
+- le court-onde garde le cycle jour/nuit via la geometrie solaire, mais utilise
+  une transmissivite mensuelle ;
+- le long-onde montant et la convection suivent la temperature de surface en
+  temps reel ;
+- c'est une approximation controlee du moteur classique, pas une reference
+  exacte colonne par colonne.
+
+### Choix recommande
+
+- Pour travailler, tester des parametres ou lancer une simulation longue :
+  utiliser `modele4.rapide`.
+- Pour verifier la physique locale, comparer les resultats ou valider une
+  modification : utiliser `modele4.modele4` sur une petite grille.
+- Pour une premiere utilisation : lancer le TUI.
+
+```bash
+./.venv/bin/python -m modele4.lancer
 ```
 
 ## Execution directe
