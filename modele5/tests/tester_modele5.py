@@ -72,7 +72,7 @@ def tester_simulation_courte_et_sortie_npz():
             assert "temperature_surface_k" in npz.files
 
 
-def tester_facteur_horizontal_nul_reproduit_modele4_et_le_couplage_agit():
+def tester_facteur_horizontal_nul_reproduit_modele4_et_echange_agit():
     paquet = charger_paquet_grille()
     commun = dict(
         jours=1.0 / 24.0,
@@ -106,7 +106,7 @@ def main():
     tester_echange_nul_si_emission_uniforme()
     tester_echange_conserve_la_puissance_globale()
     tester_simulation_courte_et_sortie_npz()
-    tester_facteur_horizontal_nul_reproduit_modele4_et_le_couplage_agit()
+    tester_facteur_horizontal_nul_reproduit_modele4_et_echange_agit()
     print("tests_modele5_ok")
 
 

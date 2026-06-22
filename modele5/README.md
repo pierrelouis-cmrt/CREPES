@@ -55,17 +55,8 @@ La convergence de chaque couche est ensuite pondérée par la transmission des
 couches situées en dessous. Cette part atteint le sol et devient
 `Q_horizontal`.
 
-Les profils ERA5 du modèle 3 sont mensuels. Pour que les colonnes soient aussi
-couplées dans le temps, une anomalie de surface modifie l'émission latérale des
-couches :
-
-```text
-T_couche(t) = T_couche_ERA5 + c × [T_surface(t) - T_surface(initiale)]
-```
-
-Le coefficient `c` vaut `0.25` par défaut et se règle avec
-`--couplage-couches`. C'est une fermeture simple, explicite et visible, pas un
-modèle de dynamique atmosphérique complet.
+Les profils ERA5 du modèle 3 sont mensuels et servent de référence pour les
+émissions latérales des couches.
 
 ## Lancer une simulation
 
@@ -98,7 +89,6 @@ Pour isoler le bilan du modèle 4 sans l'échange horizontal :
 | `--dt` | `1800` | Pas interne, en secondes. |
 | `--sortie-heures` | `4` | Fréquence de sauvegarde. |
 | `--facteur-horizontal` | `1` | Intensité de l'échange horizontal ; `0` le désactive. |
-| `--couplage-couches` | `0.25` | Part de l'anomalie de surface transférée aux couches (`0..1`). |
 | `--max-latitudes`, `--max-longitudes` | — | Sous-grille de développement. |
 | `--facteur-latent`, `--convection`, `--vent` | mêmes valeurs que modèle 4 | Termes de surface hérités du modèle 4. |
 
@@ -150,8 +140,7 @@ Pour écrire directement un PNG sans ouvrir de fenêtre :
 - Les profils de pression, humidité et température de référence sont mensuels
   et issus du paquet ERA5 du modèle 3.
 - Les couches n'ont pas encore leur propre capacité thermique ni équation de
-  mouvement : le coefficient `--couplage-couches` est une fermeture de premier
-  ordre.
+  mouvement.
 - L'échange est radiatif infrarouge seulement ; il n'y a pas encore d'advection
   de masse, d'océan dynamique, de vent horizontal ni de diffusion turbulente.
 - La transmission de la convergence atmosphérique vers le sol est une

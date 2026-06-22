@@ -1,12 +1,13 @@
-# Albédo mensuel
+# Albédo
 
-`albedo01.csv` à `albedo12.csv` correspondent aux mois de janvier à décembre.
+Ce dossier contient l'albédo du sol par mois et le jeu CERES utilisé pour la contribution nuageuse.
 
-Ils sont régénérables via :
+## Albédo de surface
 
-```bash
-python3 outils_generation_donnees/generer_donnees.py --run albedo-surface-nasa --force --yes
-```
+`albedo01.csv` à `albedo12.csv` représentent janvier à décembre. La première colonne, `Latitude/Longitude`, contient les latitudes ; la première ligne contient les longitudes ; les cellules contiennent un albédo compris entre 0 et 1. Les douze fichiers doivent partager les mêmes axes.
 
-Cette cible utilise `outils_generation_donnees/albedo/generer_albedo_surface.py`
-et appelle NASA POWER.
+## Albédo nuageux
+
+`CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc` est une source externe locale. Le moteur y lit `toa_sw_all_mon`, `toa_sw_clr_c_mon` et `solar_mon`.
+
+Les CSV de surface peuvent être régénérés via NASA POWER : consulter le [README du générateur](../../outils_generation_donnees/albedo/README.md). Le fichier CERES n'est pas généré par le projet.

@@ -2,9 +2,8 @@
 
 Le moteur reprend exactement le bilan de surface vectorise du modele 4 rapide.
 Il ajoute un echange infrarouge entre les faces verticales des couches
-atmospheriques de deux colonnes voisines.  Les profils restent ceux du paquet
-ERA5, mais leur emission laterale suit une fraction de l'anomalie locale de
-temperature de surface : les colonnes deviennent donc reellement couplees.
+atmospheriques de deux colonnes voisines. Les profils de reference proviennent
+du paquet ERA5.
 """
 
 from __future__ import annotations
@@ -43,10 +42,6 @@ class ConfigurationModele5:
     """Configuration du moteur de temperature avec couplage horizontal.
 
     ``facteur_horizontal`` permet de desactiver le nouveau terme avec ``0``.
-    ``couplage_couches_surface`` relie une anomalie de surface a chaque
-    temperature de couche ; il rend l'emission laterale dependante de la
-    temperature calculee, sans pretendre resoudre la thermodynamique complete
-    de l'atmosphere.
     """
 
     jours: float = 1.0
@@ -62,7 +57,6 @@ class ConfigurationModele5:
     vent_m_s: float = surface.VENT_DEFAUT_M_S
     temperature_air_defaut_k: float = surface.TEMPERATURE_AIR_DEFAUT_K
     facteur_horizontal: float = 1.0
-    couplage_couches_surface: float = 0.25
     afficher_progression: bool = True
 
 
@@ -134,10 +128,8 @@ def _precalculer_couches_horizontales(paquet, config, lat_indices, lon_indices, 
     shape_couche = (n_mois, n_couches, len(indices_lat), len(indices_lon))
     shape_bande = (n_mois, n_couches, n_bandes, len(indices_lat), len(indices_lon))
 
-    temperature_ref = np.zeros(shape_couche, dtype=np.float32)
     epaisseur_m = np.zeros(shape_couche, dtype=np.float32)
     emission_ref = np.zeros(shape_bande, dtype=np.float32)
-    derivee_emission = np.zeros(shape_bande, dtype=np.float32)
     transmission_vers_surface = np.zeros(shape_bande, dtype=np.float32)
 
     for indice_mois, mois in enumerate(mois_utiles):
@@ -171,7 +163,6 @@ def _precalculer_couches_horizontales(paquet, config, lat_indices, lon_indices, 
         temperature = np.where(valide, np.maximum(temperature, 1.0), 1.0)
         masse_h2o = np.where(np.isfinite(masse_h2o), np.maximum(masse_h2o, 0.0), 0.0)
         epaisseur = _epaisseur_hypsometrique_m(p_bas, p_haut, temperature)
-        temperature_ref[indice_mois] = temperature
         epaisseur_m[indice_mois] = epaisseur
 
         # On garde en memoire ce que chaque couche peut emettre vers ses voisines.
@@ -195,21 +186,7 @@ def _precalculer_couches_horizontales(paquet, config, lat_indices, lon_indices, 
                     bande["lambda_min_um"],
                     bande["lambda_max_um"],
                 )
-                epsilon_temperature = 0.1
-                corps_noir_plus = _flux_planck_bande_vectoriel(
-                    temperature[couche] + epsilon_temperature,
-                    bande["lambda_min_um"],
-                    bande["lambda_max_um"],
-                )
-                corps_noir_moins = _flux_planck_bande_vectoriel(
-                    np.maximum(temperature[couche] - epsilon_temperature, 1.0),
-                    bande["lambda_min_um"],
-                    bande["lambda_max_um"],
-                )
                 emission_ref[indice_mois, couche, bande_indice] = emissivite * corps_noir
-                derivee_emission[indice_mois, couche, bande_indice] = emissivite * (
-                    (corps_noir_plus - corps_noir_moins) / (2.0 * epsilon_temperature)
-                )
                 transmission_vers_surface[indice_mois, couche, bande_indice] = (
                     transmission_cumulee[bande_indice]
                     * physique.EMISSIVITE_SURFACE_CONSTANTE
@@ -218,10 +195,8 @@ def _precalculer_couches_horizontales(paquet, config, lat_indices, lon_indices, 
                 transmission_cumulee[bande_indice] *= transmission
 
     return {
-        "temperature_ref": temperature_ref,
         "epaisseur_m": epaisseur_m,
         "emission_ref": emission_ref,
-        "derivee_emission": derivee_emission,
         "transmission_vers_surface": transmission_vers_surface,
     }
 
@@ -328,12 +303,13 @@ def simuler(paquet, config=None):
         raise ValueError("jours, dt_s et sortie_heures doivent etre strictement positifs.")
     if config.facteur_horizontal < 0.0:
         raise ValueError("facteur_horizontal doit etre positif ou nul.")
-    if not 0.0 <= config.couplage_couches_surface <= 1.0:
-        raise ValueError("couplage_couches_surface doit etre compris entre 0 et 1.")
-
     donnees = paquet["donnees"]
-    lat_indices = modele4_rapide._indices_grille(len(donnees["lat_deg"]), config.max_latitudes)
-    lon_indices = modele4_rapide._indices_grille(len(donnees["lon_deg"]), config.max_longitudes)
+    lat_indices = modele4_rapide._indices_grille(
+        len(donnees["lat_deg"]), maximum=config.max_latitudes
+    )
+    lon_indices = modele4_rapide._indices_grille(
+        len(donnees["lon_deg"]), maximum=config.max_longitudes
+    )
     latitudes = np.asarray(donnees["lat_deg"][list(lat_indices)], dtype=np.float64)
     longitudes = np.asarray(donnees["lon_deg"][list(lon_indices)], dtype=np.float64)
     nombre_pas = max(1, int(round(config.jours * 86400.0 / config.dt_s)))
@@ -352,7 +328,6 @@ def simuler(paquet, config=None):
     periodique_longitude = len(lon_indices) == len(donnees["lon_deg"])
 
     temperature = champs_surface["temperature_initiale"].copy()
-    temperature_initiale = temperature.copy()
     sorties_temperature = [temperature.astype(np.float32)]
     temps_sortie = [0.0]
     jours_sortie = [1.0]
@@ -382,16 +357,8 @@ def simuler(paquet, config=None):
         flux_latent = champs_surface["flux_latent"][indice_mois]
         capacite = champs_surface["capacite"][indice_mois]
 
-        # Une surface plus chaude rend les couches voisines un peu plus emissives.
-        anomalie_surface = temperature - temperature_initiale
-        emission = champs_couches["emission_ref"][indice_mois] + (
-            champs_couches["derivee_emission"][indice_mois]
-            * config.couplage_couches_surface
-            * anomalie_surface[None, None, :, :]
-        )
-        emission = np.maximum(emission, 0.0)
         convergence = calculer_convergence_horizontale(
-            emission,
+            champs_couches["emission_ref"][indice_mois],
             champs_couches["epaisseur_m"][indice_mois],
             geometrie,
             periodique_longitude,
@@ -474,7 +441,6 @@ def simuler(paquet, config=None):
             "facteur_latent": config.facteur_latent,
             "vent_m_s": config.vent_m_s,
             "facteur_horizontal": config.facteur_horizontal,
-            "couplage_couches_surface": config.couplage_couches_surface,
             "condition_longitude": "periodique" if periodique_longitude else "bords_fermes_sous_grille",
             "condition_latitude": "bords_fermes_aux_poles_ou_aux_bords_sous_grille",
             "source_paquet": str(paquet["npz_path"]),
@@ -547,12 +513,6 @@ def construire_parseur():
         default=1.0,
         help="Multiplicateur de l'echange horizontal ; 0 reproduit le modele 4 rapide.",
     )
-    parseur.add_argument(
-        "--couplage-couches",
-        type=float,
-        default=0.25,
-        help="Part de l'anomalie de surface appliquee aux couches (0 a 1).",
-    )
     parseur.add_argument("--no-progress", action="store_true")
     return parseur
 
@@ -574,7 +534,6 @@ def main():
         vent_m_s=args.vent,
         temperature_air_defaut_k=args.temperature_air,
         facteur_horizontal=args.facteur_horizontal,
-        couplage_couches_surface=args.couplage_couches,
         afficher_progression=not args.no_progress,
     )
     resultat = simuler(paquet, config)
