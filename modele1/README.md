@@ -10,7 +10,7 @@ Il s'agit d'un premier noyau pédagogique, sans latitude ni évolution temporell
 Depuis la racine du dépôt :
 
 ```bash
-python -m pip install -r modele1/requirements.txt
+
 python modele1/codes_python/modele1.py
 ```
 
