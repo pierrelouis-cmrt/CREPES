@@ -14,7 +14,8 @@ from pathlib import Path
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-OUTPUT_DIR = SCRIPT_DIR / "données"
+MODEL_DIR = SCRIPT_DIR.parent
+OUTPUT_DIR = MODEL_DIR / "sorties"
 
 
 def default_matplotlib_cache_dir() -> Path:
