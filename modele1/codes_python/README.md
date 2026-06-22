@@ -15,7 +15,7 @@ python modele1/codes_python/modele1.py
 | Fichier | Rôle |
 | --- | --- |
 | `modele1.py` | Calcule les flux infrarouges pour une surface et trois couches atmosphériques. |
-| `modele1-squelette.py` | Version pédagogique incomplète, conservée comme point de départ. |
+| `modele1-squelette.py` | Version pédagogique incomplète pour tester le code sans les valeurs.|
 
 Pour le périmètre et les hypothèses du modèle, voir le
 [README parent](../README.md).
