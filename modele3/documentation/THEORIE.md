@@ -210,14 +210,14 @@ Les unites et references internes sont :
 
 | Coefficient | Unite dans le modele | Origine projet | Cible / role |
 | --- | --- | --- | --- |
-| `a_CO2_bande` | profondeur optique effective sans dimension pour `CO2 = 280 ppm` et `delta_p = 101325 Pa` | noyau long-onde du modele 2.5, repris dans le modele 3 | conserver l'ordre de grandeur pedagogique du forcage relatif `280 -> 560 ppm` |
-| `a_H2O_bande` | profondeur optique effective sans dimension pour `10 kg m-2` de vapeur d'eau | ajout modele 3 branche sur les masses H2O issues d'ERA5, recalibrable avec `CALIBRAGE_H2O.md` | representer les grandes bandes H2O : 6.3 um, fenetre 8-13 um, far-IR |
+| `a_CO2_bande` | profondeur optique effective sans dimension pour `CO2 = 280 ppm` et `delta_p = 101325 Pa` | `ressources/calibrage_opacite_co2/coefficients_co2_modele3.json`, regenerable avec `calibrer_coefficients_co2.py` | forcage relatif `280 -> 560 ppm` cale au premier ordre |
+| `a_H2O_bande` | profondeur optique effective sans dimension pour `10 kg m-2` de vapeur d'eau | `ressources/calibrage_opacite_h2o/coefficients_h2o_modele3.json`, regenerable avec `calibrer_coefficients_h2o.py` | representer les grandes bandes H2O : 6.3 um, fenetre 8-13 um, far-IR |
+| `tau_nuage` | profondeur optique grise long-onde pour une fraction nuageuse | `ressources/calibrage_opacite_nuages/coefficients_nuages_modele3.json` + fractions ERA5 | premier jet all-sky sans microphysique |
 
-Dans `physique.py`, `ECHELLE_OPACITE_CO2 = 0.0327228010` est donc un facteur
-d'echelle effectif du noyau CO2, pas une section efficace. De meme, les valeurs
-H2O `25.60`, `0.48` et `14.40` fixent des profondeurs optiques de grandes
-bandes pour une masse colonne de reference ; elles ne codent pas des raies
-spectrales individuelles.
+Dans `physique.py`, les coefficients ne sont plus ajustes par une constante
+CO2 codee en dur : les bandes lisent les JSON de calibrage. Ces nombres restent
+des profondeurs optiques effectives de grandes bandes ; ils ne codent pas des
+raies spectrales individuelles.
 
 Le facteur diffusif herite du noyau precedent reste :
 
@@ -273,23 +273,24 @@ transmission.
 
 ## Nuages
 
-Les nuages ne sont pas un terme radiatif explicite dans le modele 3. Leur effet
-moyen sur le court-onde de surface est inclus dans la transmissivite ERA5
-mensuelle :
+L'effet moyen des nuages sur le court-onde de surface est inclus dans la
+transmissivite ERA5 mensuelle :
 
 ```text
 SW_down_surface = transmissivite_sw_mensuelle * SW_TOA_local
 ```
 
-Dans le long-onde, il n'y a pas de `tau_nuage` :
+Dans le long-onde, le premier jet ajoute une opacite grise de nuage :
 
 ```text
-tau_total = tau_CO2 + tau_H2O
+tau_nuage = tau_lw_par_fraction_nuage * cloud_cover_couche
+tau_total = tau_CO2 + tau_H2O + tau_nuage
 ```
 
-Les anciens mecanismes qui associaient `low_cloud_cover`,
-`medium_cloud_cover`, `high_cloud_cover` ou `total_cloud_cover` a un albedo
-nuageux court-onde ou a une opacite grise long-onde ne sont donc pas repris.
+Les fractions nuageuses viennent du paquet compact quand elles sont disponibles
+(`cc`, `lcc`, `mcc`, `hcc`, `tcc` ERA5). L'albedo nuageux CERES est conserve
+comme diagnostic, mais il n'est pas multiplie une seconde fois dans le flux
+court-onde de production.
 
 ## Flux de sortie
 
@@ -329,7 +330,8 @@ flux de surface situee hors des bandes modelisees.
 
 Le paquet compact versionne contient les champs necessaires au calcul normal :
 coordonnees, pression de surface, albedo de surface, transmissivite court-onde
-mensuelle, couches verticales pretraitees et flux ERA5 de validation.
+mensuelle, fractions nuageuses, couches verticales pretraitees et flux ERA5 de
+validation.
 
 Ce qui est volontairement absent du modele 3 :
 
@@ -338,8 +340,7 @@ Ce qui est volontairement absent du modele 3 :
 - pas de lecture directe ERA5 pendant `calculer_colonne_radiative` ;
 - pas de fallback analytique dans le calcul normal ;
 - pas d'emissivite variable de surface ;
-- pas d'albedo nuageux court-onde explicite ;
-- pas d'opacite nuageuse long-onde explicite ;
+- pas de double comptage d'un albedo nuageux court-onde explicite ;
 - pas d'ozone, aerosols, CH4, N2O ou microphysique nuageuse.
 
 Ces absences sont des choix du modele 3. Elles ne doivent pas etre corrigees

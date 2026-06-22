@@ -24,6 +24,7 @@ import numpy as np
 
 try:
     from . import physique
+    from .coefficients_opacite import CHEMIN_COEFFICIENTS_CO2
     from .donnees import DOSSIER_PAQUET_DEFAUT, charger_paquet_grille, extraire_colonne
     from .modele3 import calculer_colonne_radiative
 except ImportError:  # Permet aussi : python modele3/codes_python/calibrer_coefficients_co2.py
@@ -31,6 +32,7 @@ except ImportError:  # Permet aussi : python modele3/codes_python/calibrer_coeff
     sys.path = [chemin for chemin in sys.path if chemin != dossier_script]
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from modele3.codes_python import physique
+    from modele3.codes_python.coefficients_opacite import CHEMIN_COEFFICIENTS_CO2
     from modele3.codes_python.donnees import DOSSIER_PAQUET_DEFAUT, charger_paquet_grille, extraire_colonne
     from modele3.codes_python.modele3 import calculer_colonne_radiative
 
@@ -395,6 +397,29 @@ def ecrire_snippet_python(chemin: Path, coefficients_finaux: dict[str, float]) -
     chemin.write_text("\n".join(lignes), encoding="utf-8")
 
 
+def construire_payload_runtime(
+    coefficients_finaux: dict[str, float],
+    facteur: float,
+    cible_forcage: float,
+    forcage_final: float,
+) -> dict[str, Any]:
+    return {
+        "methode": (
+            "coefficients CO2 effectifs calibres par HITRAN/RADIS, moyenne Planck, "
+            "mediane(tau_eq / X), puis facteur global sur le forcage 280 -> 560 ppm"
+        ),
+        "formule_modele3": "tau_CO2 = a_CO2 * (co2_ppm / 280) * (delta_p_pa / 101325)",
+        "co2_reference_ppm": CO2_REFERENCE_PPM,
+        "pression_reference_pa": PRESSION_REFERENCE_PA,
+        "forcage": {
+            "cible_W_m2": cible_forcage,
+            "final_W_m2": forcage_final,
+            "facteur_global": facteur,
+        },
+        "coefficients": dict(sorted(coefficients_finaux.items())),
+    }
+
+
 def construire_resultat(
     args: argparse.Namespace,
     colonnes: list[ColonneCalibration],
@@ -457,7 +482,7 @@ def construire_parseur() -> argparse.ArgumentParser:
     parseur.add_argument(
         "--output-dir",
         type=Path,
-        default=Path(__file__).resolve().parent / "ressources" / "calibrage_opacite_co2",
+        default=CHEMIN_COEFFICIENTS_CO2.parent,
     )
     parseur.add_argument("--dry-run", action="store_true")
     return parseur
@@ -501,12 +526,28 @@ def main() -> None:
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     json_path = args.output_dir / "calibrage_coefficients_co2.json"
+    runtime_path = args.output_dir / CHEMIN_COEFFICIENTS_CO2.name
     snippet_path = args.output_dir / "coefficients_co2_calibres.py"
     json_path.write_text(json.dumps(arrondir_json(resultat), indent=2), encoding="utf-8")
+    runtime_path.write_text(
+        json.dumps(
+            arrondir_json(
+                construire_payload_runtime(
+                    coefficients_finaux,
+                    facteur,
+                    args.cible_forcage,
+                    forcage_final,
+                )
+            ),
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
     ecrire_snippet_python(snippet_path, coefficients_finaux)
 
     print("calibrage_co2_ok")
     print(f"json = {json_path}")
+    print(f"runtime_json = {runtime_path}")
     print(f"snippet = {snippet_path}")
     print(f"forcage_cible_W_m2 = {args.cible_forcage:.6f}")
     print(f"forcage_final_W_m2 = {forcage_final:.6f}")
