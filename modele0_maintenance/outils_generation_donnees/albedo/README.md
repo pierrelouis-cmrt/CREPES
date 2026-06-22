@@ -1,19 +1,27 @@
-# Générateur d'albédo de surface
+# Générateur d'albédo — modèle 0
 
-`generer_albedo_surface.py` est appelé par la cible `albedo-surface-nasa` du générateur principal. Il consulte l'API NASA POWER et écrit les douze fichiers `albedo01.csv` à `albedo12.csv` dans le format actif du modèle.
+Ce dossier contient l'outil appelé par la cible `albedo-surface-nasa` du
+générateur principal. Il interroge NASA POWER et produit les douze CSV
+d'albédo attendus par le modèle 0.
 
-## Utilisation directe
+## Lancer
+
+Depuis la racine du dépôt :
 
 ```bash
 python modele0_maintenance/outils_generation_donnees/albedo/generer_albedo_surface.py --year 2023 --dry-run
 ```
 
-| Option | Rôle |
-| --- | --- |
-| `--year` | Année interrogée auprès de NASA POWER. |
-| `--template-dir` | Dossier contenant le gabarit `albedo01.csv`. |
-| `--output-dir` | Dossier de destination des douze CSV. |
-| `--force` | Autorise le remplacement de CSV existants. |
-| `--sleep`, `--timeout` | Réglages des appels réseau. |
+Utiliser `--output-dir` pour écrire ailleurs, `--force` pour autoriser le
+remplacement et `--sleep` ou `--timeout` pour régler les appels réseau.
+L'exécution complète est longue car elle contacte le service pour chaque point
+de grille.
 
-Le script effectue un appel par point de grille ; il peut être long. Le format produit est décrit dans le [README des ressources albédo](../../ressources/albedo/README.md).
+## Structure
+
+| Fichier | Rôle |
+| --- | --- |
+| `generer_albedo_surface.py` | Télécharge, convertit et écrit les CSV mensuels d'albédo. |
+
+Le lancement groupé est expliqué dans le
+[README du générateur parent](../README.md).

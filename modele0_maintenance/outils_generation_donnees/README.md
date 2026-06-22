@@ -1,43 +1,32 @@
-# Génération des données
+# Génération des données — modèle 0
 
-Ce dossier produit les grilles de température, les fichiers mensuels du viewer
-3D et les albédo de surface. Les sources externes locales ne sont pas recréées
-ici.
+Ce dossier contient les outils qui inventorient ou produisent les sorties du
+modèle 0. Les fichiers existants sont protégés par défaut.
 
-## Script principal
+## Lancer
 
-`generer_donnees.py` centralise les cibles et protège les fichiers existants.
+Depuis la racine du dépôt :
 
 ```bash
+# Inventorier les ressources sans rien écrire
 python modele0_maintenance/outils_generation_donnees/generer_donnees.py --status
+
+# Afficher les cibles disponibles
 python modele0_maintenance/outils_generation_donnees/generer_donnees.py --list
+
+# Préparer une génération rapide sans écrire
 python modele0_maintenance/outils_generation_donnees/generer_donnees.py --run tout-rapide --dry-run --yes
 ```
 
-Pour remplacer une sortie existante, ajouter `--force`. `--yes` supprime les
-questions interactives et `--output-dir` permet d'écrire une sortie de test
-hors de `ressources/`.
+Ajouter `--force` pour remplacer une sortie existante. `--output-dir` permet
+d'écrire une sortie d'essai ailleurs que dans les ressources actives.
 
-## Cibles
+## Structure
 
-| Cible | Sortie | Usage |
-| --- | --- | --- |
-| `grille-lowres-rapide` / `grille-hires-rapide` | `grid_*_fast.npy` | Essais visuels courts. |
-| `grille-lowres-1an` / `grille-hires-1an` | `grid_*_1yr.npy` | Visualisations annuelles. |
-| `grille-lowres-stabilisee` / `grille-hires-stabilisee` | `grid_*_stabilized.npy` | Seconde année calculée. |
-| `temperatures-12mois` | `ressources/12_mois/*.csv` | Globe mensuel rapide. |
-| `albedo-surface-nasa` | `ressources/albedo/albedo01.csv` à `albedo12.csv` | Albédo de surface. |
+| Élément | Rôle |
+| --- | --- |
+| `generer_donnees.py` | Lance les cibles de grilles, séries mensuelles et albédo. |
+| `albedo/` | Générateur des CSV d'albédo depuis NASA POWER. |
 
-Les groupes `tout-rapide`, `tout-standard`, `tout-complet`,
-`grilles-rapides`, `grilles-standard` et `grilles-stabilisees` lancent plusieurs
-cibles. Chaque grille reçoit un fichier compagnon `.npy.json`.
-
-## Paramètres et entrées
-
-`--fast-days` règle la durée des sorties rapides et `--dtype float32` réduit la
-taille des fichiers. Les options de convection sont détaillées dans le
-[README des codes](../codes_python/README.md). Les emplacements et formats des
-entrées sont documentés dans le [README des ressources](../ressources/README.md).
-
-La cible `albedo-surface-nasa` appelle le script du sous-dossier
-[`albedo/`](albedo/README.md) et nécessite le réseau.
+Les ressources de destination sont décrites dans le
+[README parent](../ressources/README.md).
