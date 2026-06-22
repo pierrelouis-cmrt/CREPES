@@ -21,8 +21,9 @@ Bien effectuer la commande suivante :
 ```bash 
 python -m pip install -r modele5/requirements.txt
 ```
+<h2> Résumé rapide des modèles </h2>
 
-## Résumé rapide des modèles
+<details>   
 
 ### Modèle 1
 
@@ -100,8 +101,11 @@ Ajouts par rapport au modèle 4 rapide :
 - Paramètre `--couplage-couches` pour relier une anomalie de surface à
   l'émission latérale des couches.
 
+  </details>
+
 ## Modèle 0
 
+<details>
 Lancer une simulation courte depuis la racine :
 
 ```bash
@@ -116,9 +120,12 @@ python3 modele0_maintenance/outils_generation_donnees/generer_donnees.py --statu
 
 La documentation complète du modèle 0 est dans
 `modele0_maintenance/README.md`.
+</details>
+
 
 ## Modèle 2
 
+<details>
 Lancer le noyau radiatif du modèle 2 :
 
 ```bash
@@ -132,9 +139,11 @@ Régénérer le profil vertical de pression et de CO2 :
 ```
 
 La documentation détaillée du modèle 2 est dans `modele2/README.md`.
+</details>
 
 ## Modèle 2.5
 
+<details>
 Lancer le noyau radiatif du modèle 2.5 :
 
 ```bash
@@ -154,9 +163,11 @@ Régénérer les profils standard et CO2 :
 ```
 
 La documentation détaillée du modèle 2.5 est dans `modele2_5/README.md`.
+</details>
 
 ## Modèle 3
 
+<details>
 Régénérer le paquet compact :
 
 ```bash
@@ -187,9 +198,11 @@ Documentation détaillée :
 - `modele3/README.md`
 - `modele3/documentation/THEORIE.md`
 - `modele3/documentation/PROVENANCE_DONNEES.md`
+</details>
 
 ## Modèle 4
 
+<details>
 Lancer le diagnostic mensuel global par défaut :
 
 ```bash
@@ -219,9 +232,11 @@ Documentation détaillée :
 
 - `modele4/README.md`
 - `modele4/THEORIE.md`
+</details>
 
 ## Modèle 5
 
+<details>
 Lancer le modèle couplé horizontal, sortie toutes les 4 heures par défaut :
 
 ```bash
@@ -249,6 +264,7 @@ Lancer les tests :
 Documentation détaillée :
 
 - `modele5/README.md`
+</details>
 
 ## Visualisation
 
