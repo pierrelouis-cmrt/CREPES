@@ -69,4 +69,4 @@ b1 = [1 ; 4 µm],
 b2 = [5 ; 7.5 µm], et
 b3 ~ [15 µm ; au-delà] 
 
-Le graphe obtenu est le suivant : ![alt text](image.png)
+Le graphe simplifié obtenu est le suivant : ![alt text](image.png)
