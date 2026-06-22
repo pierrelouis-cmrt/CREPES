@@ -65,7 +65,7 @@ CO2_REFERENCE_PPM = 280.0  # référence préindustrielle utilisée pour normali
 CO2_SURFACE_PPM = 420.0  # concentration de CO2 au niveau de la surface
 GRADIENT_CO2_PPM_PAR_KM = 0.0  # 0 signifie que le CO2 est bien mélangé
 
-# D = 1 garde un trajet vertical simple. D = 1.66 pourra être testé ensuite
+# D = 1 garde un trajet vertical simple. Une valeur différente pourra être testée ensuite
 # pour représenter grossièrement des trajets obliques moyens.
 FACTEUR_DIFFUSIF = 1.0
 
@@ -123,7 +123,7 @@ PARAMETRES_COUCHES = (
 )
 
 # Coefficients de depart repris des absorbances moyennes calculees par
-# `modele1/codes_python/absorbance CO2.py`.
+# `modele1/ressources/absorbance CO2.py`.
 BANDES_CO2 = (
     BandeSpectrale("CO2_15um", 14.25, 15.75, 0.160933),
     BandeSpectrale("CO2_4_3um", 4.20, 4.35, 1.477625),

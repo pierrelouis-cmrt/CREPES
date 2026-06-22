@@ -8,7 +8,6 @@ boucle par le modele 4.
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
@@ -75,16 +74,6 @@ def _normaliser_nuages_couches(couches, surface):
 
     for couche, cloud_cover in zip(couches, normalisees):
         couche["cloud_cover"] = cloud_cover
-
-
-def _arrondir(objet):
-    if isinstance(objet, float):
-        return round(objet, 6)
-    if isinstance(objet, dict):
-        return {cle: _arrondir(valeur) for cle, valeur in objet.items()}
-    if isinstance(objet, list):
-        return [_arrondir(valeur) for valeur in objet]
-    return objet
 
 
 def construire_couches(donnees, co2_ppm=CO2_DEFAUT_PPM):
@@ -442,7 +431,6 @@ def construire_parseur():
         default=DOSSIER_PAQUET_DEFAUT,
         help="Dossier du paquet .npz compact",
     )
-    parseur.add_argument("--json", action="store_true", help="Sortie JSON complete")
     return parseur
 
 
@@ -514,10 +502,7 @@ def main():
         moyenne_journaliere_sw=args.moyenne_journaliere_sw,
     )
 
-    if args.json:
-        print(json.dumps(_arrondir(resultat), indent=2, ensure_ascii=False))
-    else:
-        afficher_resultat(donnees, resultat)
+    afficher_resultat(donnees, resultat)
 
 
 if __name__ == "__main__":

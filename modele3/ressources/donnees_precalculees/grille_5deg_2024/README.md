@@ -35,5 +35,5 @@ ignorees avant stockage pour eviter des couches nulles apres quantification.
 Le `.npz` contient seulement les champs necessaires au calcul normal :
 coordonnees, poids de surface, pression de surface, albedo, transmissivite
 court-onde mensuelle, champs surface utiles, flux ERA5 de validation et
-couches pretraitees, dont la fraction nuageuse par couche. Les facteurs de quantification, unites et sources
-sont dans `metadata.json`.
+couches pretraitees, dont la fraction nuageuse par couche. Les facteurs de
+quantification, unites et sources sont stockes dans le meme `.npz`.

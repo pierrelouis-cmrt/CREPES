@@ -1,6 +1,6 @@
 # Absorbance du CO2
 
-Le script CO2 a ete deplace dans `modele1/codes_python/absorbance CO2.py`,
+Le script CO2 a ete deplace dans `modele1/ressources/absorbance CO2.py`,
 car ses valeurs servent directement au modele 1.
 
 [Source bande absorbance CO2](https://acces.ens-lyon.fr/acces/thematiques/CCCIC/ressources/irspco2)
@@ -25,23 +25,23 @@ l'absorbance moyenne sur les deux bandes utilisees par les modeles 1 et 2.
 Depuis la racine du dépôt :
 
 ```bash
-./.venv/bin/python "modele1/codes_python/absorbance CO2.py"
+./.venv/bin/python "modele1/ressources/absorbance CO2.py"
 ```
 
 Sous Windows, depuis PowerShell :
 
 ```powershell
-.\.venv\Scripts\python.exe "modele1\codes_python\absorbance CO2.py"
+.\.venv\Scripts\python.exe "modele1\ressources\absorbance CO2.py"
 ```
 
 Dans un environnement non interactif (CI, sandbox), ce lancement enregistre
-automatiquement `modele1/sorties/absorbance_CO2.png` au lieu d'ouvrir une
+automatiquement `modele1/ressources/données/absorbance_CO2.png` au lieu d'ouvrir une
 fenêtre.
 
 Pour tester sans ouvrir de fenêtre graphique :
 
 ```bash
-./.venv/bin/python "modele1/codes_python/absorbance CO2.py" --no-plot
+./.venv/bin/python "modele1/ressources/absorbance CO2.py" --no-plot
 ```
 
 Sortie utile pour les modeles 1 et 2 :
@@ -56,7 +56,7 @@ CO2_4_3um, 4.20-4.35, 1.477625
 Pour générer une image :
 
 ```bash
-./.venv/bin/python "modele1/codes_python/absorbance CO2.py" --output "modele1/sorties/absorbance_CO2.png" --no-plot
+./.venv/bin/python "modele1/ressources/absorbance CO2.py" --no-plot
 ```
 
 RADIS télécharge les raies HITRAN au premier lancement. Le script stocke maintenant
@@ -68,7 +68,7 @@ ce cache dans le cache utilisateur du système :
 Si un téléchargement est interrompu, relancer avec :
 
 ```bash
-./.venv/bin/python "modele1/codes_python/absorbance CO2.py" --regen-cache --no-plot
+./.venv/bin/python "modele1/ressources/absorbance CO2.py" --regen-cache --no-plot
 ```
 ------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------

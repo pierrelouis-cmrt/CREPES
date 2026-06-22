@@ -7,13 +7,12 @@ effectifs compatibles avec le modele 3 :
 
 Pour chaque bande, on calcule une transmission RADIS, on la moyenne avec le
 poids de Planck de la couche, on la convertit en tau equivalent, puis on retient
-la mediane de tau/X. Un facteur global recale ensuite le forcage 280 -> 560 ppm.
+la mediane de tau/X.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 import math
 import sys
 from dataclasses import dataclass
@@ -24,28 +23,28 @@ import numpy as np
 
 try:
     from . import physique
-    from .coefficients_opacite import CHEMIN_COEFFICIENTS_CO2
+    from .coefficients_opacite import (
+        CHEMIN_COEFFICIENTS_OPACITE,
+        ecrire_coefficients_opacite,
+    )
     from .donnees import DOSSIER_PAQUET_DEFAUT, charger_paquet_grille, extraire_colonne
-    from .modele3 import calculer_colonne_radiative
 except ImportError:  # Permet aussi : python modele3/codes_python/calibrer_coefficients_co2.py
     dossier_script = str(Path(__file__).resolve().parent)
     sys.path = [chemin for chemin in sys.path if chemin != dossier_script]
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from modele3.codes_python import physique
-    from modele3.codes_python.coefficients_opacite import CHEMIN_COEFFICIENTS_CO2
+    from modele3.codes_python.coefficients_opacite import (
+        CHEMIN_COEFFICIENTS_OPACITE,
+        ecrire_coefficients_opacite,
+    )
     from modele3.codes_python.donnees import DOSSIER_PAQUET_DEFAUT, charger_paquet_grille, extraire_colonne
-    from modele3.codes_python.modele3 import calculer_colonne_radiative
 
 
 R_UNIVERSEL = 8.31446261815324
 MASSE_MOLAIRE_AIR = 0.0289647
 PRESSION_REFERENCE_PA = physique.PRESSION_REFERENCE_PA
 CO2_REFERENCE_PPM = physique.CO2_REFERENCE_PPM
-CO2_DOUBLE_PPM = 2.0 * CO2_REFERENCE_PPM
-FORCAGE_MYHRE_2XCO2 = 5.35 * math.log(2.0)
 TRANSMISSION_MIN = 1e-12
-FACTEUR_MAX = 128.0
-ITERATIONS_FORCAGE = 40
 
 RADIS_DATABANK = ("hitran", "range")
 RADIS_ISOTOPES = "1,2,3"
@@ -295,146 +294,18 @@ def ajuster_coefficients_par_bande(
     return coefficients
 
 
-def calculer_forcage_echantillon(
-    colonnes: list[ColonneCalibration],
-    bandes: list[dict[str, Any]],
-    co2_initial: float,
-    co2_final: float,
-) -> float:
-    numerateur = 0.0
-    denominateur = 0.0
-    for colonne in colonnes:
-        resultat_initial = calculer_colonne_radiative(
-            colonne.donnees,
-            temperature_surface_k=colonne.temperature_surface_k,
-            co2_ppm=co2_initial,
-            moyenne_journaliere_sw=True,
-            bandes=bandes,
-        )
-        resultat_final = calculer_colonne_radiative(
-            colonne.donnees,
-            temperature_surface_k=colonne.temperature_surface_k,
-            co2_ppm=co2_final,
-            moyenne_journaliere_sw=True,
-            bandes=bandes,
-        )
-        numerateur += colonne.poids * (resultat_initial["OLR"] - resultat_final["OLR"])
-        denominateur += colonne.poids
-    return numerateur / denominateur
-
-
-def bandes_avec_coefficients(coefficients: dict[str, float], facteur: float) -> list[dict[str, Any]]:
-    return physique.bandes_avec_coefficients_co2(coefficients, facteur=facteur)
-
-
-def trouver_facteur_forcage(
-    colonnes: list[ColonneCalibration],
-    coefficients: dict[str, float],
-    cible_w_m2: float,
-) -> tuple[float, float, float]:
-    if cible_w_m2 <= 0.0:
-        raise ValueError("La cible de forcage doit etre positive.")
-
-    def forcage(facteur: float) -> float:
-        return calculer_forcage_echantillon(
-            colonnes,
-            bandes_avec_coefficients(coefficients, facteur),
-            CO2_REFERENCE_PPM,
-            CO2_DOUBLE_PPM,
-        )
-
-    forcage_brut = forcage(1.0)
-    bas = 0.0
-    haut = 1.0
-    forcage_haut = forcage_brut
-    while forcage_haut < cible_w_m2 and haut < FACTEUR_MAX:
-        haut *= 2.0
-        forcage_haut = forcage(haut)
-    if forcage_haut < cible_w_m2:
-        raise RuntimeError("La cible de forcage n'est pas atteinte.")
-
-    for _ in range(ITERATIONS_FORCAGE):
-        milieu = 0.5 * (bas + haut)
-        if forcage(milieu) < cible_w_m2:
-            bas = milieu
-        else:
-            haut = milieu
-
-    facteur = 0.5 * (bas + haut)
-    return facteur, forcage_brut, forcage(facteur)
-
-
-def arrondir_json(objet: Any, chiffres: int = 10) -> Any:
-    if isinstance(objet, float):
-        return round(objet, chiffres) if math.isfinite(objet) else None
-    if isinstance(objet, dict):
-        return {cle: arrondir_json(valeur, chiffres) for cle, valeur in objet.items()}
-    if isinstance(objet, list):
-        return [arrondir_json(valeur, chiffres) for valeur in objet]
-    return objet
-
-
-def ecrire_snippet_python(chemin: Path, coefficients_finaux: dict[str, float]) -> None:
-    lignes = [
-        '"""Coefficients CO2 calibres par modele3.codes_python.calibrer_coefficients_co2."""',
-        "",
-        "COEFFICIENTS_CO2_CALIBRES = {",
-    ]
-    for nom, valeur in sorted(coefficients_finaux.items()):
-        lignes.append(f'    "{nom}": {valeur:.12g},')
-    lignes.extend(
-        [
-            "}",
-            "",
-            "",
-            "def bandes_calibrees():",
-            "    from modele3.codes_python.physique import bandes_avec_coefficients_co2",
-            "",
-            "    return bandes_avec_coefficients_co2(COEFFICIENTS_CO2_CALIBRES)",
-            "",
-        ]
-    )
-    chemin.write_text("\n".join(lignes), encoding="utf-8")
-
-
-def construire_payload_runtime(
-    coefficients_finaux: dict[str, float],
-    facteur: float,
-    cible_forcage: float,
-    forcage_final: float,
-) -> dict[str, Any]:
-    return {
-        "methode": (
-            "coefficients CO2 effectifs calibres par HITRAN/RADIS, moyenne Planck, "
-            "mediane(tau_eq / X), puis facteur global sur le forcage 280 -> 560 ppm"
-        ),
-        "formule_modele3": "tau_CO2 = a_CO2 * (co2_ppm / 280) * (delta_p_pa / 101325)",
-        "co2_reference_ppm": CO2_REFERENCE_PPM,
-        "pression_reference_pa": PRESSION_REFERENCE_PA,
-        "forcage": {
-            "cible_W_m2": cible_forcage,
-            "final_W_m2": forcage_final,
-            "facteur_global": facteur,
-        },
-        "coefficients": dict(sorted(coefficients_finaux.items())),
-    }
-
-
 def construire_resultat(
     args: argparse.Namespace,
     colonnes: list[ColonneCalibration],
     bandes: list[dict[str, Any]],
     coefficients: dict[str, float],
-    facteur: float,
-    forcage_brut: float,
-    forcage_final: float,
     nombre_spectres: int,
 ) -> dict[str, Any]:
     bandes_par_nom = {bande["nom"]: bande for bande in bandes}
     return {
         "methode": (
             "HITRAN/RADIS -> moyenne Planck -> tau equivalent -> "
-            "mediane(tau/X) par bande -> facteur global de forcage"
+            "mediane(tau/X) par bande"
         ),
         "formule_modele3": "tau_CO2 = a_CO2 * (CO2_ppm / 280) * (delta_p / 101325)",
         "echantillon": {
@@ -446,19 +317,12 @@ def construire_resultat(
             "couches": sum(len(colonne.donnees["couches"]) for colonne in colonnes),
             "spectres_radis_hitran": nombre_spectres,
         },
-        "forcage": {
-            "cible_W_m2": args.cible_forcage,
-            "brut_W_m2": forcage_brut,
-            "facteur_global": facteur,
-            "final_W_m2": forcage_final,
-        },
         "coefficients": [
             {
                 "nom": nom,
                 "lambda_min_um": float(bandes_par_nom[nom]["lambda_min_um"]),
                 "lambda_max_um": float(bandes_par_nom[nom]["lambda_max_um"]),
-                "a_co2_hitran": valeur,
-                "a_co2_final": valeur * facteur,
+                "a_co2": valeur,
             }
             for nom, valeur in sorted(
                 coefficients.items(),
@@ -476,13 +340,12 @@ def construire_parseur() -> argparse.ArgumentParser:
     parseur.add_argument("--latitudes", default="-45,0,45")
     parseur.add_argument("--longitudes", default="0")
     parseur.add_argument("--mois", default="1,7")
-    parseur.add_argument("--co2-values", default="280,420,560,1120")
+    parseur.add_argument("--co2-values", default="280,420,700")
     parseur.add_argument("--wstep", type=lire_wstep, default="auto")
-    parseur.add_argument("--cible-forcage", type=float, default=FORCAGE_MYHRE_2XCO2)
     parseur.add_argument(
-        "--output-dir",
+        "--output",
         type=Path,
-        default=CHEMIN_COEFFICIENTS_CO2.parent,
+        default=CHEMIN_COEFFICIENTS_OPACITE,
     )
     parseur.add_argument("--dry-run", action="store_true")
     return parseur
@@ -507,51 +370,23 @@ def main() -> None:
 
     mesures = mesurer_tau_reference(colonnes, bandes, co2_values, args.wstep)
     coefficients = ajuster_coefficients_par_bande(mesures)
-    facteur, forcage_brut, forcage_final = trouver_facteur_forcage(
-        colonnes,
-        coefficients,
-        args.cible_forcage,
-    )
-    coefficients_finaux = {nom: valeur * facteur for nom, valeur in coefficients.items()}
     resultat = construire_resultat(
         args,
         colonnes,
         bandes,
         coefficients,
-        facteur,
-        forcage_brut,
-        forcage_final,
         nombre_spectres,
     )
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    json_path = args.output_dir / "calibrage_coefficients_co2.json"
-    runtime_path = args.output_dir / CHEMIN_COEFFICIENTS_CO2.name
-    snippet_path = args.output_dir / "coefficients_co2_calibres.py"
-    json_path.write_text(json.dumps(arrondir_json(resultat), indent=2), encoding="utf-8")
-    runtime_path.write_text(
-        json.dumps(
-            arrondir_json(
-                construire_payload_runtime(
-                    coefficients_finaux,
-                    facteur,
-                    args.cible_forcage,
-                    forcage_final,
-                )
-            ),
-            indent=2,
-        ),
-        encoding="utf-8",
+    output = ecrire_coefficients_opacite(
+        args.output,
+        coefficients_co2=coefficients,
     )
-    ecrire_snippet_python(snippet_path, coefficients_finaux)
 
     print("calibrage_co2_ok")
-    print(f"json = {json_path}")
-    print(f"runtime_json = {runtime_path}")
-    print(f"snippet = {snippet_path}")
-    print(f"forcage_cible_W_m2 = {args.cible_forcage:.6f}")
-    print(f"forcage_final_W_m2 = {forcage_final:.6f}")
-    print(f"facteur_global = {facteur:.8f}")
+    print(f"coefficients_npz = {output}")
+    print(f"bandes_co2 = {len(resultat['coefficients'])}")
+    print(f"spectres_radis_hitran = {nombre_spectres}")
 
 
 if __name__ == "__main__":

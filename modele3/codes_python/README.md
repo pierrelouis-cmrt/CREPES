@@ -19,7 +19,7 @@ python -m modele3 --lat 48.5 --lon 2.3 --mois 7 --temperature-surface 293 --moye
 
 Utiliser `--jour-annee` à la place de `--mois` pour un jour précis,
 `--heure-solaire` pour le court-onde instantané, `--co2` pour changer la
-concentration et `--json` pour obtenir la sortie complète structurée.
+concentration.
 
 ## Structure
 
@@ -28,9 +28,16 @@ concentration et `--json` pour obtenir la sortie complète structurée.
 | `modele3.py` | Interface en ligne de commande et calcul de colonne radiative. |
 | `donnees.py` | Chargement du paquet et extraction de la colonne demandée. |
 | `physique.py` | Constantes, bandes et formules radiatives partagées. |
-| `calibrer_coefficients_co2.py` | Calibrage HITRAN/RADIS des coefficients CO₂ effectifs. |
-| `calibrer_coefficients_h2o.py` | Calibrage HITRAN/RADIS des coefficients H₂O effectifs. |
+| `coefficients_opacite.py` | Chargement du paquet unique `coefficients_opacite_modele3.npz`. |
+| `generer_donnees.py` | Génération du paquet compact, puis lancement des calibrages CO₂/H₂O. |
+| `calibrer_coefficients_co2.py` | Recalcule les coefficients CO₂ effectifs et les écrit dans le NPZ commun. |
+| `calibrer_coefficients_h2o.py` | Recalcule les coefficients H₂O effectifs et les écrit dans le NPZ commun. |
 | `Absorbance_H2O.py` | Visualisation qualitative des bandes et du continuum d'absorption H₂O. |
+
+`generer_donnees.py` lance les deux scripts de coefficients après avoir écrit
+le paquet de grille. Le coefficient nuageux n'a pas de script dédié : c'est le
+paramètre gris `tau_lw_par_fraction_nuage`, conservé dans le même NPZ et
+modifiable avec `--tau-lw-nuage`.
 
 Pour calibrer les coefficients CO₂ :
 

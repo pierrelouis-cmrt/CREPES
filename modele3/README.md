@@ -43,8 +43,13 @@ python modele3/tests/tester_modele3.py
 Pour régénérer le paquet compact lorsque les sources sont disponibles :
 
 ```bash
-python -m modele3.ressources.generer_donnees --overwrite
+python -m modele3.codes_python.generer_donnees --overwrite
 ```
+
+Cette commande génère le paquet de grille puis relance les calibrages CO₂ et
+H₂O pour mettre à jour `ressources/coefficients_opacite_modele3.npz`. Si RADIS
+n'est pas disponible et que seul le paquet de grille doit être refait, ajouter
+`--sans-coefficients`.
 
 ## Visualisation de l'absorption H₂O
 
@@ -65,9 +70,9 @@ dans [`documentation/CALIBRAGE_H2O.md`](documentation/CALIBRAGE_H2O.md).
 
 | Élément | Rôle |
 | --- | --- |
-| `codes_python/` | Chargement du paquet, calcul radiatif de colonne et calibrages CO₂/H₂O. |
-| `ressources/` | Générateur du paquet compact et données générées. |
-| `documentation/` | Théorie, provenance, calibrage CO₂ et notes de recherche. |
+| `codes_python/` | Scripts et modules du modèle : calcul de colonne, chargement, génération du paquet et calibrages éventuels. |
+| `ressources/` | Données prêtes à lire : paquet de grille et coefficients `.npz`. |
+| `documentation/` | Théorie, provenance et notes de recherche. |
 | `tests/` | Vérifications numériques automatisables. |
 | `sorties/` | Images et autres sorties de diagnostic du modèle. |
 

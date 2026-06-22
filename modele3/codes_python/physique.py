@@ -1,9 +1,9 @@
 """Formules physiques elementaires du modele 3.
 
 Ce module contient les constantes, la geometrie solaire, Planck, les masses
-colonne et les opacites infrarouges CO2 + H2O + nuages. Les coefficients de
-production viennent de ressources JSON versionnees afin de pouvoir les
-remplacer par les scripts de calibrage sans modifier ce fichier.
+colonne et les opacites infrarouges CO2 + H2O + nuages. Les petits
+coefficients de production viennent d'un unique paquet `.npz` versionne dans
+les ressources du modele 3.
 """
 
 from __future__ import annotations
@@ -48,16 +48,10 @@ TAU_LW_NUAGE_PAR_FRACTION = PARAMETRES_NUAGES_MODELE3["tau_lw_par_fraction_nuage
 COEFFICIENTS_OPACITE_EFFECTIFS = {
     "statut": "coefficients effectifs pedagogiques, pas des sections efficaces spectrales",
     "origine": (
-        "coefficients CO2 lus dans "
-        "modele3/ressources/calibrage_opacite_co2/coefficients_co2_modele3.json "
-        "et recalibrables avec modele3/codes_python/calibrer_coefficients_co2.py; "
-        "coefficients H2O lus dans "
-        "modele3/ressources/calibrage_opacite_h2o/coefficients_h2o_modele3.json "
-        "et recalibrables avec modele3/codes_python/calibrer_coefficients_h2o.py; "
-        "opacite nuageuse grise lue dans "
-        "modele3/ressources/calibrage_opacite_nuages/coefficients_nuages_modele3.json"
+        "coefficients CO2, H2O et nuages lus dans "
+        "modele3/ressources/coefficients_opacite_modele3.npz; "
+        "les scripts de recalcul eventuels restent dans modele3/codes_python"
     ),
-    "cible_co2": "forcage global 280 -> 560 ppm cale sur 5.35 ln(2)",
     "unite_a_co2": (
         "profondeur optique effective sans dimension pour CO2=280 ppm "
         f"et delta_p={PRESSION_REFERENCE_PA:g} Pa"
