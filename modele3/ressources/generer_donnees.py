@@ -517,7 +517,7 @@ def ecrire_paquet(sortie_dir, tableaux, metadata, overwrite):
     npz_path = sortie_dir / FICHIER_NPZ
     readme_path = sortie_dir / "README.md"
     if npz_path.exists() and not overwrite:
-        raise FileExistsError(f"La sortie existe deja: {sortie_dir}. Ajouter --overwrite.")
+        raise FileExistsError(f"La sortie existe deja: {sortie_dir}. Relancer sans --no-overwrite.")
     sortie_dir.mkdir(parents=True, exist_ok=True)
 
     tableaux_quantifies = {nom: _quantifier(nom, valeurs) for nom, valeurs in tableaux.items()}
@@ -807,7 +807,19 @@ def construire_parseur():
         action="store_true",
         help="Genere seulement le paquet de grille, sans lancer les calibrages CO2/H2O.",
     )
-    parseur.add_argument("--overwrite", action="store_true")
+    parseur.set_defaults(overwrite=True)
+    parseur.add_argument(
+        "--overwrite",
+        dest="overwrite",
+        action="store_true",
+        help="Ecrase le paquet de donnees existant (comportement par defaut).",
+    )
+    parseur.add_argument(
+        "--no-overwrite",
+        dest="overwrite",
+        action="store_false",
+        help="Refuse d'ecrire si le paquet de donnees existe deja.",
+    )
     parseur.add_argument("--dry-run", action="store_true")
     parseur.add_argument("--allow-fallbacks", action="store_true")
     return parseur
