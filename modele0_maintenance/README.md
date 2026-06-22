@@ -1,9 +1,15 @@
 # Modèle 0 — maintenance
 
 Le modèle 0 est la version historique maintenue du modèle de surface CREPES.
+<<<<<<< HEAD
+Il simule la température de surface en un point ou sur une grille, à partir du
+rayonnement solaire, des albédos, de la capacité thermique, de la chaleur
+latente et de la convection.
+=======
 Il simule la température de surface en un point ou sur une grille à partir du
 rayonnement solaire, de l'albédo, de la capacité thermique, du flux latent et
 de la convection. Il est conservé comme référence pour les modèles ultérieurs.
+>>>>>>> 896ea4ee3f6decb602a67734b312fe52e0460b5c
 
 ## Démarrer
 
