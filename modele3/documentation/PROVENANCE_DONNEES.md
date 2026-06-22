@@ -57,6 +57,13 @@ definis dans `modele3/physique.py` comme coefficients effectifs pedagogiques :
 Ces coefficients gardent une physique CO2 + H2O simple ; ils ne remplacent pas
 HITRAN, RADIS ou une methode correlated-k.
 
+Le recalibrage propre des coefficients CO2 est maintenant isole dans
+`modele3/calibrer_coefficients_co2.py` et documente dans
+`modele3/CALIBRAGE_COEFFICIENTS_CO2.md`. La methode utilise des transmissions
+HITRAN/RADIS, une moyenne de bande ponderee par Planck, un ajustement par
+moindres carres sur la forme `tau_CO2 = a_CO2 * CO2/280 * delta_p/101325`, puis
+un recalage global sur le forcage `280 -> 560 ppm`.
+
 ## Transmissivite court-onde
 
 ```text

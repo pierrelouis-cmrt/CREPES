@@ -27,8 +27,8 @@ Les elements repris sont :
 - propagation infrarouge montante et descendante couche par couche ;
 - facteur diffusif `D = 1.66` ;
 - bandes CO2 a `15 um` et `4.3 um`, avec decoupage coeur/ailes ;
-- coefficients CO2 effectifs calibres dans le 2.5 sur le forcage
-  `280 -> 560 ppm`.
+- coefficients CO2 effectifs herites du 2.5, avec une methode de recalibrage
+  HITRAN/RADIS dediee dans `CALIBRAGE_COEFFICIENTS_CO2.md`.
 
 La profondeur optique CO2 conservee est :
 
@@ -224,7 +224,9 @@ bandes H2O effectives sont :
 
 Les coefficients de bandes sont effectifs. Ils gardent un noyau CO2 + H2O
 simple et lisible ; ils ne remplacent pas HITRAN, RADIS ou une methode
-correlated-k.
+correlated-k. Le script `calibrer_coefficients_co2.py` sert precisement a
+deriver des `a_CO2_bande` plus tracables depuis des transmissions HITRAN/RADIS,
+puis a recaler leur facteur global sur le forcage `280 -> 560 ppm`.
 
 ## Vapeur d'eau
 
