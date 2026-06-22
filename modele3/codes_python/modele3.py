@@ -19,7 +19,13 @@ try:
         charger_paquet_grille,
         extraire_colonne,
     )
-except ImportError:  # Permet aussi : python modele3/modele3.py
+except ImportError:  # Permet aussi : python modele3/codes_python/modele3.py
+    dossier_script = Path(__file__).resolve().parent
+    sys.path = [
+        chemin
+        for chemin in sys.path
+        if Path(chemin or ".").resolve() != dossier_script
+    ]
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from modele3.codes_python import physique
     from modele3.codes_python.donnees import (
