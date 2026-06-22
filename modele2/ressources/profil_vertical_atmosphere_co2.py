@@ -20,7 +20,7 @@ import numpy as np
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-DONNEES_DIR = SCRIPT_DIR / "données"
+DONNEES_DIR = SCRIPT_DIR.parent / "sorties"
 CSV_DEFAUT = DONNEES_DIR / "profil_vertical_atmosphere_co2.csv"
 GRAPHIQUE_DEFAUT = DONNEES_DIR / "profil_vertical_atmosphere_co2.png"
 CACHE_DIR = SCRIPT_DIR / ".cache"
