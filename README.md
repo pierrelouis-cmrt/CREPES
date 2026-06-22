@@ -19,7 +19,7 @@ Projet Climat, Groupe D, 2026
 ## Lancement des codes 
 Bien effectuer la commande suivante :
 ```bash 
-python -m pip install -r modele5/requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ## Résumé rapide des modèles
