@@ -42,6 +42,7 @@ try:
         plage_nombre_onde_cm,
         tau_equivalent_depuis_transmission,
     )
+    from .coefficients_opacite import CHEMIN_COEFFICIENTS_H2O
     from .donnees import DOSSIER_PAQUET_DEFAUT
 except ImportError:  # Permet aussi : python modele3/codes_python/calibrer_coefficients_h2o.py
     dossier_script = str(Path(__file__).resolve().parent)
@@ -63,6 +64,7 @@ except ImportError:  # Permet aussi : python modele3/codes_python/calibrer_coeff
         plage_nombre_onde_cm,
         tau_equivalent_depuis_transmission,
     )
+    from modele3.codes_python.coefficients_opacite import CHEMIN_COEFFICIENTS_H2O
     from modele3.codes_python.donnees import DOSSIER_PAQUET_DEFAUT
 
 
@@ -264,6 +266,18 @@ def ecrire_snippet_python(chemin: Path, coefficients: dict[str, float]) -> None:
     chemin.write_text("\n".join(lignes), encoding="utf-8")
 
 
+def construire_payload_runtime(coefficients: dict[str, float]) -> dict[str, Any]:
+    return {
+        "methode": (
+            "coefficients H2O effectifs calibres par HITRAN/RADIS, moyenne Planck "
+            "et mediane(tau_eq / X)"
+        ),
+        "formule_modele3": "tau_H2O = a_H2O * (masse_h2o_kg_m2 / 10)",
+        "masse_h2o_reference_kg_m2": MASSE_H2O_REFERENCE_KG_M2,
+        "coefficients": dict(sorted(coefficients.items())),
+    }
+
+
 def construire_resultat(
     args: argparse.Namespace,
     colonnes: list[Any],
@@ -335,9 +349,7 @@ def construire_parseur() -> argparse.ArgumentParser:
     parseur.add_argument(
         "--output-dir",
         type=Path,
-        default=Path(__file__).resolve().parents[1]
-        / "ressources"
-        / "calibrage_opacite_h2o",
+        default=CHEMIN_COEFFICIENTS_H2O.parent,
     )
     parseur.add_argument("--dry-run", action="store_true")
     return parseur
@@ -378,12 +390,18 @@ def main() -> None:
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     json_path = args.output_dir / "calibrage_coefficients_h2o.json"
+    runtime_path = args.output_dir / CHEMIN_COEFFICIENTS_H2O.name
     snippet_path = args.output_dir / "coefficients_h2o_calibres.py"
     json_path.write_text(json.dumps(arrondir_json(resultat), indent=2), encoding="utf-8")
+    runtime_path.write_text(
+        json.dumps(arrondir_json(construire_payload_runtime(coefficients)), indent=2),
+        encoding="utf-8",
+    )
     ecrire_snippet_python(snippet_path, coefficients)
 
     print("calibrage_h2o_ok")
     print(f"json = {json_path}")
+    print(f"runtime_json = {runtime_path}")
     print(f"snippet = {snippet_path}")
     print(f"bandes_h2o = {len(bandes)}")
     print(f"spectres_radis_hitran = {nombre_spectres}")
