@@ -16,5 +16,5 @@ parent et ne constituent pas des points d'entrée indépendants.
 | `diffusion.py` | Diffusion thermique radiale, conservée mais non couplée au moteur principal. |
 | `co2.py` | Prototype de transfert radiatif CO₂, conservé mais non couplé. |
 
-Les unités usuelles sont les kelvins et les `W m⁻²`. Pour lancer le moteur,
+Pour lancer le moteur,
 voir le [README des codes](../README.md).

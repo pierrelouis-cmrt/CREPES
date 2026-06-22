@@ -26,7 +26,11 @@ from modele3.codes_python.calibrer_coefficients_h2o import (
     couche_reference_depuis_modele as couche_h2o_reference_depuis_modele,
     fraction_molaire_h2o_depuis_masses,
 )
-from modele3.codes_python.coefficients_opacite import COEFFICIENTS_H2O_MODELE3
+from modele3.codes_python.coefficients_opacite import (
+    COEFFICIENTS_CO2_MODELE3,
+    COEFFICIENTS_H2O_MODELE3,
+    PARAMETRES_NUAGES_MODELE3,
+)
 from modele3.codes_python.donnees import charger_paquet_grille, extraire_colonne, iterer_colonnes
 from modele3.codes_python.modele3 import calculer_colonne_radiative, construire_couches
 from modele3.ressources.generer_donnees import _nearest_matrix, normaliser_longitudes_180
@@ -120,7 +124,7 @@ def tester_emissivite_constante():
     assert resultat["sources"]["emissivite_surface"] == "constante_0.98"
 
 
-def tester_nuages_lw_absents_des_opacites():
+def tester_nuages_lw_ajoutes_aux_opacites():
     couches = construire_couches(_donnees_test())
     diagnostic = physique.opacites_couche_bande(couches[0], physique.BANDES_INFRAROUGES[0])
     assert set(diagnostic) == {
@@ -128,17 +132,32 @@ def tester_nuages_lw_absents_des_opacites():
         "bande",
         "tau_co2",
         "tau_h2o",
+        "tau_nuage",
         "tau_total",
         "transmission",
         "emissivite",
     }
-    assert diagnostic["tau_total"] == diagnostic["tau_co2"] + diagnostic["tau_h2o"]
+    assert diagnostic["tau_nuage"] == 0.0
+    assert (
+        diagnostic["tau_total"]
+        == diagnostic["tau_co2"] + diagnostic["tau_h2o"] + diagnostic["tau_nuage"]
+    )
+
+
+def tester_nuages_lw_depuis_fraction_totale():
+    donnees = _donnees_test()
+    donnees["surface"]["total_cloud_cover"] = 0.8
+    couches = construire_couches(donnees)
+    assert abs(sum(couche["cloud_cover"] for couche in couches) - 0.8) < 1e-12
+    resultat = calculer_colonne_radiative(donnees)
+    attendu = PARAMETRES_NUAGES_MODELE3["tau_lw_par_fraction_nuage"] * 0.8
+    assert abs(resultat["tau_lw_nuage_total"] - attendu) < 1e-12
 
 
 def tester_coefficients_opacite_effectifs_documentes():
     description = physique.COEFFICIENTS_OPACITE_EFFECTIFS
     assert "effectifs" in description["statut"]
-    assert "280 -> 560 ppm" in description["cible_co2"]
+    assert "coefficients_opacite_modele3.npz" in description["origine"]
     assert "101325 Pa" in description["unite_a_co2"]
     assert "10 kg m-2" in description["unite_a_h2o"]
     assert "HITRAN" in description["limites"]
@@ -154,8 +173,8 @@ def tester_normalisation_tau_co2_reference():
     }
     bande = {"a_co2": 0.42}
     assert abs(physique.tau_co2(couche_reference, bande) - 0.42) < 1e-12
-    couche_double_co2 = dict(couche_reference, co2_ppm=2.0 * physique.CO2_REFERENCE_PPM)
-    assert abs(physique.tau_co2(couche_double_co2, bande) - 0.84) < 1e-12
+    couche_420_ppm = dict(couche_reference, co2_ppm=420.0)
+    assert abs(physique.tau_co2(couche_420_ppm, bande) - 0.63) < 1e-12
     couche_demi_pression = dict(couche_reference, pression_bas_pa=0.5 * physique.PRESSION_REFERENCE_PA)
     assert abs(physique.tau_co2(couche_demi_pression, bande) - 0.21) < 1e-12
 
@@ -169,6 +188,13 @@ def tester_coefficients_co2_remplacables_sans_mutation_globale():
     assert all(bande["a_h2o"] == 0.0 for bande in bandes)
     assert avant["a_co2"] != 0.123
     assert any(bande["a_h2o"] > 0.0 for bande in physique.BANDES_INFRAROUGES)
+
+
+def tester_coefficients_co2_charges_depuis_ressource():
+    bandes_co2 = {bande["nom"]: bande["a_co2"] for bande in physique.bandes_co2()}
+    assert set(bandes_co2) == set(COEFFICIENTS_CO2_MODELE3)
+    for nom, coefficient in COEFFICIENTS_CO2_MODELE3.items():
+        assert bandes_co2[nom] == coefficient
 
 
 def tester_normalisation_tau_h2o_reference():
@@ -314,6 +340,9 @@ def tester_paquet_grille_chargeable_et_final():
     assert metadata["shape"]["lon"] == 72
     assert "transmissivite_sw_mensuelle" in metadata["variables"]
     assert "sw_toa_moyen_mensuel_w_m2" in metadata["variables"]
+    assert "cloud_cover_couche" in metadata["variables"]
+    assert "total_cloud_cover" in metadata["variables"]
+    assert "albedo_nuages_effectif" in metadata["variables"]
     assert abs(float(paquet["donnees"]["poids_surface"].sum()) - 1.0) < 1e-6
     transmissivite = paquet["donnees"]["transmissivite_sw_mensuelle"]
     assert 0.0 <= float(np.nanmin(transmissivite)) <= float(np.nanmax(transmissivite)) <= 1.0
@@ -355,6 +384,8 @@ def tester_colonne_depuis_paquet():
     assert 0.0 <= resultat["SW_absorbe_surface"] <= 500.0
     assert 250.0 <= resultat["LW_up_surface"] <= 600.0
     assert 0.0 < resultat["OLR"] <= 600.0
+    assert 0.0 <= resultat["tau_lw_nuage_total"] <= 10.0
+    assert resultat["sources"]["cloud_cover"] != "non fourni"
 
 
 def tester_appel_en_boucle_sur_plusieurs_colonnes():
@@ -372,10 +403,12 @@ def main():
     tester_shortwave_mensuel_utilise_moyenne_paquet()
     tester_validation_shortwave_utilise_moyenne_mensuelle()
     tester_emissivite_constante()
-    tester_nuages_lw_absents_des_opacites()
+    tester_nuages_lw_ajoutes_aux_opacites()
+    tester_nuages_lw_depuis_fraction_totale()
     tester_coefficients_opacite_effectifs_documentes()
     tester_normalisation_tau_co2_reference()
     tester_coefficients_co2_remplacables_sans_mutation_globale()
+    tester_coefficients_co2_charges_depuis_ressource()
     tester_normalisation_tau_h2o_reference()
     tester_coefficients_h2o_remplacables_sans_mutation_globale()
     tester_coefficients_h2o_charges_depuis_ressource()

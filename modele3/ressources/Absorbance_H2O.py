@@ -1,5 +1,13 @@
+from pathlib import Path
+
 import numpy as np
 import matplotlib.pyplot as plt
+
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+MODEL_DIR = SCRIPT_DIR.parent
+OUTPUT_DIR = MODEL_DIR / "sorties"
+OUTPUT_PATH = OUTPUT_DIR / "absorbance_h2o.png"
 
 
 # 1. Configuration de l'axe des abscisses (Longueur d'onde de 0.1 à 30 µm)
@@ -67,4 +75,7 @@ ax.spines['right'].set_visible(False)
 plt.legend(loc='lower right', fontsize=10)
 
 plt.tight_layout()
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+plt.savefig(OUTPUT_PATH, dpi=200)
+print(f"Graphique enregistré : {OUTPUT_PATH}")
 plt.show()

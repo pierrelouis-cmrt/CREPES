@@ -29,8 +29,8 @@ l'atmosphère claire.
 Un contrôle numérique interne a motivé cette correction, mais le tableau de
 biais historique n'est pas conservé comme benchmark reproductible. La validation
 versionnée est limitée aux invariants simples de `modele3/tests/tester_modele3.py`
-et aux diagnostics du paquet dans
-`modele3/ressources/donnees_precalculees/grille_5deg_2024/metadata.json`.
+et aux diagnostics intégrés dans le paquet
+`modele3/ressources/donnees_precalculees/grille_5deg_2024/donnees_colonnes_5deg_2024.npz`.
 
 ## Sources scientifiques utilisées
 
@@ -50,7 +50,7 @@ Source :
 https://confluence.ecmwf.int/display/CKB/ERA5%3A+data+documentation
 ```
 
-Conclusion pour le projet : les champs ERA5 du paquet sont des forçages
+Conclusion pour le projet : les champs ERA5 du paquet sont des entrees imposees
 de flux shortwave de surface directement utilisables, pas seulement des diagnostics.
 
 ### Constante solaire S0
@@ -286,7 +286,7 @@ Pour le modèle 4, le meilleur compromis rigueur/simplicité est :
 flux shortwave par défaut =
     S0*cos(i,t) * transmissivite_SW_mensuelle_ERA5 * (1 - albedo_surface)
 
-mode forçage simple =
+mode entree imposee simple =
     ERA5 SW_down_surface * (1 - albedo_surface)
 
 mode validation =

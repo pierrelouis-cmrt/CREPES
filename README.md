@@ -19,7 +19,7 @@ Projet Climat, Groupe D, 2026
 ## Lancement des codes 
 Bien effectuer la commande suivante :
 ```bash 
-python -m pip install -r modele5/requirements.txt
+python -m pip install -r requirements.txt
 ```
 <h2> Résumé rapide des modèles </h2>
 
@@ -52,7 +52,6 @@ Ajouts par rapport au modèle 2 :
 - Profil de température standard 1976.
 - Découpage CO2 en sous-bandes cœur/ailes.
 - Facteur diffusif `D = 1,66`.
-- Calibration sur le forçage `280 -> 560 ppm`.
 - Tests numériques séparés.
 
 ### Modèle 3

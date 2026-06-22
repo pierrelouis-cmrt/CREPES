@@ -64,7 +64,7 @@ Bandes codées :
 | `CO2_4_3um` |   $4.20-4.35\ \mu\mathrm{m}$ |   $A_b = 1.477625$ |
 
 Les bornes et les absorbances viennent du script local
-`modele1/codes_python/absorbance CO2.py`, qui calcule un spectre CO₂ avec
+`modele1/ressources/absorbance CO2.py`, qui calcule un spectre CO₂ avec
 RADIS/HITRAN et récupère :
 
 ```text
@@ -329,8 +329,8 @@ temporairement les absorbances des deux bandes par 0.
 | `CONCENTRATION_CO2_PPM`    |                                $425.65\ \mathrm{ppm}$ | Moyenne globale annuelle NOAA GML pour 2025                                   |
 | `IRRADIANCE_SOLAIRE`       |                            $1360\ \mathrm{W\,m^{-2}}$ | Modèle des Carcajous callipyges de l'année dernière                           |
 | `ALBEDO_SURFACE`           |                                                $0.30$ | Modèle des Carcajous callipyges de l'année dernière                           |
-| Bande `CO2_15um`           |          $14.25-15.75\ \mu\mathrm{m}$, $A_b=0.160933$ | `modele1/codes_python/absorbance CO2.py`, RADIS/HITRAN                        |
-| Bande `CO2_4_3um`          |           $4.20-4.35\ \mu\mathrm{m}$, $A_b=1.477625$ | `modele1/codes_python/absorbance CO2.py`, RADIS/HITRAN                        |
+| Bande `CO2_15um`           |          $14.25-15.75\ \mu\mathrm{m}$, $A_b=0.160933$ | `modele1/ressources/absorbance CO2.py`, RADIS/HITRAN                          |
+| Bande `CO2_4_3um`          |           $4.20-4.35\ \mu\mathrm{m}$, $A_b=1.477625$ | `modele1/ressources/absorbance CO2.py`, RADIS/HITRAN                          |
 | Positions IR du CO₂        | autour de $15\ \mu\mathrm{m}$ et $4.3\ \mu\mathrm{m}$ | ENS Lyon ACCES                                                                |
 
 Liens :

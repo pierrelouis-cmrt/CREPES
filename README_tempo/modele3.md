@@ -10,13 +10,13 @@ modele3/
   physique.py                   # constantes et formules physiques
   calibrer_coefficients_co2.py  # calibrage HITRAN/RADIS des coefficients CO2
   donnees.py                    # chargement du paquet compact
+  generer_donnees.py            # génération du paquet compact
   ressources/
-    README.md                   # ressources et génération du paquet
-    generer_donnees.py          # génération du paquet compact
+    README.md
+    coefficients_opacite_modele3.npz
     donnees_precalculees/
       grille_5deg_2024/
         donnees_colonnes_5deg_2024.npz
-        metadata.json
         README.md
   tests/
     tester_modele3.py
@@ -88,15 +88,10 @@ unité est sans dimension :
   `delta_p / 101325`.
 - `a_H2O` vaut pour `10 kg m-2` de vapeur d'eau, puis il est remis à l'échelle
   par la masse de vapeur d'eau ERA5 de la couche.
-- La cible CO2 conserve l'ordre de grandeur pédagogique du doublement
-  `280 -> 560 ppm` hérité du modele 2.5. Les coefficients H2O ajoutent une
-  opacité simple par grandes bandes, sans raies fines.
+- Le fichier `coefficients_opacite_modele3.npz` regroupe les coefficients CO2,
+  H2O et nuages utilisés par le calcul.
 
 Ces nombres ne remplacent pas HITRAN, correlated-k ou une dépendance fine en température/pression ; ils servent à garder un noyau CO2 + H2O clair et défendable pour le projet.
-
-Une méthode de recalibrage propre des coefficients CO2 est documentée dans
-`CALIBRAGE_COEFFICIENTS_CO2.md`. Le script dédié calcule des transmissions de référence HITRAN via RADIS, ajuste les `a_CO2` par bande, recale le forçage
-`280 -> 560 ppm`, puis quantifie l'impact des coeurs et des ailes.
 
 ## Données
 

@@ -3,14 +3,13 @@
 Le modele 3 represente la vapeur d'eau avec quelques coefficients de bande
 effectifs, pas avec un transfert radiatif ligne par ligne. Le script
 `modele3/codes_python/calibrer_coefficients_h2o.py` fabrique ces coefficients
-a partir de transmissions HITRAN/RADIS, dans le meme esprit que le calibrage
-CO2.
+a partir de transmissions HITRAN/RADIS.
 
 Les coefficients H2O utilises par le calcul normal ne sont pas ecrits dans
 `physique.py`. Ils sont lus depuis :
 
 ```text
-modele3/ressources/calibrage_opacite_h2o/coefficients_h2o_modele3.json
+modele3/ressources/coefficients_opacite_modele3.npz
 ```
 
 La methode volontairement simple est :
@@ -44,18 +43,6 @@ $$
 
 Le facteur `1.66` reste l'approximation diffusif/two-stream du modele.
 
-## Pourquoi pas de cible de forcage globale ?
-
-Le CO2 peut etre recale sur le doublement `280 -> 560 ppm`, parce que cette
-contrainte est simple, stable et pedagogiquement standard.
-
-Pour H2O, une cible analogue serait beaucoup moins defendable : la vapeur d'eau
-depend fortement de la temperature, de la colonne locale et de la verticale.
-Recaller les coefficients sur les flux ERA5 melangerait aussi les effets de
-nuages, d'emissivite de surface et d'erreurs de profil thermique. Le script H2O
-reste donc ancre sur la transmission spectrale HITRAN/RADIS et ne force pas les
-flux du modele vers ERA5.
-
 ## Commandes
 
 Installer les dependances optionnelles :
@@ -83,20 +70,13 @@ L'option `--h2o-scale-values` existe pour explorer la sensibilite a des masses
 H2O multipliees, mais le defaut `1` est le choix le plus propre physiquement :
 il utilise directement les profils humides du paquet.
 
-## Sorties
+## Sortie
 
-Le script ecrit trois fichiers :
+Le script met a jour le paquet commun :
 
 ```text
-modele3/ressources/calibrage_opacite_h2o/calibrage_coefficients_h2o.json
-modele3/ressources/calibrage_opacite_h2o/coefficients_h2o_modele3.json
-modele3/ressources/calibrage_opacite_h2o/coefficients_h2o_calibres.py
+modele3/ressources/coefficients_opacite_modele3.npz
 ```
-
-Le premier JSON est le rapport detaille. Le fichier
-`coefficients_h2o_modele3.json` est le fichier runtime charge par le modele 3.
-Le fichier Python permet de tester les coefficients avec
-`calculer_colonne_radiative(..., bandes=...)`.
 
 Le script calibre toutes les bandes ou `a_h2o > 0`, y compris les intervalles
 CO2 ou la vapeur d'eau contribue aussi a l'opacite.

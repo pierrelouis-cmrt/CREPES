@@ -1,7 +1,9 @@
 # Tests — modèle 3
 
-Ce dossier vérifie le chargement du paquet compact, le calcul radiatif et les
-invariants numériques principaux du modèle 3.
+Ce dossier vérifie le chargement du paquet compact, le calcul radiatif, les
+coefficients d'opacité CO₂/H₂O et les invariants numériques principaux du
+modèle 3. La visualisation qualitative `../ressources/Absorbance_H2O.py` n'est
+pas un test de calibrage et ne fait pas partie du runtime.
 
 ## Lancer
 

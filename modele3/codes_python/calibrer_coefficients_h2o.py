@@ -7,16 +7,12 @@ compatibles avec le modele 3 :
 
 Pour chaque bande H2O, on calcule une transmission RADIS pour les couches ERA5
 humides, on la moyenne avec le poids de Planck de la couche, on la convertit en
-tau equivalent, puis on retient la mediane de tau/X. Contrairement au CO2, il
-n'y a pas de recalage global sur une cible de forcage : la vapeur d'eau varie
-fortement avec les profils locaux et ne fournit pas une contrainte universelle
-aussi propre que le doublement 280 -> 560 ppm.
+tau equivalent, puis on retient la mediane de tau/X.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 import math
 import sys
 from dataclasses import dataclass
@@ -31,7 +27,6 @@ try:
         MASSE_MOLAIRE_AIR,
         R_UNIVERSEL,
         TRANSMISSION_MIN,
-        arrondir_json,
         charger_colonnes_calibration,
         coefficient_effectif_median,
         extraire_transmission_spectre,
@@ -42,7 +37,10 @@ try:
         plage_nombre_onde_cm,
         tau_equivalent_depuis_transmission,
     )
-    from .coefficients_opacite import CHEMIN_COEFFICIENTS_H2O
+    from .coefficients_opacite import (
+        CHEMIN_COEFFICIENTS_OPACITE,
+        ecrire_coefficients_opacite,
+    )
     from .donnees import DOSSIER_PAQUET_DEFAUT
 except ImportError:  # Permet aussi : python modele3/codes_python/calibrer_coefficients_h2o.py
     dossier_script = str(Path(__file__).resolve().parent)
@@ -53,7 +51,6 @@ except ImportError:  # Permet aussi : python modele3/codes_python/calibrer_coeff
         MASSE_MOLAIRE_AIR,
         R_UNIVERSEL,
         TRANSMISSION_MIN,
-        arrondir_json,
         charger_colonnes_calibration,
         coefficient_effectif_median,
         extraire_transmission_spectre,
@@ -64,7 +61,10 @@ except ImportError:  # Permet aussi : python modele3/codes_python/calibrer_coeff
         plage_nombre_onde_cm,
         tau_equivalent_depuis_transmission,
     )
-    from modele3.codes_python.coefficients_opacite import CHEMIN_COEFFICIENTS_H2O
+    from modele3.codes_python.coefficients_opacite import (
+        CHEMIN_COEFFICIENTS_OPACITE,
+        ecrire_coefficients_opacite,
+    )
     from modele3.codes_python.donnees import DOSSIER_PAQUET_DEFAUT
 
 
@@ -243,46 +243,12 @@ def ajuster_coefficients_par_bande(
     return coefficients
 
 
-def ecrire_snippet_python(chemin: Path, coefficients: dict[str, float]) -> None:
-    lignes = [
-        '"""Coefficients H2O calibres par modele3.codes_python.calibrer_coefficients_h2o."""',
-        "",
-        "COEFFICIENTS_H2O_CALIBRES = {",
-    ]
-    for nom, valeur in sorted(coefficients.items()):
-        lignes.append(f'    "{nom}": {valeur:.12g},')
-    lignes.extend(
-        [
-            "}",
-            "",
-            "",
-            "def bandes_calibrees():",
-            "    from modele3.codes_python.physique import bandes_avec_coefficients_h2o",
-            "",
-            "    return bandes_avec_coefficients_h2o(COEFFICIENTS_H2O_CALIBRES)",
-            "",
-        ]
-    )
-    chemin.write_text("\n".join(lignes), encoding="utf-8")
-
-
-def construire_payload_runtime(coefficients: dict[str, float]) -> dict[str, Any]:
-    return {
-        "methode": (
-            "coefficients H2O effectifs calibres par HITRAN/RADIS, moyenne Planck "
-            "et mediane(tau_eq / X)"
-        ),
-        "formule_modele3": "tau_H2O = a_H2O * (masse_h2o_kg_m2 / 10)",
-        "masse_h2o_reference_kg_m2": MASSE_H2O_REFERENCE_KG_M2,
-        "coefficients": dict(sorted(coefficients.items())),
-    }
-
-
 def construire_resultat(
     args: argparse.Namespace,
     colonnes: list[Any],
     bandes: list[dict[str, Any]],
     coefficients: dict[str, float],
+    facteur_global: float,
     nombre_couches_humides: int,
     nombre_spectres: int,
 ) -> dict[str, Any]:
@@ -290,7 +256,7 @@ def construire_resultat(
     return {
         "methode": (
             "HITRAN/RADIS H2O -> moyenne Planck -> tau equivalent -> "
-            "mediane(tau/X) par bande, sans recalage global de forcage"
+            "mediane(tau/X) par bande"
         ),
         "formule_modele3": "tau_H2O = a_H2O * (masse_h2o_kg_m2 / 10)",
         "echantillon": {
@@ -307,6 +273,7 @@ def construire_resultat(
             "masse_h2o_reference_kg_m2": MASSE_H2O_REFERENCE_KG_M2,
             "mole_fraction": "deduite de masse_h2o_kg_m2 / masse_air_kg_m2",
             "transmission_min": TRANSMISSION_MIN,
+            "facteur_global": facteur_global,
         },
         "coefficients": [
             {
@@ -315,6 +282,7 @@ def construire_resultat(
                 "lambda_max_um": float(bandes_par_nom[nom]["lambda_max_um"]),
                 "a_h2o_actuel": float(bandes_par_nom[nom]["a_h2o"]),
                 "a_h2o_hitran": valeur,
+                "a_h2o_modele3": valeur * facteur_global,
             }
             for nom, valeur in sorted(
                 coefficients.items(),
@@ -324,7 +292,7 @@ def construire_resultat(
         "limites": [
             "coefficients effectifs par grandes bandes, pas correlated-k",
             "couches supposees homogenes",
-            "pas de recalage sur les flux ERA5 car les nuages et le profil thermique s'y melangent",
+            "un facteur global peut etre passe explicitement si un recalage separe a ete documente",
         ],
     }
 
@@ -347,9 +315,15 @@ def construire_parseur() -> argparse.ArgumentParser:
     )
     parseur.add_argument("--wstep", type=lire_wstep, default="auto")
     parseur.add_argument(
-        "--output-dir",
+        "--facteur-global",
+        type=float,
+        default=1.0,
+        help="Facteur multiplicatif applique aux coefficients runtime apres le calibrage HITRAN.",
+    )
+    parseur.add_argument(
+        "--output",
         type=Path,
-        default=CHEMIN_COEFFICIENTS_H2O.parent,
+        default=CHEMIN_COEFFICIENTS_OPACITE,
     )
     parseur.add_argument("--dry-run", action="store_true")
     return parseur
@@ -362,6 +336,8 @@ def main() -> None:
     echelles_h2o = lire_liste_float(args.h2o_scale_values)
     if any(echelle <= 0.0 for echelle in echelles_h2o):
         raise ValueError("--h2o-scale-values doit contenir des valeurs strictement positives.")
+    if args.facteur_global <= 0.0:
+        raise ValueError("--facteur-global doit etre strictement positif.")
 
     nombre_couches = sum(len(colonne.donnees["couches"]) for colonne in colonnes)
     nombre_couches_humides = compter_couches_humides(colonnes, echelles_h2o)
@@ -384,26 +360,22 @@ def main() -> None:
         colonnes,
         bandes,
         coefficients,
+        args.facteur_global,
         nombre_couches_humides,
         nombre_spectres,
     )
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    json_path = args.output_dir / "calibrage_coefficients_h2o.json"
-    runtime_path = args.output_dir / CHEMIN_COEFFICIENTS_H2O.name
-    snippet_path = args.output_dir / "coefficients_h2o_calibres.py"
-    json_path.write_text(json.dumps(arrondir_json(resultat), indent=2), encoding="utf-8")
-    runtime_path.write_text(
-        json.dumps(arrondir_json(construire_payload_runtime(coefficients)), indent=2),
-        encoding="utf-8",
+    output = ecrire_coefficients_opacite(
+        args.output,
+        coefficients_h2o={
+            nom: valeur * args.facteur_global
+            for nom, valeur in coefficients.items()
+        },
     )
-    ecrire_snippet_python(snippet_path, coefficients)
 
     print("calibrage_h2o_ok")
-    print(f"json = {json_path}")
-    print(f"runtime_json = {runtime_path}")
-    print(f"snippet = {snippet_path}")
-    print(f"bandes_h2o = {len(bandes)}")
+    print(f"coefficients_npz = {output}")
+    print(f"bandes_h2o = {len(resultat['coefficients'])}")
     print(f"spectres_radis_hitran = {nombre_spectres}")
 
 

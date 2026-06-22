@@ -76,8 +76,8 @@ encore.
 Deux modes de comparaison peuvent être gardés :
 
 ```text
-mode_forcage_mensuel = era5_sw_down_surface_w_m2 * (1 - albedo_surface)
-mode_validation      = era5_sw_net_surface_w_m2
+mode_entree_mensuelle = era5_sw_down_surface_w_m2 * (1 - albedo_surface)
+mode_validation       = era5_sw_net_surface_w_m2
 ```
 
 Les anciennes corrections nuageuses TOA de type `albedo_nuages_effectif`
@@ -133,7 +133,7 @@ Format recommandé :
 - éviter le CSV mondial brut ;
 - stocker les tableaux en `.npz` compressé ;
 - utiliser des tableaux `int16` avec `scale_factor` et `offset` documentés ;
-- garder un petit fichier `metadata.json` décrivant la grille, les unités, les
+- garder la metadata dans le `.npz` pour décrire la grille, les unités, les
   facteurs d'échelle, l'année/source et les variables ;
 - viser des fichiers suivis par Git nettement sous `30 Mo`.
 
@@ -145,7 +145,6 @@ Exemple de dossier versionnable :
 
 ```text
 modele3/ressources/donnees_precalculees/grille_5deg_2024/
-  metadata.json
   donnees_colonnes_5deg_2024.npz
   README.md
 ```
@@ -171,7 +170,7 @@ Le workflow attendu est donc :
 
 1. un membre du groupe qui possède les gros fichiers lance le prétraitement ;
 2. le script lit `ressources/`, interpole sur la grille 5°, construit les
-   couches du modèle 3 et écrit les `.npz`/`metadata.json` compacts ;
+   couches du modèle 3 et écrit le `.npz` compact ;
 3. ces fichiers pré-calculés sont suivis par Git ;
 4. les autres membres clonent le dépôt et peuvent lancer le modèle 4 sans
    télécharger les gros fichiers d'origine.

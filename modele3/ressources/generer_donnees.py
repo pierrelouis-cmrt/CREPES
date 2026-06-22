@@ -6,6 +6,7 @@ import argparse
 import csv
 import json
 import math
+import subprocess
 import sys
 from pathlib import Path
 
@@ -17,16 +18,30 @@ except ImportError as exc:  # pragma: no cover - message CLI
     raise SystemExit("xarray est requis pour generer les donnees 3.") from exc
 
 try:
-    from ..codes_python import physique
+    from modele3.codes_python import physique
+    from modele3.codes_python.coefficients_opacite import (
+        CHEMIN_COEFFICIENTS_OPACITE,
+        ecrire_coefficients_opacite,
+    )
 except ImportError:  # Permet aussi : python modele3/ressources/generer_donnees.py
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from modele3.codes_python import physique
+    from modele3.codes_python.coefficients_opacite import (
+        CHEMIN_COEFFICIENTS_OPACITE,
+        ecrire_coefficients_opacite,
+    )
 
 
 RACINE_DEPOT = Path(__file__).resolve().parents[2]
 RESSOURCES_DEFAUT = RACINE_DEPOT / "ressources"
 ALBEDO_DIR_DEFAUT = RESSOURCES_DEFAUT / "albedo"
-SORTIE_DEFAUT = Path(__file__).resolve().parent / "donnees_precalculees" / "grille_5deg_2024"
+CERES_ALBEDO_NUAGES_DEFAUT = ALBEDO_DIR_DEFAUT / "CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc"
+SORTIE_DEFAUT = (
+    Path(__file__).resolve().parents[1]
+    / "ressources"
+    / "donnees_precalculees"
+    / "grille_5deg_2024"
+)
 FICHIER_NPZ = "donnees_colonnes_5deg_2024.npz"
 LONGITUDE_CONVENTION = "-180..180"
 EPAISSEUR_MIN_COUCHE_HPA = 0.1
@@ -43,14 +58,23 @@ QUANTIFICATION = {
     "humidite_specifique_couche_kgkg": ("uint16", 5e-7, 0.0, 65535, "kg kg-1"),
     "masse_h2o_couche_kg_m2": ("uint16", 0.001, 0.0, 65535, "kg m-2"),
     "albedo_surface": ("uint16", 1e-4, 0.0, 65535, "1"),
+    "albedo_nuages_effectif": ("uint16", 1e-4, 0.0, 65535, "1"),
     "sw_toa_moyen_mensuel_w_m2": ("uint16", 0.1, 0.0, 65535, "W m-2"),
     "transmissivite_sw_mensuelle": ("uint16", 1e-4, 0.0, 65535, "1"),
     "land_fraction": ("uint16", 1e-4, 0.0, 65535, "1"),
     "snow_ice_fraction": ("uint16", 1e-4, 0.0, 65535, "1"),
+    "low_cloud_cover": ("uint16", 1e-4, 0.0, 65535, "1"),
+    "medium_cloud_cover": ("uint16", 1e-4, 0.0, 65535, "1"),
+    "high_cloud_cover": ("uint16", 1e-4, 0.0, 65535, "1"),
+    "total_cloud_cover": ("uint16", 1e-4, 0.0, 65535, "1"),
+    "cloud_cover_couche": ("uint16", 1e-4, 0.0, 65535, "1"),
     "era5_lw_down_surface_w_m2": ("int16", 0.1, 0.0, -32768, "W m-2"),
+    "era5_lw_down_surface_clear_sky_w_m2": ("int16", 0.1, 0.0, -32768, "W m-2"),
     "era5_sw_net_surface_w_m2": ("int16", 0.1, 0.0, -32768, "W m-2"),
     "era5_olr_w_m2": ("int16", 0.1, 0.0, -32768, "W m-2"),
+    "era5_olr_clear_sky_w_m2": ("int16", 0.1, 0.0, -32768, "W m-2"),
     "era5_sw_down_surface_w_m2": ("int16", 0.1, 0.0, -32768, "W m-2"),
+    "era5_sw_down_surface_clear_sky_w_m2": ("int16", 0.1, 0.0, -32768, "W m-2"),
 }
 
 
@@ -163,6 +187,10 @@ def charger_surface_era5(fichier_surface, latitudes, longitudes, annee):
         "temperature_2m_k": ds["t2m"].to_numpy().astype(np.float32) if "t2m" in ds else np.nan,
         "skin_temperature_k": ds["skt"].to_numpy().astype(np.float32) if "skt" in ds else np.nan,
         "land_fraction": _borne_fraction(ds["lsm"].to_numpy().astype(np.float32)) if "lsm" in ds else np.nan,
+        "low_cloud_cover": _borne_fraction(ds["lcc"].to_numpy().astype(np.float32)) if "lcc" in ds else np.nan,
+        "medium_cloud_cover": _borne_fraction(ds["mcc"].to_numpy().astype(np.float32)) if "mcc" in ds else np.nan,
+        "high_cloud_cover": _borne_fraction(ds["hcc"].to_numpy().astype(np.float32)) if "hcc" in ds else np.nan,
+        "total_cloud_cover": _borne_fraction(ds["tcc"].to_numpy().astype(np.float32)) if "tcc" in ds else np.nan,
     }
     sea_ice = _borne_fraction(ds["siconc"].to_numpy().astype(np.float32)) if "siconc" in ds else 0.0
     snow_depth = ds["sd"].to_numpy().astype(np.float32) if "sd" in ds else 0.0
@@ -174,9 +202,12 @@ def charger_surface_era5(fichier_surface, latitudes, longitudes, annee):
 def charger_flux_era5(fichier_flux, latitudes, longitudes, annee, allow_fallbacks):
     variables = {
         "avg_sdlwrf": "era5_lw_down_surface_w_m2",
+        "avg_sdlwrfcs": "era5_lw_down_surface_clear_sky_w_m2",
         "avg_snswrf": "era5_sw_net_surface_w_m2",
         "avg_tnlwrf": "era5_olr_w_m2",
+        "avg_tnlwrfcs": "era5_olr_clear_sky_w_m2",
         "avg_sdswrf": "era5_sw_down_surface_w_m2",
+        "avg_sdswrfcs": "era5_sw_down_surface_clear_sky_w_m2",
     }
     shape = (12, len(latitudes), len(longitudes))
     if fichier_flux is None:
@@ -189,7 +220,7 @@ def charger_flux_era5(fichier_flux, latitudes, longitudes, annee, allow_fallback
     for entree, sortie_nom in variables.items():
         if entree in ds:
             valeurs = ds[entree].to_numpy().astype(np.float32)
-            if entree == "avg_tnlwrf":
+            if entree in ("avg_tnlwrf", "avg_tnlwrfcs"):
                 valeurs = np.abs(valeurs)
             sortie[sortie_nom] = valeurs
         elif allow_fallbacks:
@@ -262,6 +293,48 @@ def charger_albedo_surface(albedo_dir, latitudes, longitudes, allow_fallbacks):
             )
         )
     return np.stack(cartes, axis=0)
+
+
+def charger_albedo_nuages_ceres(ceres_file, latitudes, longitudes, annee, allow_fallbacks):
+    """Charge l'albedo nuageux effectif CERES utilise comme diagnostic."""
+
+    ceres_file = Path(ceres_file)
+    if not ceres_file.exists():
+        if allow_fallbacks:
+            return np.zeros((12, len(latitudes), len(longitudes)), dtype=np.float32)
+        raise FileNotFoundError(f"Fichier CERES nuages introuvable: {ceres_file}")
+
+    with xr.open_dataset(ceres_file, decode_times=True) as ds:
+        ds = _selection_temps(ds, annee)
+        ds.load()
+        ds = ds.assign_coords(lon=(((ds.lon + 180) % 360) - 180)).sortby("lon")
+        toa_sw_all = ds["toa_sw_all_mon"]
+        toa_sw_clr = ds["toa_sw_clr_c_mon"]
+        solar_in = ds["solar_mon"]
+        cloud_albedo = xr.where(
+            solar_in > 1e-6,
+            (toa_sw_all - toa_sw_clr) / solar_in,
+            0.0,
+        )
+
+        source_lat = ds["lat"].to_numpy().astype(np.float64)
+        source_lon = ds["lon"].to_numpy().astype(np.float64)
+        valeurs = cloud_albedo.to_numpy().astype(np.float64)
+
+    cartes = []
+    for mois in range(12):
+        cartes.append(
+            _nearest_matrix(
+                source_lat,
+                source_lon,
+                valeurs[mois],
+                latitudes,
+                longitudes,
+                allow_fallbacks,
+                0.0,
+            )
+        )
+    return _borne_fraction(np.stack(cartes, axis=0))
 
 
 def calculer_sw_toa_moyen_mensuel(latitudes, nombre_pas_horaires=96):
@@ -352,6 +425,11 @@ def charger_profils_et_couches(fichier_profil, surface, latitudes, longitudes, a
         p_levels = ds["pressure_level"].to_numpy().astype(np.float64)
         temperature = ds["t"].to_numpy().astype(np.float32)
         humidite = np.maximum(ds["q"].to_numpy().astype(np.float32), 0.0)
+        cloud_cover = (
+            _borne_fraction(ds["cc"].to_numpy().astype(np.float32))
+            if "cc" in ds
+            else None
+        )
 
     shape = (12, len(physique.PRESSION_BORDS_REFERENCE_HPA), len(latitudes), len(longitudes))
     sortie = {
@@ -361,6 +439,7 @@ def charger_profils_et_couches(fichier_profil, surface, latitudes, longitudes, a
         "humidite_specifique_couche_kgkg": np.full(shape, np.nan, dtype=np.float32),
         "masse_air_couche_kg_m2": np.full(shape, np.nan, dtype=np.float32),
         "masse_h2o_couche_kg_m2": np.full(shape, np.nan, dtype=np.float32),
+        "cloud_cover_couche": np.zeros(shape, dtype=np.float32),
     }
 
     p_surface = surface["pression_surface_hpa"]
@@ -376,6 +455,11 @@ def charger_profils_et_couches(fichier_profil, surface, latitudes, longitudes, a
                     indice_couche = physique.PRESSION_BORDS_REFERENCE_HPA.index(p_haut)
                     t_moy = _moyenne_profile(p_levels, temperature[mois, :, i, j], p_bas, p_haut)
                     q_moy = _moyenne_profile(p_levels, humidite[mois, :, i, j], p_bas, p_haut)
+                    cc_moy = (
+                        _moyenne_profile(p_levels, cloud_cover[mois, :, i, j], p_bas, p_haut)
+                        if cloud_cover is not None
+                        else 0.0
+                    )
                     if not math.isfinite(t_moy) or not math.isfinite(q_moy):
                         continue
                     delta_p_pa = (p_bas - p_haut) * 100.0
@@ -387,6 +471,9 @@ def charger_profils_et_couches(fichier_profil, surface, latitudes, longitudes, a
                     sortie["humidite_specifique_couche_kgkg"][mois, indice_couche, i, j] = q_moy
                     sortie["masse_air_couche_kg_m2"][mois, indice_couche, i, j] = masse_air
                     sortie["masse_h2o_couche_kg_m2"][mois, indice_couche, i, j] = masse_h2o
+                    sortie["cloud_cover_couche"][mois, indice_couche, i, j] = (
+                        np.clip(cc_moy, 0.0, 1.0) if math.isfinite(cc_moy) else 0.0
+                    )
     return sortie
 
 
@@ -428,17 +515,17 @@ def _metadata_variable(nom, source):
 def ecrire_paquet(sortie_dir, tableaux, metadata, overwrite):
     sortie_dir = Path(sortie_dir)
     npz_path = sortie_dir / FICHIER_NPZ
-    metadata_path = sortie_dir / "metadata.json"
     readme_path = sortie_dir / "README.md"
-    if (npz_path.exists() or metadata_path.exists()) and not overwrite:
-        raise FileExistsError(f"La sortie existe deja: {sortie_dir}. Ajouter --overwrite.")
+    if npz_path.exists() and not overwrite:
+        raise FileExistsError(f"La sortie existe deja: {sortie_dir}. Relancer sans --no-overwrite.")
     sortie_dir.mkdir(parents=True, exist_ok=True)
 
     tableaux_quantifies = {nom: _quantifier(nom, valeurs) for nom, valeurs in tableaux.items()}
-    np.savez_compressed(npz_path, **tableaux_quantifies)
-    with metadata_path.open("w", encoding="utf-8") as fichier:
-        json.dump(metadata, fichier, indent=2, ensure_ascii=False)
-        fichier.write("\n")
+    np.savez_compressed(
+        npz_path,
+        metadata_json=np.array(json.dumps(metadata, ensure_ascii=False)),
+        **tableaux_quantifies,
+    )
     readme_path.write_text(
         "# Donnees precalculees 3\n\n"
         "Paquet compact genere depuis les ressources racine du depot. Ce dossier\n"
@@ -448,6 +535,7 @@ def ecrire_paquet(sortie_dir, tableaux, metadata, overwrite):
         f"- Annee: {metadata['annee']}\n"
         "- Grille: 36 latitudes x 72 longitudes x 12 mois\n"
         "- Usage normal: `modele3.codes_python.donnees.charger_paquet_grille`.\n\n"
+        "Le paquet est regenere par `modele3.ressources.generer_donnees`.\n\n"
         "## Provenance\n\n"
         "| Champ | Source active | Transformation |\n"
         "| --- | --- | --- |\n"
@@ -456,6 +544,7 @@ def ecrire_paquet(sortie_dir, tableaux, metadata, overwrite):
         "| Flux de validation | ERA5 flux moyens | Stockes pour comparaison, jamais pour recalibrer. |\n"
         "| Transmissivite SW | Geometrie solaire 3 + ERA5 `avg_sdswrf` | `ERA5 SW_down / moyenne_mensuelle(S0*cos(i))`, borne `[0, 1]`. |\n"
         "| Albedo surface | `ressources/albedo/albedo01.csv` ... `albedo12.csv` | Longitudes normalisees -180..180, selection mensuelle au plus proche, puis correction des zeros sur neige/glace. |\n"
+        "| Nuages | ERA5 `cc/lcc/mcc/hcc/tcc` + CERES EBAF TOA | Fractions nuageuses bornees `[0, 1]`; albedo nuageux CERES stocke comme diagnostic. |\n"
         "\n"
         "Les fichiers `ressources/albedo/*` sont des copies racine des donnees utiles\n"
         "historiquement presentes dans le modele 0. Le code 3 ne lit pas le dossier\n"
@@ -469,11 +558,63 @@ def ecrire_paquet(sortie_dir, tableaux, metadata, overwrite):
         "Le `.npz` contient seulement les champs necessaires au calcul normal :\n"
         "coordonnees, poids de surface, pression de surface, albedo, transmissivite\n"
         "court-onde mensuelle, champs surface utiles, flux ERA5 de validation et\n"
-        "couches pretraitees. Les facteurs de quantification, unites et sources\n"
-        "sont dans `metadata.json`.\n",
+        "couches pretraitees, dont la fraction nuageuse par couche. Les facteurs\n"
+        "de quantification, unites et sources sont stockes dans le meme `.npz`.\n",
         encoding="utf-8",
     )
     return npz_path
+
+
+def _chemin_absolu(chemin):
+    chemin = Path(chemin)
+    if chemin.is_absolute():
+        return chemin
+    return Path.cwd() / chemin
+
+
+def recalculer_coefficients_opacite(paquet_npz, coefficients_output, tau_lw_nuage):
+    """Recalcule CO2 puis H2O et garde le parametre nuageux dans le NPZ commun."""
+
+    paquet_npz = _chemin_absolu(paquet_npz)
+    coefficients_output = _chemin_absolu(coefficients_output)
+
+    if tau_lw_nuage is not None:
+        _message("Mise a jour du coefficient nuageux long-onde")
+        ecrire_coefficients_opacite(
+            coefficients_output,
+            parametres_nuages={"tau_lw_par_fraction_nuage": tau_lw_nuage},
+        )
+
+    commandes = (
+        (
+            "CO2",
+            [
+                sys.executable,
+                "-m",
+                "modele3.codes_python.calibrer_coefficients_co2",
+                "--paquet",
+                str(paquet_npz),
+                "--output",
+                str(coefficients_output),
+            ],
+        ),
+        (
+            "H2O",
+            [
+                sys.executable,
+                "-m",
+                "modele3.codes_python.calibrer_coefficients_h2o",
+                "--paquet",
+                str(paquet_npz),
+                "--output",
+                str(coefficients_output),
+            ],
+        ),
+    )
+
+    for nom, commande in commandes:
+        _message(f"Calibrage coefficients {nom}")
+        subprocess.run(commande, cwd=RACINE_DEPOT, check=True)
 
 
 def generer(args):
@@ -502,6 +643,14 @@ def generer(args):
         longitudes,
         args.allow_fallbacks,
     )
+    _message("Chargement albedo nuages CERES")
+    albedo_nuages_effectif = charger_albedo_nuages_ceres(
+        args.ceres_file,
+        latitudes,
+        longitudes,
+        args.annee,
+        args.allow_fallbacks,
+    )
     _message("Calcul transmissivite court-onde mensuelle")
     sw_toa_moyen = calculer_sw_toa_moyen_mensuel(latitudes)
     transmissivite_sw, diagnostics_transmissivite = calculer_transmissivite_sw(
@@ -527,6 +676,7 @@ def generer(args):
         ),
         **surface,
         "albedo_surface": _borne_fraction(albedo_surface),
+        "albedo_nuages_effectif": _borne_fraction(albedo_nuages_effectif),
         "sw_toa_moyen_mensuel_w_m2": sw_toa_moyen,
         "transmissivite_sw_mensuelle": transmissivite_sw,
         **flux,
@@ -563,10 +713,12 @@ def generer(args):
             "era5_surface": str(Path(fichier_surface).relative_to(RACINE_DEPOT)),
             "era5_flux": str(Path(fichier_flux).relative_to(RACINE_DEPOT)) if fichier_flux else None,
             "albedo_dir": str(Path(args.albedo_dir).relative_to(RACINE_DEPOT)),
+            "ceres_albedo_nuages": str(Path(args.ceres_file).relative_to(RACINE_DEPOT)),
         },
         "references_externes": {
             "era5_pressure_levels_monthly": "https://cds.climate.copernicus.eu/datasets/reanalysis-era5-pressure-levels-monthly-means",
             "era5_single_levels_monthly": "https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels-monthly-means",
+            "ceres_ebaf_toa": "https://ceres.larc.nasa.gov/data/",
             "nasa_power_parameters": "https://power.larc.nasa.gov/docs/tutorials/parameters/",
             "nasa_power_methodology": "https://power.larc.nasa.gov/docs/methodology/",
         },
@@ -582,21 +734,31 @@ def generer(args):
                 "masse_air_couche_kg_m2": "delta_p / g",
                 "humidite_specifique_couche_kgkg": "ERA5 q moyenne par couche",
                 "masse_h2o_couche_kg_m2": "q * delta_p / g",
+                "cloud_cover_couche": "ERA5 cc moyenne par couche",
                 "albedo_surface": "ressources/albedo/albedo01.csv..albedo12.csv, longitudes normalisees -180..180 + correction zero neige/glace",
+                "albedo_nuages_effectif": "CERES EBAF TOA, (toa_sw_all - toa_sw_clr) / solar",
                 "sw_toa_moyen_mensuel_w_m2": "geometrie solaire modele 3, S0=1361 W m-2",
                 "transmissivite_sw_mensuelle": "ERA5 avg_sdswrf / sw_toa_moyen_mensuel_w_m2",
                 "land_fraction": "ERA5 lsm",
                 "snow_ice_fraction": "ERA5 siconc ou sd > 0.01 m",
+                "low_cloud_cover": "ERA5 lcc",
+                "medium_cloud_cover": "ERA5 mcc",
+                "high_cloud_cover": "ERA5 hcc",
+                "total_cloud_cover": "ERA5 tcc",
                 "era5_lw_down_surface_w_m2": "ERA5 avg_sdlwrf",
+                "era5_lw_down_surface_clear_sky_w_m2": "ERA5 avg_sdlwrfcs",
                 "era5_sw_net_surface_w_m2": "ERA5 avg_snswrf",
                 "era5_olr_w_m2": "abs(ERA5 avg_tnlwrf)",
+                "era5_olr_clear_sky_w_m2": "abs(ERA5 avg_tnlwrfcs)",
                 "era5_sw_down_surface_w_m2": "ERA5 avg_sdswrf",
+                "era5_sw_down_surface_clear_sky_w_m2": "ERA5 avg_sdswrfcs",
             }.items()
         },
         "notes": [
             "Les CSV d'albedo sont lus depuis ressources/albedo, copie racine des donnees utiles du modele 0.",
+            "L'albedo nuageux CERES est stocke comme diagnostic; le court-onde de production utilise la transmissivite ERA5 all-sky pour eviter un double comptage des nuages.",
             "Les albedos nuls sur neige/glace sont remplaces par un repli physique 0.30..0.65, car le rapport SW_UP/SW_DOWN source est non observable en nuit polaire.",
-            "Le modele 3 n'utilise pas de coefficient nuageux court-onde ou long-onde.",
+            "Le modele 3 utilise les fractions nuageuses ERA5 pour une opacite grise long-onde simple.",
             "transmissivite_sw_mensuelle corrige le court-onde surface avec ERA5, sans remplacer S0*cos(i).",
             "Les couches verticales <0.1 hPa sont ignorees avant stockage.",
             "Les poids_surface sont normalises pour sommer a 1 sur la grille.",
@@ -606,6 +768,14 @@ def generer(args):
     _message("Ecriture du paquet compact")
     npz_path = ecrire_paquet(args.output, tableaux, metadata, args.overwrite)
     _message(f"Paquet ecrit: {npz_path}")
+    if args.sans_coefficients:
+        _message("Calibrage des coefficients ignore (--sans-coefficients).")
+    else:
+        recalculer_coefficients_opacite(
+            npz_path,
+            args.coefficients_output,
+            args.tau_lw_nuage,
+        )
     return npz_path
 
 
@@ -615,8 +785,41 @@ def construire_parseur():
     parseur.add_argument("--annee", type=int, default=2024)
     parseur.add_argument("--ressources-dir", type=Path, default=RESSOURCES_DEFAUT)
     parseur.add_argument("--albedo-dir", type=Path, default=ALBEDO_DIR_DEFAUT)
+    parseur.add_argument("--ceres-file", type=Path, default=CERES_ALBEDO_NUAGES_DEFAUT)
     parseur.add_argument("--output", type=Path, default=SORTIE_DEFAUT)
-    parseur.add_argument("--overwrite", action="store_true")
+    parseur.add_argument(
+        "--coefficients-output",
+        type=Path,
+        default=CHEMIN_COEFFICIENTS_OPACITE,
+        help="Fichier NPZ commun ou ecrire les coefficients CO2, H2O et nuages.",
+    )
+    parseur.add_argument(
+        "--tau-lw-nuage",
+        type=float,
+        default=None,
+        help=(
+            "Met a jour le coefficient nuageux gris tau_lw_par_fraction_nuage "
+            "dans le NPZ commun. Par defaut, conserve la valeur existante."
+        ),
+    )
+    parseur.add_argument(
+        "--sans-coefficients",
+        action="store_true",
+        help="Genere seulement le paquet de grille, sans lancer les calibrages CO2/H2O.",
+    )
+    parseur.set_defaults(overwrite=True)
+    parseur.add_argument(
+        "--overwrite",
+        dest="overwrite",
+        action="store_true",
+        help="Ecrase le paquet de donnees existant (comportement par defaut).",
+    )
+    parseur.add_argument(
+        "--no-overwrite",
+        dest="overwrite",
+        action="store_false",
+        help="Refuse d'ecrire si le paquet de donnees existe deja.",
+    )
     parseur.add_argument("--dry-run", action="store_true")
     parseur.add_argument("--allow-fallbacks", action="store_true")
     return parseur

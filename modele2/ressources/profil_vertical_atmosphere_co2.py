@@ -20,9 +20,10 @@ import numpy as np
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-DONNEES_DIR = SCRIPT_DIR / "données"
-CSV_DEFAUT = DONNEES_DIR / "profil_vertical_atmosphere_co2.csv"
-GRAPHIQUE_DEFAUT = DONNEES_DIR / "profil_vertical_atmosphere_co2.png"
+MODEL_DIR = SCRIPT_DIR.parent
+SORTIES_DIR = MODEL_DIR / "sorties"
+CSV_DEFAUT = SORTIES_DIR / "profil_vertical_atmosphere_co2.csv"
+GRAPHIQUE_DEFAUT = SORTIES_DIR / "profil_vertical_atmosphere_co2.png"
 CACHE_DIR = SCRIPT_DIR / ".cache"
 MPL_CACHE_DIR = CACHE_DIR / "matplotlib"
 G0 = 9.80665  # m s-2, acceleration de la pesanteur standard au niveau de la mer

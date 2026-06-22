@@ -12,8 +12,8 @@ donnee. Le modele 4 utilisera ces flux pour faire evoluer `T_surface(t)`.
 
 Le modele 3 est la version finale de la colonne radiative locale : il garde le
 noyau radiatif utile des iterations precedentes, avec un court-onde corrige
-par transmissivite ERA5 mensuelle, une emissivite de surface constante et sans
-opacite radiative explicite des nuages.
+par transmissivite ERA5 mensuelle, une emissivite de surface constante et une
+opacite long-onde nuageuse grise tres simple.
 
 ## Heritage du modele 2.5
 
@@ -27,8 +27,7 @@ Les elements repris sont :
 - propagation infrarouge montante et descendante couche par couche ;
 - facteur diffusif `D = 1.66` ;
 - bandes CO2 a `15 um` et `4.3 um`, avec decoupage coeur/ailes ;
-- coefficients CO2 effectifs herites du 2.5, avec une methode de recalibrage
-  HITRAN/RADIS dediee dans `CALIBRAGE_CO2.md`.
+- coefficients CO2 effectifs par grandes bandes.
 
 La profondeur optique CO2 conservee est :
 
@@ -43,11 +42,11 @@ transmission = exp(-D * tau_total_bande)
 emissivite_couche = 1 - transmission
 ```
 
-Dans le modele 3, `tau_total_bande` ne reprend pas les anciennes corrections
-nuageuses. Il contient seulement les contributions CO2 et H2O :
+Dans le modele 3, `tau_total_bande` additionne les contributions CO2, H2O et
+nuages avant de calculer la transmission :
 
 ```text
-tau_total_bande = tau_CO2_bande + tau_H2O_bande
+tau_total_bande = tau_CO2_bande + tau_H2O_bande + tau_nuage
 ```
 
 Ainsi, l'heritage du 2.5 concerne le transfert long-onde spectral et la logique
@@ -210,14 +209,13 @@ Les unites et references internes sont :
 
 | Coefficient | Unite dans le modele | Origine projet | Cible / role |
 | --- | --- | --- | --- |
-| `a_CO2_bande` | profondeur optique effective sans dimension pour `CO2 = 280 ppm` et `delta_p = 101325 Pa` | noyau long-onde du modele 2.5, repris dans le modele 3 | conserver l'ordre de grandeur pedagogique du forcage relatif `280 -> 560 ppm` |
-| `a_H2O_bande` | profondeur optique effective sans dimension pour `10 kg m-2` de vapeur d'eau | ajout modele 3 branche sur les masses H2O issues d'ERA5, recalibrable avec `CALIBRAGE_H2O.md` | representer les grandes bandes H2O : 6.3 um, fenetre 8-13 um, far-IR |
+| `a_CO2_bande` | profondeur optique effective sans dimension pour `CO2 = 280 ppm` et `delta_p = 101325 Pa` | `ressources/coefficients_opacite_modele3.npz` | grandes bandes CO2 15 um et 4.3 um |
+| `a_H2O_bande` | profondeur optique effective sans dimension pour `10 kg m-2` de vapeur d'eau | `ressources/coefficients_opacite_modele3.npz` | grandes bandes H2O : 6.3 um, fenetre 8-13 um, far-IR |
+| `tau_nuage` | profondeur optique grise long-onde pour une fraction nuageuse | `ressources/coefficients_opacite_modele3.npz` + fractions ERA5 | effet long-onde gris simple |
 
-Dans `physique.py`, `ECHELLE_OPACITE_CO2 = 0.0327228010` est donc un facteur
-d'echelle effectif du noyau CO2, pas une section efficace. De meme, les valeurs
-H2O `25.60`, `0.48` et `14.40` fixent des profondeurs optiques de grandes
-bandes pour une masse colonne de reference ; elles ne codent pas des raies
-spectrales individuelles.
+Dans `physique.py`, les coefficients sont lus depuis un seul fichier `.npz`.
+Ces nombres restent des profondeurs optiques effectives de grandes bandes ; ils
+ne codent pas des raies spectrales individuelles.
 
 Le facteur diffusif herite du noyau precedent reste :
 
@@ -238,11 +236,9 @@ trois grands intervalles propres a H2O sont :
 
 Les coefficients de bandes sont effectifs. Ils gardent un noyau CO2 + H2O
 simple et lisible ; ils ne remplacent pas HITRAN, RADIS ou une methode
-correlated-k. Le script `codes_python/calibrer_coefficients_co2.py` sert a
-deriver des `a_CO2_bande` plus tracables depuis des transmissions HITRAN/RADIS,
-puis a recaler leur facteur global sur le forcage `280 -> 560 ppm`. Le script
-`codes_python/calibrer_coefficients_h2o.py` applique la meme compression aux
-bandes H2O, mais sans recalage global de forcage.
+correlated-k. Les scripts de calibrage dans `codes_python/` peuvent recalculer
+les coefficients depuis des transmissions HITRAN/RADIS, puis mettre a jour le
+paquet `.npz` commun.
 
 ## Vapeur d'eau
 
@@ -273,23 +269,24 @@ transmission.
 
 ## Nuages
 
-Les nuages ne sont pas un terme radiatif explicite dans le modele 3. Leur effet
-moyen sur le court-onde de surface est inclus dans la transmissivite ERA5
-mensuelle :
+L'effet moyen des nuages sur le court-onde de surface est inclus dans la
+transmissivite ERA5 mensuelle :
 
 ```text
 SW_down_surface = transmissivite_sw_mensuelle * SW_TOA_local
 ```
 
-Dans le long-onde, il n'y a pas de `tau_nuage` :
+Dans le long-onde, le premier jet ajoute une opacite grise de nuage :
 
 ```text
-tau_total = tau_CO2 + tau_H2O
+tau_nuage = tau_lw_par_fraction_nuage * cloud_cover_couche
+tau_total = tau_CO2 + tau_H2O + tau_nuage
 ```
 
-Les anciens mecanismes qui associaient `low_cloud_cover`,
-`medium_cloud_cover`, `high_cloud_cover` ou `total_cloud_cover` a un albedo
-nuageux court-onde ou a une opacite grise long-onde ne sont donc pas repris.
+Les fractions nuageuses viennent du paquet compact quand elles sont disponibles
+(`cc`, `lcc`, `mcc`, `hcc`, `tcc` ERA5). L'albedo nuageux CERES est conserve
+comme diagnostic, mais il n'est pas multiplie une seconde fois dans le flux
+court-onde de production.
 
 ## Flux de sortie
 
@@ -329,7 +326,8 @@ flux de surface situee hors des bandes modelisees.
 
 Le paquet compact versionne contient les champs necessaires au calcul normal :
 coordonnees, pression de surface, albedo de surface, transmissivite court-onde
-mensuelle, couches verticales pretraitees et flux ERA5 de validation.
+mensuelle, fractions nuageuses, couches verticales pretraitees et flux ERA5 de
+validation.
 
 Ce qui est volontairement absent du modele 3 :
 
@@ -338,8 +336,7 @@ Ce qui est volontairement absent du modele 3 :
 - pas de lecture directe ERA5 pendant `calculer_colonne_radiative` ;
 - pas de fallback analytique dans le calcul normal ;
 - pas d'emissivite variable de surface ;
-- pas d'albedo nuageux court-onde explicite ;
-- pas d'opacite nuageuse long-onde explicite ;
+- pas de double comptage d'un albedo nuageux court-onde explicite ;
 - pas d'ozone, aerosols, CH4, N2O ou microphysique nuageuse.
 
 Ces absences sont des choix du modele 3. Elles ne doivent pas etre corrigees
