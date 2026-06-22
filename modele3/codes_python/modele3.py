@@ -19,7 +19,13 @@ try:
         charger_paquet_grille,
         extraire_colonne,
     )
-except ImportError:  # Permet aussi : python modele3/modele3.py
+except ImportError:  # Permet aussi : python modele3/codes_python/modele3.py
+    dossier_script = Path(__file__).resolve().parent
+    sys.path = [
+        chemin
+        for chemin in sys.path
+        if Path(chemin or ".").resolve() != dossier_script
+    ]
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from modele3.codes_python import physique
     from modele3.codes_python.donnees import (
@@ -125,15 +131,61 @@ def _propager_flux_descendant(bande, couches):
     return flux
 
 
-def comparaison_validation(resultat, validation_flux):
+def construire_flux_validation_modele(resultat):
+    flux_validation = {}
+    sw_toa_mensuel = physique.valeur_finie(resultat.get("sw_toa_moyen_mensuel_w_m2"))
+    if sw_toa_mensuel is not None:
+        sw_down_mensuel = sw_toa_mensuel * resultat["transmissivite_sw_mensuelle"]
+        flux_validation["SW_down_surface_mensuel"] = sw_down_mensuel
+        flux_validation["SW_absorbe_surface_mensuel"] = (
+            sw_down_mensuel * (1.0 - resultat["albedo_surface"])
+        )
+    return flux_validation
+
+
+def construire_notes_validation(resultat, validation_flux, flux_validation_modele):
+    notes = []
+    references_sw = any(
+        nom in validation_flux
+        for nom in ("era5_sw_down_surface_w_m2", "era5_sw_net_surface_w_m2")
+    )
+    if references_sw and not flux_validation_modele:
+        notes.append(
+            "Comparaison shortwave ignoree: les references ERA5 sont mensuelles "
+            "et aucun SW_TOA moyen mensuel n'est disponible."
+        )
+    elif references_sw and resultat.get("mode_shortwave") != "moyenne_mensuelle_paquet":
+        notes.append(
+            "Le court-onde de flux_W_m2 est en mode "
+            f"{resultat.get('mode_shortwave')}; les ecarts SW utilisent le "
+            "diagnostic mensuel equivalent."
+        )
+    return notes
+
+
+def comparaison_validation(resultat, validation_flux, flux_validation_modele=None):
+    if flux_validation_modele is None:
+        flux_validation_modele = {}
     comparaison = {}
     if "era5_lw_down_surface_w_m2" in validation_flux:
         comparaison["ecart_LW_down_surface_W_m2"] = (
             resultat["LW_down_surface"] - validation_flux["era5_lw_down_surface_w_m2"]
         )
-    if "era5_sw_net_surface_w_m2" in validation_flux:
-        comparaison["ecart_SW_absorbe_surface_W_m2"] = (
-            resultat["SW_absorbe_surface"] - validation_flux["era5_sw_net_surface_w_m2"]
+    if (
+        "era5_sw_down_surface_w_m2" in validation_flux
+        and "SW_down_surface_mensuel" in flux_validation_modele
+    ):
+        comparaison["ecart_SW_down_surface_mensuel_W_m2"] = (
+            flux_validation_modele["SW_down_surface_mensuel"]
+            - validation_flux["era5_sw_down_surface_w_m2"]
+        )
+    if (
+        "era5_sw_net_surface_w_m2" in validation_flux
+        and "SW_absorbe_surface_mensuel" in flux_validation_modele
+    ):
+        comparaison["ecart_SW_absorbe_surface_mensuel_W_m2"] = (
+            flux_validation_modele["SW_absorbe_surface_mensuel"]
+            - validation_flux["era5_sw_net_surface_w_m2"]
         )
     if "era5_olr_w_m2" in validation_flux:
         comparaison["ecart_OLR_W_m2"] = resultat["OLR"] - validation_flux["era5_olr_w_m2"]
@@ -296,9 +348,16 @@ def calculer_colonne_radiative(
         "diagnostics_bandes": diagnostics_bandes,
         "validation_flux": donnees.get("validation_flux", {}),
     }
+    resultat["flux_validation_modele"] = construire_flux_validation_modele(resultat)
     resultat["comparaison_validation"] = comparaison_validation(
         resultat,
         resultat["validation_flux"],
+        resultat["flux_validation_modele"],
+    )
+    resultat["notes_validation"] = construire_notes_validation(
+        resultat,
+        resultat["validation_flux"],
+        resultat["flux_validation_modele"],
     )
     return resultat
 
@@ -360,11 +419,24 @@ def afficher_resultat(donnees, resultat):
 
     if resultat["validation_flux"]:
         print()
-        print("validation_W_m2")
+        print("validation_era5_mensuelle_W_m2")
         for nom, valeur in sorted(resultat["validation_flux"].items()):
             print(f"{nom} = {valeur:.6f}")
-        for nom, valeur in sorted(resultat["comparaison_validation"].items()):
-            print(f"{nom} = {valeur:.6f}")
+        if resultat["flux_validation_modele"]:
+            print()
+            print("validation_modele_mensuelle_W_m2")
+            for nom, valeur in sorted(resultat["flux_validation_modele"].items()):
+                print(f"{nom} = {valeur:.6f}")
+        if resultat["comparaison_validation"]:
+            print()
+            print("comparaison_validation_W_m2")
+            for nom, valeur in sorted(resultat["comparaison_validation"].items()):
+                print(f"{nom} = {valeur:.6f}")
+        if resultat["notes_validation"]:
+            print()
+            print("notes_validation")
+            for note in resultat["notes_validation"]:
+                print(f"- {note}")
 
 
 def main():

@@ -5,10 +5,16 @@ chargent le paquet compact ou regroupent les formules physiques.
 
 ## Lancer une colonne
 
+Depuis le dossier `modele3/` :
+
+```bash
+./modele3.py --lat 48.5 --lon 2.3 --mois 7 --temperature-surface 293 --moyenne-journaliere-sw
+```
+
 Depuis la racine du dépôt :
 
 ```bash
-python -m modele3.codes_python.modele3 --lat 48.5 --lon 2.3 --mois 7 --temperature-surface 293 --moyenne-journaliere-sw
+python -m modele3 --lat 48.5 --lon 2.3 --mois 7 --temperature-surface 293 --moyenne-journaliere-sw
 ```
 
 Utiliser `--jour-annee` à la place de `--mois` pour un jour précis,

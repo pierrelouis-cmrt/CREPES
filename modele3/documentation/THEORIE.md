@@ -123,6 +123,19 @@ SW_down_surface = transmissivite_sw_mensuelle * SW_TOA_local
 SW_absorbe_surface = SW_down_surface * (1 - albedo_surface)
 ```
 
+Pour la validation ERA5, ces flux ne sont comparables directement que lorsque
+`SW_TOA_local` represente la moyenne mensuelle. En mode instantane, le modele
+affiche le flux local demande, mais compare ERA5 a un diagnostic mensuel
+equivalent :
+
+```text
+SW_down_surface_mensuel =
+    transmissivite_sw_mensuelle * SW_TOA_moyen_mensuel
+
+SW_absorbe_surface_mensuel =
+    SW_down_surface_mensuel * (1 - albedo_surface)
+```
+
 Cette partie remplace l'ancien court-onde simplifie. Il n'y a plus de mode
 court-onde alternatif dans le modele 3, et il n'y a plus d'albedo nuageux
 effectif multiplie explicitement dans la formule.
