@@ -49,6 +49,8 @@ ENV/
 !**/ressources/grilles/grid_lowres_fast.npy
 !**/ressources/grilles/grid_lowres_fast.npy.json
 /ressources/
+/ressource.zip
+/ressources.zip
 
 # Local API/cache outputs created by model runs.
 **/ressources/caches/*

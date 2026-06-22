@@ -5,6 +5,9 @@ effectifs, pas avec un transfert radiatif ligne par ligne. Le script
 `modele3/codes_python/calibrer_coefficients_h2o.py` fabrique ces coefficients
 a partir de transmissions HITRAN/RADIS.
 
+Pour le rappel méthodologique complet, commun au CO2 et a la vapeur d'eau, voir
+[`CALIBRAGE_CO2_H2O.md`](CALIBRAGE_CO2_H2O.md).
+
 Les coefficients H2O utilises par le calcul normal ne sont pas ecrits dans
 `physique.py`. Ils sont lus depuis :
 
@@ -48,7 +51,7 @@ Le facteur `1.66` reste l'approximation diffusif/two-stream du modele.
 Installer les dependances optionnelles :
 
 ```bash
-./.venv/bin/python -m pip install -r modele3/requirements-calibrage.txt
+./.venv/bin/python -m pip install -r requirements.txt
 ```
 
 Voir le volume de calcul sans appeler RADIS :

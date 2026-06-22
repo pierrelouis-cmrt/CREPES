@@ -23,6 +23,15 @@ Bien effectuer la commande suivante :
 python -m pip install -r requirements.txt
 ```
 
+Sous Windows, depuis la racine :
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m modele4.codes_python.rapide
+.\.venv\Scripts\python.exe visualisation\planisphere.py --fichier modele4\sorties\simulation_modele4_rapide.npz
+```
+
 
 ## Modèle 0
 

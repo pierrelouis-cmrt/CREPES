@@ -64,8 +64,8 @@ python modele3/ressources/Absorbance_H2O.py
 Il construit des bandes paramétrées et un continuum infrarouge, puis applique
 Beer-Lambert. C'est une visualisation qualitative : elle ne lit pas RADIS,
 ne calcule pas de raies HITRAN et ne modifie pas les coefficients utilisés par
-la colonne radiative. Le calibrage effectif des coefficients H₂O est expliqué
-dans [`documentation/CALIBRAGE_H2O.md`](documentation/CALIBRAGE_H2O.md).
+la colonne radiative. Le rappel méthodologique commun CO₂/H₂O est dans
+[`documentation/CALIBRAGE_CO2_H2O.md`](documentation/CALIBRAGE_CO2_H2O.md).
 
 ## Structure
 
