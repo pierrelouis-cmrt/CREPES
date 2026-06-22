@@ -13,13 +13,15 @@ liés à leur génération ou à leur visualisation.
 Pour régénérer le paquet de grille depuis les sources locales :
 
 ```bash
-python -m modele3.ressources.generer_donnees --overwrite
+python -m modele3.ressources.generer_donnees
 ```
 
 Cette commande relance aussi les calibrages CO₂ et H₂O, qui mettent à jour
 `coefficients_opacite_modele3.npz`. Le troisième élément d'opacité, côté
 nuages, est simplement le paramètre gris `tau_lw_par_fraction_nuage`; il est
-stocké dans le même NPZ et peut être fixé avec `--tau-lw-nuage`.
+stocké dans le même NPZ et peut être fixé avec `--tau-lw-nuage`. Le paquet
+existant est écrasé par défaut ; utiliser `--no-overwrite` pour refuser
+l'écriture si les données existent déjà.
 
 Pour visualiser l'absorption qualitative de la vapeur d'eau :
 
