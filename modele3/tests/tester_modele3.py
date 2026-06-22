@@ -26,6 +26,7 @@ from modele3.codes_python.calibrer_coefficients_h2o import (
     couche_reference_depuis_modele as couche_h2o_reference_depuis_modele,
     fraction_molaire_h2o_depuis_masses,
 )
+from modele3.codes_python.coefficients_opacite import COEFFICIENTS_H2O_MODELE3
 from modele3.codes_python.donnees import charger_paquet_grille, extraire_colonne, iterer_colonnes
 from modele3.codes_python.modele3 import calculer_colonne_radiative, construire_couches
 from modele3.ressources.generer_donnees import _nearest_matrix, normaliser_longitudes_180
@@ -188,6 +189,13 @@ def tester_coefficients_h2o_remplacables_sans_mutation_globale():
     assert all(bande["a_co2"] == 0.0 for bande in bandes)
     assert avant["a_h2o"] != 1.23
     assert any(bande["a_co2"] > 0.0 for bande in physique.BANDES_INFRAROUGES)
+
+
+def tester_coefficients_h2o_charges_depuis_ressource():
+    bandes_h2o = {bande["nom"]: bande["a_h2o"] for bande in physique.bandes_h2o()}
+    assert set(bandes_h2o) == set(COEFFICIENTS_H2O_MODELE3)
+    for nom, coefficient in COEFFICIENTS_H2O_MODELE3.items():
+        assert bandes_h2o[nom] == coefficient
 
 
 def tester_calibrage_h2o_fraction_molaire_depuis_masses():
@@ -370,6 +378,7 @@ def main():
     tester_coefficients_co2_remplacables_sans_mutation_globale()
     tester_normalisation_tau_h2o_reference()
     tester_coefficients_h2o_remplacables_sans_mutation_globale()
+    tester_coefficients_h2o_charges_depuis_ressource()
     tester_calibrage_h2o_fraction_molaire_depuis_masses()
     tester_calibrage_h2o_couche_reference_synthetique()
     tester_calibrage_co2_coefficient_median_synthetique()

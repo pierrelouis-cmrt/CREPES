@@ -61,6 +61,7 @@ python -m modele3.ressources.generer_donnees --overwrite
 | `codes_python/calibrer_coefficients_h2o.py` | Outil de calibrage H₂O dédié. |
 | `documentation/CALIBRAGE_CO2.md` | Méthode de calibrage CO₂ actuelle. |
 | `documentation/CALIBRAGE_H2O.md` | Méthode de calibrage H₂O proposée. |
+| `ressources/calibrage_opacite_h2o/coefficients_h2o_modele3.json` | Coefficients H₂O chargés par le runtime. |
 | `requirements.txt` | Dépendances du moteur. |
 | `requirements-calibrage.txt` | Dépendances supplémentaires pour le calibrage. |
 
