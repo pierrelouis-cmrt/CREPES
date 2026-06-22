@@ -1,0 +1,25 @@
+# CREPES — dépendances communes à tous les modèles et scripts annexes.
+# Installer depuis la racine : python -m pip install -r requirements.txt
+
+# Calcul et manipulation de données
+numpy>=2.0
+pandas>=2.2
+scipy>=1.13
+xarray>=2024.6
+netCDF4>=1.7
+
+# Graphiques et données géographiques
+matplotlib>=3.8
+geopandas>=1.0
+shapely>=2.0
+Cartopy>=0.23
+pyshp>=2.3
+
+# Téléchargement, barres de progression et données ERA5
+requests>=2.31
+tqdm>=4.66
+cdsapi>=0.7
+
+# Calculs spectraux (CO2, H2O, CH4 et N2O)
+radis==0.17
+hitran-api==1.3.0.0

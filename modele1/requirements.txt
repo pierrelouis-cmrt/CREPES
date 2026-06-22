@@ -1,7 +1,0 @@
-# `modele1.py` utilise uniquement la bibliotheque standard.
-# Le script `codes_python/absorbance CO2.py` utilise les dependances ci-dessous.
-matplotlib
-numpy
-scipy
-radis
-hitran-api
