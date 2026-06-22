@@ -1,1 +1,0 @@
-# Le modèle 1 utilise uniquement la bibliothèque standard de Python.

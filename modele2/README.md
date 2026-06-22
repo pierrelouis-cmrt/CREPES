@@ -25,7 +25,7 @@ python modele2/ressources/profil_vertical_atmosphere_co2.py --no-plot
 | --- | --- |
 | `codes_python/` | Noyau radiatif de la colonne à six couches. |
 | `ressources/` | Générateur du profil vertical et ses données produites. |
-| `requirements.txt` | Dépendances `numpy` et `matplotlib`. |
-| `README.md` | Présentation et commandes principales. |
+
+|
 
 Chaque sous-dossier possède son propre README pour les détails d'utilisation.
