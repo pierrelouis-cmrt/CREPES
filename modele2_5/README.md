@@ -21,8 +21,7 @@ python modele2_5/ressources/calibrer_coefficients_optiques.py
 Régénérer les profils :
 
 ```bash
-python modele2_5/ressources/profil_temperature_standard.py --max-altitude-km 84 --step-m 100 --output modele2_5/ressources/profil_temperature_standard.png --csv modele2_5/ressources/profil_temperature_standard.csv --no-plot
-python modele2_5/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 84 --step-m 100 --surface-co2-ppm 420 --output modele2_5/ressources/profil_vertical_atmosphere_co2.png --csv modele2_5/ressources/profil_vertical_atmosphere_co2.csv --no-plot
+python modele2_5/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 84 --step-m 100 --surface-co2-ppm 420 --no-plot
 ```
 
 ## Structure
@@ -30,8 +29,7 @@ python modele2_5/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 
 | Élément | Rôle |
 | --- | --- |
 | `modele2_5.py` | Noyau radiatif CO₂ autonome. |
-| `ressources/profil_temperature_standard.py` | Génère le profil de température standard. |
-| `ressources/profil_vertical_atmosphere_co2.py` | Génère le profil pression-température-CO₂. |
+| `ressources/profil_vertical_atmosphere_co2.py` | Source de profil utilisée par le modèle : pression, température et CO₂. |
 | `ressources/calibrer_coefficients_optiques.py` | Calibre les opacités sur le doublement du CO₂. |
 | `ressources/tester_modele2_5.py` | Tests numériques. |
 | `THEORIE.md` | Hypothèses, équations, calibration, résultats et limites. |

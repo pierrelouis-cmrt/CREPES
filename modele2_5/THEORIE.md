@@ -36,6 +36,21 @@ $$
 p(h)=p_b\exp\left[-\frac{g_0(h-h_b)}{R_{air}T_b}\right]
 $$
 
+Le profil de référence produit les couches suivantes :
+
+| Couche | Pression (hPa) | Altitude (km) | Température moyenne (K) |
+| --- | ---: | ---: | ---: |
+| 1 | 1013.25–850 | 0.000–1.458 | 283.413 |
+| 2 | 850–700 | 1.458–3.014 | 273.624 |
+| 3 | 700–500 | 3.014–5.579 | 260.242 |
+| 4 | 500–300 | 5.579–9.177 | 240.248 |
+| 5 | 300–200 | 9.177–11.806 | 220.831 |
+| 6 | 200–100 | 11.806–16.221 | 216.650 |
+| 7 | 100–50 | 16.221–20.643 | 216.688 |
+| 8 | 50–20 | 20.643–26.592 | 220.180 |
+| 9 | 20–10 | 26.592–31.207 | 225.418 |
+| 10 | 10–1 | 31.207–48.183 | 249.487 |
+
 ## CO₂ et bandes spectrales
 
 Le CO₂ est bien mélangé par défaut : $C(z)=420\ \mathrm{ppm}$. Sa moyenne de couche est pondérée par la masse d’air, donc par $\Delta p$.
