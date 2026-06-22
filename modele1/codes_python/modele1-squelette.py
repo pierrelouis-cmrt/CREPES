@@ -33,22 +33,22 @@ def flux_bande_corps_noir(temperature_k, longueur_onde_min_um, longueur_onde_max
     flux_total = CONSTANTE_STEFAN_BOLTZMANN * temperature_k**4
     return flux_total * largeur_bande_um / 100.0
 
-
+"retourne l'absorbance d'une bande de CO2)"
 def transmission_depuis_absorbance(absorbance):
     return exp(-absorbance)
 
-
+"retourne l'emissivite d'une bande de CO2)"
 def emissivite_depuis_absorbance(absorbance):
     return 1.0 - transmission_depuis_absorbance(absorbance)
 
-
+"retourne le flux pour chaque couche en prenant en compte la transmission et l'emissivité de la couche)"
 def propager_flux(flux_initial, emission_couche, transmission, emissivite, couches):
     flux = flux_initial
     for _couche in couches:
         flux = transmission * flux + emissivite * emission_couche
     return flux
 
-
+"calcul le flux sortant au sommet de l'atmosphère et le flux descendant à la surface, en utilisant les bandes de CO2 et les couches atmosphériques définies  et la loi de stefan-boltzmann pour le flux total de la surface"
 def calculer_flux(couches=COUCHES_ATMOSPHERE, bandes=BANDES_CO2):
     if len(couches) != NOMBRE_COUCHES:
         raise ValueError(f"Le modèle 1 attend exactement {NOMBRE_COUCHES} couches.")
