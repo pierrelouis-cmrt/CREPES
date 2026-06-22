@@ -1,16 +1,16 @@
-# absorbance du CO2
+# Absorbance du CO2
 
 [Source bande absorbance CO2](https://acces.ens-lyon.fr/acces/thematiques/CCCIC/ressources/irspco2)
 
-Bande 600, 760 cm^-1
-Bande 2100, 2450 cm^-1
-Bande 1200, 1500 cm^-1
+b1 = [600, 760 cm $^{-1}$] ,
+b2 = [2100, 2450 cm $^{-1}$] ,     
+b3 = [1200, 1500 cm $^{-1}$]
 
-# Utilité du code
+## Utilité du code
 
 Courbe du pourcentage d'absorbance du CO2 en fonction de la longueur d'onde
 
-# Fonctionnement du code
+## Fonctionnement du code
 
 - utilisation de l'API RADIS
 - récupération de la transmittance au niveau des bandes d'absorbance (voir lien ci-dessus)
@@ -56,3 +56,17 @@ Si un téléchargement est interrompu, relancer avec :
 ```bash
 ./.venv/bin/python "modélisation absorbance/absorbance CO2.py" --regen-cache --no-plot
 ```
+------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------
+# Absorbance de la vapeur d'eau 
+
+Source des données : [hitran.org ](https://hitran.org/lbl/3?1=on)
+
+## Utilité du code
+
+Obtention des bandes d'absoption de la vapeur d'eau 
+b1 = [1 ; 4 µm],
+b2 = [5 ; 7.5 µm], et
+b3 ~ [15 µm ; au-delà] 
+
+Le graphe obtenu est le suivant : ![alt text](image.png)
