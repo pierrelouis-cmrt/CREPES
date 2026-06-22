@@ -51,7 +51,8 @@ ENV/
 /ressources/
 
 # Local API/cache outputs created by model runs.
-**/ressources/caches/
+**/ressources/caches/*
+!**/ressources/caches/README.md
 
 # Environment files
 .env

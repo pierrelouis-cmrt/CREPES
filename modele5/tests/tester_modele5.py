@@ -12,9 +12,9 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from modele3.donnees import charger_paquet_grille
-from modele4.rapide import ConfigurationRapide, simuler_rapide
-from modele5.modele5 import (
+from modele3.codes_python.donnees import charger_paquet_grille
+from modele4.codes_python.rapide import ConfigurationRapide, simuler_rapide
+from modele5.codes_python.modele5 import (
     ConfigurationModele5,
     _geometrie_grille,
     calculer_convergence_horizontale,
@@ -72,7 +72,7 @@ def tester_simulation_courte_et_sortie_npz():
             assert "temperature_surface_k" in npz.files
 
 
-def tester_facteur_horizontal_nul_reproduit_modele4_et_le_couplage_agit():
+def tester_facteur_horizontal_nul_reproduit_modele4_et_echange_agit():
     paquet = charger_paquet_grille()
     commun = dict(
         jours=1.0 / 24.0,
@@ -106,7 +106,7 @@ def main():
     tester_echange_nul_si_emission_uniforme()
     tester_echange_conserve_la_puissance_globale()
     tester_simulation_courte_et_sortie_npz()
-    tester_facteur_horizontal_nul_reproduit_modele4_et_le_couplage_agit()
+    tester_facteur_horizontal_nul_reproduit_modele4_et_echange_agit()
     print("tests_modele5_ok")
 
 

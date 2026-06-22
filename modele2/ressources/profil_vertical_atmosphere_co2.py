@@ -20,6 +20,9 @@ import numpy as np
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+DONNEES_DIR = SCRIPT_DIR / "données"
+CSV_DEFAUT = DONNEES_DIR / "profil_vertical_atmosphere_co2.csv"
+GRAPHIQUE_DEFAUT = DONNEES_DIR / "profil_vertical_atmosphere_co2.png"
 CACHE_DIR = SCRIPT_DIR / ".cache"
 MPL_CACHE_DIR = CACHE_DIR / "matplotlib"
 G0 = 9.80665  # m s-2, acceleration de la pesanteur standard au niveau de la mer
@@ -216,8 +219,12 @@ def analyser_arguments(argv: list[str]) -> argparse.Namespace:
         default=288.15,
         help="température de surface en kelvins",
     )
-    parser.add_argument("--output", type=Path, help="chemin du graphique produit")
-    parser.add_argument("--csv", type=Path, help="chemin du CSV produit")
+    parser.add_argument(
+        "--output", type=Path, default=GRAPHIQUE_DEFAUT, help="chemin du graphique produit"
+    )
+    parser.add_argument(
+        "--csv", type=Path, default=CSV_DEFAUT, help="chemin du CSV produit"
+    )
     parser.add_argument(
         "--no-plot",
         action="store_true",
@@ -280,8 +287,6 @@ def main(argv: list[str] | None = None) -> int:
 
     sans_interface = environnement_sans_interface_graphique()
     chemin_sortie = args.output
-    if sans_interface and chemin_sortie is None:
-        chemin_sortie = SCRIPT_DIR / "profil_vertical_atmosphere_co2.png"
 
     fig, plt = construire_graphique(
         profil,

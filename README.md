@@ -115,13 +115,13 @@ La documentation complète du modèle 0 est dans
 Lancer le noyau radiatif du modèle 2 :
 
 ```bash
-./.venv/bin/python modele2/modele2.py
+./.venv/bin/python modele2/codes_python/modele2.py
 ```
 
 Régénérer le profil vertical de pression et de CO2 :
 
 ```bash
-./.venv/bin/python modele2/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 50 --surface-co2-ppm 420 --output modele2/ressources/profil_vertical_atmosphere_co2.png --csv modele2/ressources/profil_vertical_atmosphere_co2.csv --no-plot
+./.venv/bin/python modele2/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 50 --surface-co2-ppm 420 --no-plot
 ```
 
 La documentation détaillée du modèle 2 est dans `modele2/README.md`.
@@ -131,7 +131,7 @@ La documentation détaillée du modèle 2 est dans `modele2/README.md`.
 Lancer le noyau radiatif du modèle 2.5 :
 
 ```bash
-./.venv/bin/python modele2_5/modele2_5.py
+./.venv/bin/python modele2_5/codes_python/modele2_5.py
 ```
 
 Lancer les tests numériques séparés :
@@ -143,7 +143,6 @@ Lancer les tests numériques séparés :
 Régénérer les profils standard et CO2 :
 
 ```bash
-./.venv/bin/python modele2_5/ressources/profil_temperature_standard.py --max-altitude-km 84 --step-m 100 --output modele2_5/ressources/profil_temperature_standard.png --csv modele2_5/ressources/profil_temperature_standard.csv --no-plot
 ./.venv/bin/python modele2_5/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 84 --step-m 100 --surface-co2-ppm 420 --output modele2_5/ressources/profil_vertical_atmosphere_co2.png --csv modele2_5/ressources/profil_vertical_atmosphere_co2.csv --no-plot
 ```
 
@@ -160,7 +159,7 @@ Régénérer le paquet compact :
 Lancer une colonne depuis le paquet global :
 
 ```bash
-./.venv/bin/python -m modele3.modele3 --lat 0 --lon 0 --mois 7 --temperature-surface 293.0 --moyenne-journaliere-sw
+./.venv/bin/python -m modele3.codes_python.modele3 --lat 0 --lon 0 --mois 7 --temperature-surface 293.0 --moyenne-journaliere-sw
 ```
 
 Lancer les tests :
@@ -172,21 +171,21 @@ Lancer les tests :
 Documentation détaillée :
 
 - `modele3/README.md`
-- `modele3/THEORIE.md`
-- `modele3/PROVENANCE_DONNEES.md`
+- `modele3/documentation/THEORIE.md`
+- `modele3/documentation/PROVENANCE_DONNEES.md`
 
 ## Modèle 4
 
 Lancer le diagnostic mensuel global par défaut :
 
 ```bash
-./.venv/bin/python -m modele4.modele4
+./.venv/bin/python -m modele4.codes_python.modele4
 ```
 
 Lancer le moteur rapide, sortie toutes les 4 heures par défaut :
 
 ```bash
-./.venv/bin/python -m modele4.rapide
+./.venv/bin/python -m modele4.codes_python.rapide
 ```
 
 Lancer un test temporel court sur une cellule :
@@ -212,7 +211,7 @@ Documentation détaillée :
 Lancer le modèle couplé horizontal, sortie toutes les 4 heures par défaut :
 
 ```bash
-./.venv/bin/python -m modele5.modele5
+./.venv/bin/python -m modele5.codes_python.modele5
 ```
 
 Lancer une petite grille de développement :

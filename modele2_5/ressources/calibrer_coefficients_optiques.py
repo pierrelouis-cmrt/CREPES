@@ -16,7 +16,7 @@ MODELE_DIR = Path(__file__).resolve().parents[1]
 if str(MODELE_DIR) not in sys.path:
     sys.path.insert(0, str(MODELE_DIR))
 
-from modele2_5 import (
+from modele2_5.codes_python.modele2_5 import (
     BandeSpectrale,
     calculer_forcage_doublement_co2,
     construire_bandes_co2,
