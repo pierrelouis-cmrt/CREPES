@@ -12,9 +12,14 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from modele3.codes_python import physique
-from modele3.codes_python.donnees import charger_paquet_grille, extraire_colonne, iterer_colonnes
-from modele3.codes_python.modele3 import calculer_colonne_radiative, construire_couches
+from modele3 import physique
+from modele3.calibrer_coefficients_co2 import (
+    ajuster_coefficient_moindres_carres,
+    moyenne_planck_transmission,
+    tau_equivalent_depuis_transmission,
+)
+from modele3.donnees import charger_paquet_grille, extraire_colonne, iterer_colonnes
+from modele3.modele3 import calculer_colonne_radiative, construire_couches
 from modele3.ressources.generer_donnees import _nearest_matrix, normaliser_longitudes_180
 
 
@@ -102,6 +107,23 @@ def tester_coefficients_opacite_effectifs_documentes():
     assert "101325 Pa" in description["unite_a_co2"]
     assert "10 kg m-2" in description["unite_a_h2o"]
     assert "HITRAN" in description["limites"]
+
+
+def tester_calibrage_co2_moindres_carres_synthetique():
+    x_modele = [0.2, 0.5, 1.0, 2.0]
+    tau_reference = [0.7 * x for x in x_modele]
+    poids = [1.0, 2.0, 2.0, 1.0]
+    a_co2 = ajuster_coefficient_moindres_carres(x_modele, tau_reference, poids)
+    assert abs(a_co2 - 0.7) < 1e-12
+
+
+def tester_calibrage_co2_transmission_planck():
+    nombre_onde = [600.0, 650.0, 700.0]
+    transmission = [0.5, 0.5, 0.5]
+    moyenne = moyenne_planck_transmission(nombre_onde, transmission, 280.0)
+    assert abs(moyenne - 0.5) < 1e-12
+    tau = tau_equivalent_depuis_transmission(moyenne)
+    assert abs(tau - (-math.log(0.5) / physique.FACTEUR_DIFFUSIF)) < 1e-12
 
 
 def tester_albedo_zero_neige_glace_corrige():
@@ -235,6 +257,8 @@ def main():
     tester_emissivite_constante()
     tester_nuages_lw_absents_des_opacites()
     tester_coefficients_opacite_effectifs_documentes()
+    tester_calibrage_co2_moindres_carres_synthetique()
+    tester_calibrage_co2_transmission_planck()
     tester_albedo_zero_neige_glace_corrige()
     tester_couche_non_positive_refusee_au_calcul()
     tester_extraction_trace_les_couches_ignorees()

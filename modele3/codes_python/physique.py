@@ -33,8 +33,9 @@ SEUIL_FRACTION_NEIGE_GLACE_ALBEDO = 0.05
 COEFFICIENTS_OPACITE_EFFECTIFS = {
     "statut": "coefficients effectifs pedagogiques, pas des sections efficaces spectrales",
     "origine": (
-        "noyau long-onde du modele 2.5 pour CO2; ajout modele 3 pour H2O "
-        "a partir des masses colonne ERA5"
+        "noyau long-onde du modele 2.5 pour CO2; recalibrage possible avec "
+        "modele3/calibrer_coefficients_co2.py; ajout modele 3 pour H2O a "
+        "partir des masses colonne ERA5"
     ),
     "cible_co2": "ordre de grandeur du forcage relatif 280 -> 560 ppm conserve du modele 2.5",
     "unite_a_co2": (

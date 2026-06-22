@@ -10,6 +10,7 @@ brique stable pour le modele 4.
 modele3/
   modele3.py                  # calcul radiatif d'une colonne
   physique.py                   # constantes et formules physiques
+  calibrer_coefficients_co2.py  # calibrage HITRAN/RADIS des coefficients CO2
   donnees.py                    # chargement du paquet compact
   ressources/
     README.md                   # ressources et generation du paquet
@@ -94,6 +95,11 @@ unite est sans dimension :
 Ces nombres ne remplacent pas HITRAN, correlated-k ou une dependance fine en
 temperature/pression ; ils servent a garder un noyau CO2 + H2O clair et
 defendable pour le projet.
+
+Une methode de recalibrage propre des coefficients CO2 est documentee dans
+`CALIBRAGE_COEFFICIENTS_CO2.md`. Le script dedie calcule des transmissions de
+reference HITRAN via RADIS, ajuste les `a_CO2` par bande, recale le forcage
+`280 -> 560 ppm`, puis quantifie l'impact des coeurs et des ailes.
 
 ## Donnees
 
