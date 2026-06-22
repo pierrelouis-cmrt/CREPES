@@ -12,9 +12,12 @@ from pathlib import Path
 import sys
 
 
-MODELE_DIR = Path(__file__).resolve().parents[1]
-if str(MODELE_DIR) not in sys.path:
-    sys.path.insert(0, str(MODELE_DIR))
+RACINE_PROJET = Path(__file__).resolve().parents[2]
+try:
+    sys.path.remove(str(RACINE_PROJET))
+except ValueError:
+    pass
+sys.path.insert(0, str(RACINE_PROJET))
 
 from modele2_5.codes_python.modele2_5 import (
     BandeSpectrale,
