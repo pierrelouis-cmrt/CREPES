@@ -1,40 +1,41 @@
 # Modèle 0 — maintenance
 
 Le modèle 0 est la version historique maintenue du modèle de surface CREPES.
+<<<<<<< HEAD
 Il simule la température de surface en un point ou sur une grille, à partir du
 rayonnement solaire, des albédos, de la capacité thermique, de la chaleur
 latente et de la convection.
+=======
+Il simule la température de surface en un point ou sur une grille à partir du
+rayonnement solaire, de l'albédo, de la capacité thermique, du flux latent et
+de la convection. Il est conservé comme référence pour les modèles ultérieurs.
+>>>>>>> 896ea4ee3f6decb602a67734b312fe52e0460b5c
 
-## Parcours de la documentation
+## Démarrer
 
-| Dossier ou document | Contenu |
-| --- | --- |
-| [`codes_python/`](codes_python/README.md) | Moteur ponctuel, modules physiques, installation et visualisations. |
-| [`outils_generation_donnees/`](outils_generation_donnees/README.md) | Création et inventaire des grilles et données dérivées. |
-| [`ressources/`](ressources/README.md) | Données lues par le modèle et formats attendus. |
-| [`documents_sources/`](documents_sources/README.md) | Documents PDF historiques provenant des groupes sources. |
-| [`PROVENANCE.md`](PROVENANCE.md) | Origine des briques de code et des données. |
+Depuis la racine du dépôt :
 
-## Démarrage
+```bash
+python -m pip install -r modele0_maintenance/requirements.txt
+python modele0_maintenance/codes_python/modele_courbe.py --lat 48.5 --lon 2.3 --days 2 --no-plot
+```
 
-La simulation ponctuelle et les prérequis sont décrits dans le
-[README des codes Python](codes_python/README.md). Pour contrôler les données
-présentes sans rien modifier :
+Pour inventorier les ressources sans les modifier :
 
 ```bash
 python modele0_maintenance/outils_generation_donnees/generer_donnees.py --status
 ```
 
-## Organisation
+## Structure
 
-```text
-modele0_maintenance/
-├── codes_python/                 moteur, physique et visualisations
-├── outils_generation_donnees/    génération contrôlée des sorties
-├── ressources/                   entrées, sorties et caches locaux
-├── documents_sources/            PDF de référence historiques
-└── PROVENANCE.md                 traçabilité
-```
+| Élément | Rôle |
+| --- | --- |
+| `codes_python/` | Moteur ponctuel, briques physiques et visualisations. |
+| `outils_generation_donnees/` | Génération et inventaire contrôlés des sorties. |
+| `ressources/` | Ressources lues par le modèle et fichiers générés. |
+| `documents_sources/` | PDF de référence historiques. |
+| `PROVENANCE.md` | Traçabilité des briques conservées. |
+| `THEORIE(a virer).md` | Note théorique historique conservée. |
+| `requirements.txt` | Dépendances Python. |
 
-Les README des sous-dossiers sont complémentaires : les instructions générales
-ne sont données qu'à leur emplacement le plus pertinent.
+Chaque sous-dossier explique son propre contenu dans son README.

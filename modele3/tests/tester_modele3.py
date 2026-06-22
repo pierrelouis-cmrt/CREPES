@@ -12,14 +12,17 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from modele3 import physique
-from modele3.calibrer_coefficients_co2 import (
-    ajuster_coefficient_moindres_carres,
+from modele3.codes_python import physique
+from modele3.codes_python.calibrer_coefficients_co2 import (
+    CO2_REFERENCE_PPM as CO2_REFERENCE_CALIBRAGE_PPM,
+    PRESSION_REFERENCE_PA as PRESSION_REFERENCE_CALIBRAGE_PA,
+    coefficient_effectif_median,
+    lire_wstep,
     moyenne_planck_transmission,
     tau_equivalent_depuis_transmission,
 )
-from modele3.donnees import charger_paquet_grille, extraire_colonne, iterer_colonnes
-from modele3.modele3 import calculer_colonne_radiative, construire_couches
+from modele3.codes_python.donnees import charger_paquet_grille, extraire_colonne, iterer_colonnes
+from modele3.codes_python.modele3 import calculer_colonne_radiative, construire_couches
 from modele3.ressources.generer_donnees import _nearest_matrix, normaliser_longitudes_180
 
 
@@ -109,12 +112,46 @@ def tester_coefficients_opacite_effectifs_documentes():
     assert "HITRAN" in description["limites"]
 
 
-def tester_calibrage_co2_moindres_carres_synthetique():
+def tester_normalisation_tau_co2_reference():
+    assert physique.CO2_REFERENCE_PPM == CO2_REFERENCE_CALIBRAGE_PPM == 280.0
+    assert physique.PRESSION_REFERENCE_PA == PRESSION_REFERENCE_CALIBRAGE_PA == 101_325.0
+    couche_reference = {
+        "co2_ppm": physique.CO2_REFERENCE_PPM,
+        "pression_bas_pa": physique.PRESSION_REFERENCE_PA,
+        "pression_haut_pa": 0.0,
+    }
+    bande = {"a_co2": 0.42}
+    assert abs(physique.tau_co2(couche_reference, bande) - 0.42) < 1e-12
+    couche_double_co2 = dict(couche_reference, co2_ppm=2.0 * physique.CO2_REFERENCE_PPM)
+    assert abs(physique.tau_co2(couche_double_co2, bande) - 0.84) < 1e-12
+    couche_demi_pression = dict(couche_reference, pression_bas_pa=0.5 * physique.PRESSION_REFERENCE_PA)
+    assert abs(physique.tau_co2(couche_demi_pression, bande) - 0.21) < 1e-12
+
+
+def tester_coefficients_co2_remplacables_sans_mutation_globale():
+    nom_bande = "CO2_15um_aile_gauche_externe"
+    avant = next(bande for bande in physique.BANDES_INFRAROUGES if bande["nom"] == nom_bande)
+    bandes = physique.bandes_avec_coefficients_co2({nom_bande: 0.123}, zero_h2o=True)
+    remplacee = next(bande for bande in bandes if bande["nom"] == nom_bande)
+    assert remplacee["a_co2"] == 0.123
+    assert all(bande["a_h2o"] == 0.0 for bande in bandes)
+    assert avant["a_co2"] != 0.123
+    assert any(bande["a_h2o"] > 0.0 for bande in physique.BANDES_INFRAROUGES)
+
+
+def tester_calibrage_co2_coefficient_median_synthetique():
     x_modele = [0.2, 0.5, 1.0, 2.0]
     tau_reference = [0.7 * x for x in x_modele]
-    poids = [1.0, 2.0, 2.0, 1.0]
-    a_co2 = ajuster_coefficient_moindres_carres(x_modele, tau_reference, poids)
+    a_co2 = coefficient_effectif_median(x_modele, tau_reference)
     assert abs(a_co2 - 0.7) < 1e-12
+    tau_avec_outlier = tau_reference + [50.0]
+    x_avec_outlier = x_modele + [1.0]
+    assert abs(coefficient_effectif_median(x_avec_outlier, tau_avec_outlier) - 0.7) < 1e-12
+
+
+def tester_calibrage_co2_wstep_auto():
+    assert lire_wstep("auto") == "auto"
+    assert lire_wstep("0.02") == 0.02
 
 
 def tester_calibrage_co2_transmission_planck():
@@ -257,7 +294,10 @@ def main():
     tester_emissivite_constante()
     tester_nuages_lw_absents_des_opacites()
     tester_coefficients_opacite_effectifs_documentes()
-    tester_calibrage_co2_moindres_carres_synthetique()
+    tester_normalisation_tau_co2_reference()
+    tester_coefficients_co2_remplacables_sans_mutation_globale()
+    tester_calibrage_co2_coefficient_median_synthetique()
+    tester_calibrage_co2_wstep_auto()
     tester_calibrage_co2_transmission_planck()
     tester_albedo_zero_neige_glace_corrige()
     tester_couche_non_positive_refusee_au_calcul()

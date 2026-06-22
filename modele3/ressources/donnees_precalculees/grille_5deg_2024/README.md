@@ -7,7 +7,7 @@ est la source normale du calcul 3 et l'entree grille du modele 4.
 - Resolution: 5 degres
 - Annee: 2024
 - Grille: 36 latitudes x 72 longitudes x 12 mois
-- Usage normal: `modele3.donnees.charger_paquet_grille`.
+- Usage normal: `modele3.codes_python.donnees.charger_paquet_grille`.
 
 ## Provenance
 
