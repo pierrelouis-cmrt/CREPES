@@ -24,8 +24,6 @@ et `flux_infrarouge_descendant_surface_W_m2`.
 | `codes_python/` | Script du modèle et squelette pédagogique. |
 | `ressources/` | Script du spectre CO2 et ressources associées. |
 | `ressources/données/` | Images générées par le script d'absorbance. |
-| `requirements.txt` | Dépendances du modèle et du script d'absorbance. |
-| `README.md` | Présentation et commande de lancement. |
 
 Les scripts du dossier `codes_python/` sont décrits dans son
 [README](codes_python/README.md).

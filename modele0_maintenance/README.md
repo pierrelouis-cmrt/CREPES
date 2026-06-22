@@ -10,7 +10,6 @@ de la convection. Il est conservé comme référence pour les modèles ultérieu
 Depuis la racine du dépôt :
 
 ```bash
-python -m pip install -r modele0_maintenance/requirements.txt
 python modele0_maintenance/codes_python/modele_courbe.py --lat 48.5 --lon 2.3 --days 2 --no-plot
 ```
 
