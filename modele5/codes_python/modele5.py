@@ -17,21 +17,21 @@ from pathlib import Path
 import numpy as np
 
 try:
-    from modele3 import physique
-    from modele3.donnees import DOSSIER_PAQUET_DEFAUT, charger_paquet_grille
-    from modele4 import rapide as modele4_rapide
-    from modele4 import surface
-    from modele4.modele4 import RZSM_MODELE0_DEFAUT
+    from modele3.codes_python import physique
+    from modele3.codes_python.donnees import DOSSIER_PAQUET_DEFAUT, charger_paquet_grille
+    from modele4.codes_python import rapide as modele4_rapide
+    from modele4.codes_python import surface
+    from modele4.codes_python.modele4 import RZSM_MODELE0_DEFAUT
 except ImportError:  # Permet aussi : python modele5/modele5.py
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from modele3 import physique
-    from modele3.donnees import DOSSIER_PAQUET_DEFAUT, charger_paquet_grille
-    from modele4 import rapide as modele4_rapide
-    from modele4 import surface
-    from modele4.modele4 import RZSM_MODELE0_DEFAUT
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from modele3.codes_python import physique
+    from modele3.codes_python.donnees import DOSSIER_PAQUET_DEFAUT, charger_paquet_grille
+    from modele4.codes_python import rapide as modele4_rapide
+    from modele4.codes_python import surface
+    from modele4.codes_python.modele4 import RZSM_MODELE0_DEFAUT
 
 
-SORTIE_DEFAUT = Path(__file__).resolve().parent / "sorties" / "simulation_modele5.npz"
+SORTIE_DEFAUT = Path(__file__).resolve().parents[1] / "sorties" / "simulation_modele5.npz"
 RAYON_TERRE_M = 6_371_000.0
 CONSTANTE_GAZ_AIR_SEC_J_KG_K = 287.05
 NOMBRE_PAS_PLANCK = 96

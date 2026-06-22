@@ -16,24 +16,24 @@ from pathlib import Path
 import numpy as np
 
 try:
-    from modele3 import physique
-    from modele3.donnees import DOSSIER_PAQUET_DEFAUT, charger_paquet_grille, extraire_colonne
-    from modele3.modele3 import calculer_colonne_radiative
+    from modele3.codes_python import physique
+    from modele3.codes_python.donnees import DOSSIER_PAQUET_DEFAUT, charger_paquet_grille, extraire_colonne
+    from modele3.codes_python.modele3 import calculer_colonne_radiative
 except ImportError:  # Permet aussi : python modele4/rapide.py
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from modele3 import physique
-    from modele3.donnees import DOSSIER_PAQUET_DEFAUT, charger_paquet_grille, extraire_colonne
-    from modele3.modele3 import calculer_colonne_radiative
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from modele3.codes_python import physique
+    from modele3.codes_python.donnees import DOSSIER_PAQUET_DEFAUT, charger_paquet_grille, extraire_colonne
+    from modele3.codes_python.modele3 import calculer_colonne_radiative
 
 try:
     from . import surface
     from .modele4 import RZSM_MODELE0_DEFAUT
 except ImportError:  # Permet aussi : python modele4/rapide.py
-    from modele4 import surface
-    from modele4.modele4 import RZSM_MODELE0_DEFAUT
+    from modele4.codes_python import surface
+    from modele4.codes_python.modele4 import RZSM_MODELE0_DEFAUT
 
 
-SORTIE_DEFAUT = Path(__file__).resolve().parent / "sorties" / "simulation_modele4_rapide.npz"
+SORTIE_DEFAUT = Path(__file__).resolve().parents[1] / "sorties" / "simulation_modele4_rapide.npz"
 
 
 @dataclass

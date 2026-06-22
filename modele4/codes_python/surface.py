@@ -29,7 +29,7 @@ EPAISSEUR_GLACE_NEIGE_M = 1.0
 DELTA_HVAP = 2_453_000.0
 RHO_EAU = 1000.0
 DELTA_T_AN = 365.25 * 24.0 * 3600.0
-RACINE_PROJET = Path(__file__).resolve().parents[1]
+RACINE_PROJET = Path(__file__).resolve().parents[2]
 RZSM_MODELE0_DEFAUT = (
     RACINE_PROJET
     / "modele0_maintenance"

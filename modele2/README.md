@@ -52,7 +52,7 @@ Les dépendances actuelles sont volontairement réduites :
 Depuis la racine du dépôt :
 
 ```bash
-./.venv/bin/python modele2/modele2.py
+./.venv/bin/python modele2/codes_python/modele2.py
 ```
 
 Le script affiche trois blocs :

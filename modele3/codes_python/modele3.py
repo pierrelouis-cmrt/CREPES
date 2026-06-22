@@ -20,9 +20,9 @@ try:
         extraire_colonne,
     )
 except ImportError:  # Permet aussi : python modele3/modele3.py
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from modele3 import physique
-    from modele3.donnees import (
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from modele3.codes_python import physique
+    from modele3.codes_python.donnees import (
         DOSSIER_PAQUET_DEFAUT,
         charger_paquet_grille,
         extraire_colonne,

@@ -30,11 +30,10 @@ import sys
 
 import numpy as np
 
-RESSOURCES_DIR = Path(__file__).resolve().parent / "ressources"
-if str(RESSOURCES_DIR) not in sys.path:
-    sys.path.insert(0, str(RESSOURCES_DIR))
-
-from profil_vertical_atmosphere_co2 import atmosphere_standard, calculer_profil
+from modele2.ressources.profil_vertical_atmosphere_co2 import (
+    atmosphere_standard,
+    calculer_profil,
+)
 
 
 # =============================================================================

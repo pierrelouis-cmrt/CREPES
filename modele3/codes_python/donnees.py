@@ -12,7 +12,7 @@ from . import physique
 
 
 DOSSIER_PAQUET_DEFAUT = (
-    Path(__file__).resolve().parent
+    Path(__file__).resolve().parents[1]
     / "ressources"
     / "donnees_precalculees"
     / "grille_5deg_2024"

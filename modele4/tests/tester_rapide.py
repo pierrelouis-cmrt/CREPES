@@ -12,8 +12,8 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from modele3.donnees import charger_paquet_grille
-from modele4.rapide import ConfigurationRapide, enregistrer_resultat, simuler_rapide
+from modele3.codes_python.donnees import charger_paquet_grille
+from modele4.codes_python.rapide import ConfigurationRapide, enregistrer_resultat, simuler_rapide
 
 
 def tester_sortie_4h_par_defaut_sur_point():

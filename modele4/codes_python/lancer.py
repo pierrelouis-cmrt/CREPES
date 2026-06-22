@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-RACINE_PROJET = Path(__file__).resolve().parents[1]
+RACINE_PROJET = Path(__file__).resolve().parents[2]
 PYTHON = Path(sys.executable)
 
 
@@ -69,7 +69,7 @@ COMMUN_PHYSIQUE = (
 SCENARIOS_RAPIDE = (
     Scenario(
         titre="Petite grille de developpement",
-        module="modele4.rapide",
+        module="modele4.codes_python.rapide",
         description=(
             "Premier choix pour tester vite les parametres sur 4 x 8 cellules."
         ),
@@ -86,7 +86,7 @@ SCENARIOS_RAPIDE = (
     ),
     Scenario(
         titre="Grille globale sur 1 jour",
-        module="modele4.rapide",
+        module="modele4.codes_python.rapide",
         description="Simulation vectorisee globale, cartes toutes les 4 heures.",
         parametres=(
             Parametre("--jours", "1", "Duree simulee en jours."),
@@ -105,7 +105,7 @@ SCENARIOS_RAPIDE = (
     ),
     Scenario(
         titre="Grille globale sur 1 an",
-        module="modele4.rapide",
+        module="modele4.codes_python.rapide",
         description="Simulation longue conseillee avec sortie quotidienne.",
         parametres=(
             Parametre("--jours", "365", "Duree simulee en jours."),
@@ -124,7 +124,7 @@ SCENARIOS_RAPIDE = (
 SCENARIOS_CLASSIQUE = (
     Scenario(
         titre="Diagnostic mensuel global",
-        module="modele4.modele4",
+        module="modele4.codes_python.modele4",
         description=(
             "12 diagnostics mensuels a un pas avec recalcul radiatif local par cellule."
         ),
@@ -153,7 +153,7 @@ SCENARIOS_CLASSIQUE = (
     ),
     Scenario(
         titre="Temporel petite grille",
-        module="modele4.modele4",
+        module="modele4.codes_python.modele4",
         description="Integration pas-a-pas sur 4 x 8 cellules ; utile pour validation.",
         parametres=(
             Parametre(
@@ -178,7 +178,7 @@ SCENARIOS_CLASSIQUE = (
     ),
     Scenario(
         titre="Une cellule, un pas",
-        module="modele4.modele4",
+        module="modele4.codes_python.modele4",
         description="Test minimal : une cellule et un pas de 1800 s.",
         parametres=(
             Parametre(
@@ -207,7 +207,7 @@ SCENARIOS_CLASSIQUE = (
 MOTEURS = (
     # Le menu propose d'abord le moteur, puis des scenarios deja pre-remplis.
     Moteur(
-        titre="Rapide - modele4.rapide",
+        titre="Rapide - modele4.codes_python.rapide",
         resume="Moteur conseille pour travailler : vectorise, rapide, adapte aux longues runs.",
         technique=(
             "pre-calcule des champs mensuels avec le modele 3",
@@ -227,7 +227,7 @@ MOTEURS = (
         scenarios=SCENARIOS_RAPIDE,
     ),
     Moteur(
-        titre="Classique - modele4.modele4",
+        titre="Classique - modele4.codes_python.modele4",
         resume="Moteur de reference : plus lent, plus direct physiquement.",
         technique=(
             "appelle le modele 3 dans la boucle de calcul",
@@ -298,7 +298,7 @@ def afficher_titre() -> None:
     print("Modele 4 - lanceur TUI")
     print("=" * 72)
     print("Choisir d'abord le moteur, puis un cas d'usage courant.")
-    print("Lancement conseille : ./.venv/bin/python -m modele4.lancer")
+    print("Lancement conseille : ./.venv/bin/python -m modele4.codes_python.lancer")
 
 
 def afficher_menu() -> None:

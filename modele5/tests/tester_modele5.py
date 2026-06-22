@@ -12,9 +12,9 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from modele3.donnees import charger_paquet_grille
-from modele4.rapide import ConfigurationRapide, simuler_rapide
-from modele5.modele5 import (
+from modele3.codes_python.donnees import charger_paquet_grille
+from modele4.codes_python.rapide import ConfigurationRapide, simuler_rapide
+from modele5.codes_python.modele5 import (
     ConfigurationModele5,
     _geometrie_grille,
     calculer_convergence_horizontale,

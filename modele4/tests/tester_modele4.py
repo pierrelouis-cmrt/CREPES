@@ -12,9 +12,9 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from modele3.donnees import charger_paquet_grille
-from modele4 import surface
-from modele4.modele4 import ConfigurationModele4, enregistrer_resultat, simuler, simuler_mensuel
+from modele3.codes_python.donnees import charger_paquet_grille
+from modele4.codes_python import surface
+from modele4.codes_python.modele4 import ConfigurationModele4, enregistrer_resultat, simuler, simuler_mensuel
 
 
 def tester_capacite_surface_finie():

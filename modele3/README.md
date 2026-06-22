@@ -122,7 +122,7 @@ Regenerer le paquet :
 Lancer une colonne depuis le paquet :
 
 ```bash
-./.venv/bin/python -m modele3.modele3 \
+./.venv/bin/python -m modele3.codes_python.modele3 \
   --lat 0 \
   --lon 0 \
   --mois 7 \

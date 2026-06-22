@@ -17,10 +17,10 @@ except ImportError as exc:  # pragma: no cover - message CLI
     raise SystemExit("xarray est requis pour generer les donnees 3.") from exc
 
 try:
-    from .. import physique
+    from ..codes_python import physique
 except ImportError:  # Permet aussi : python modele3/ressources/generer_donnees.py
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from modele3 import physique
+    from modele3.codes_python import physique
 
 
 RACINE_DEPOT = Path(__file__).resolve().parents[2]
@@ -447,7 +447,7 @@ def ecrire_paquet(sortie_dir, tableaux, metadata, overwrite):
         f"- Resolution: {metadata['resolution_deg']} degres\n"
         f"- Annee: {metadata['annee']}\n"
         "- Grille: 36 latitudes x 72 longitudes x 12 mois\n"
-        "- Usage normal: `modele3.donnees.charger_paquet_grille`.\n\n"
+        "- Usage normal: `modele3.codes_python.donnees.charger_paquet_grille`.\n\n"
         "## Provenance\n\n"
         "| Champ | Source active | Transformation |\n"
         "| --- | --- | --- |\n"

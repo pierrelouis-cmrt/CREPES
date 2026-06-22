@@ -22,7 +22,7 @@ découpage spectral CO2 et calibration optique.
 Depuis la racine du dépôt :
 
 ```bash
-./.venv/bin/python modele2_5/modele2_5.py
+./.venv/bin/python modele2_5/codes_python/modele2_5.py
 ./.venv/bin/python modele2_5/ressources/tester_modele2_5.py
 ./.venv/bin/python modele2_5/ressources/calibrer_coefficients_optiques.py
 ```

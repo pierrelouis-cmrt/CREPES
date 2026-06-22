@@ -12,9 +12,9 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from modele3 import physique
-from modele3.donnees import charger_paquet_grille, extraire_colonne, iterer_colonnes
-from modele3.modele3 import calculer_colonne_radiative, construire_couches
+from modele3.codes_python import physique
+from modele3.codes_python.donnees import charger_paquet_grille, extraire_colonne, iterer_colonnes
+from modele3.codes_python.modele3 import calculer_colonne_radiative, construire_couches
 from modele3.ressources.generer_donnees import _nearest_matrix, normaliser_longitudes_180
 
 

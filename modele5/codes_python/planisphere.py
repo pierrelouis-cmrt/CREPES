@@ -39,8 +39,8 @@ except ImportError:
 
 RAYON_TERRE_M = 6_371_000.0
 SCRIPT_DIR = Path(__file__).resolve().parent
-PROJET_DIR = SCRIPT_DIR.parent
-SORTIES_DEFAUT = SCRIPT_DIR / "sorties"
+PROJET_DIR = SCRIPT_DIR.parents[1]
+SORTIES_DEFAUT = PROJET_DIR / "sorties"
 COASTLINE_SHP = (
     PROJET_DIR
     / "modele0_maintenance"
