@@ -25,6 +25,12 @@ Les options restent disponibles si besoin :
 ./modele3.py --lat 0 --lon 0 --mois 7 --temperature-surface 293 --moyenne-journaliere-sw
 ```
 
+Les flux ERA5 affiches en validation sont mensuels. Si le court-onde principal
+est lance en mode instantane, le bloc de validation compare donc un diagnostic
+mensuel equivalent du modele, pas le flux instantane affiche dans `flux_W_m2`.
+Pour rendre le flux court-onde principal directement comparable a ERA5, lancer
+avec `--moyenne-journaliere-sw` et `--mois` sans `--jour-annee`.
+
 Depuis la racine du dépôt :
 
 ```bash

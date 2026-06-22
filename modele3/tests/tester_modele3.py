@@ -82,6 +82,32 @@ def tester_shortwave_mensuel_utilise_moyenne_paquet():
     assert resultat["SW_down_surface"] == 321.5 * donnees["surface"]["transmissivite_sw_mensuelle"]
 
 
+def tester_validation_shortwave_utilise_moyenne_mensuelle():
+    donnees = _donnees_test()
+    donnees["surface"]["sw_toa_moyen_mensuel_w_m2"] = 400.0
+    resultat = calculer_colonne_radiative(donnees, moyenne_journaliere_sw=False)
+    assert resultat["mode_shortwave"] == "instantane_jour_representatif"
+    assert resultat["SW_absorbe_surface"] != resultat["flux_validation_modele"][
+        "SW_absorbe_surface_mensuel"
+    ]
+    assert resultat["flux_validation_modele"]["SW_down_surface_mensuel"] == 240.0
+    assert resultat["flux_validation_modele"]["SW_absorbe_surface_mensuel"] == 168.0
+    assert (
+        abs(resultat["comparaison_validation"]["ecart_SW_down_surface_mensuel_W_m2"])
+        < 1e-12
+    )
+    assert (
+        abs(
+            resultat["comparaison_validation"][
+                "ecart_SW_absorbe_surface_mensuel_W_m2"
+            ]
+        )
+        < 1e-12
+    )
+    assert "ecart_SW_absorbe_surface_W_m2" not in resultat["comparaison_validation"]
+    assert resultat["notes_validation"]
+
+
 def tester_emissivite_constante():
     resultat = calculer_colonne_radiative(_donnees_test())
     assert resultat["emissivite_surface"] == 0.98
@@ -291,6 +317,7 @@ def tester_appel_en_boucle_sur_plusieurs_colonnes():
 def main():
     tester_court_onde_unique_transmissivite()
     tester_shortwave_mensuel_utilise_moyenne_paquet()
+    tester_validation_shortwave_utilise_moyenne_mensuelle()
     tester_emissivite_constante()
     tester_nuages_lw_absents_des_opacites()
     tester_coefficients_opacite_effectifs_documentes()
