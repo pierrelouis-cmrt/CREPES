@@ -10,7 +10,7 @@ imposées et il n'intègre pas d'évolution climatique dans le temps.
 Depuis la racine du dépôt :
 
 ```bash
-python -m pip install -r modele2/requirements.txt
+
 python modele2/codes_python/modele2.py
 ```
 Pour régénérer le profil de référence sans ouvrir de fenêtre graphique :

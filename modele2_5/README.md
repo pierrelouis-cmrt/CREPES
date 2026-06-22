@@ -10,7 +10,7 @@ imposées.
 Depuis la racine du dépôt :
 
 ```bash
-python -m pip install -r modele2_5/requirements.txt
+
 python modele2_5/codes_python/modele2_5.py
 python modele2_5/ressources/tester_modele2_5.py
 ```
