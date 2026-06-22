@@ -29,12 +29,12 @@ python -m modele3.ressources.generer_donnees --overwrite
 
 | Élément | Rôle |
 | --- | --- |
-| `codes_python/` | Chargement du paquet et calcul radiatif de colonne. |
+| `codes_python/` | Chargement du paquet, calcul radiatif de colonne et calibrage CO₂. |
 | `ressources/` | Générateur du paquet compact et données générées. |
-| `documentation/` | Théorie, provenance et notes de recherche. |
+| `documentation/` | Théorie, provenance, calibrage CO₂ et notes de recherche. |
 | `tests/` | Vérifications numériques automatisables. |
-| `calibrer_coefficients_co2.py` | Outil de calibrage CO₂ dédié. |
-| `CALIBRAGE_COEFFICIENTS_CO2.md` | Méthode et résultats du calibrage. |
+| `codes_python/calibrer_coefficients_co2.py` | Outil de calibrage CO₂ dédié. |
+| `documentation/CALIBRAGE_CO2.md` | Méthode de calibrage CO₂ actuelle. |
 | `requirements.txt` | Dépendances du moteur. |
 | `requirements-calibrage.txt` | Dépendances supplémentaires pour le calibrage. |
 

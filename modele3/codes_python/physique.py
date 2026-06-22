@@ -22,6 +22,7 @@ TEMPERATURE_SURFACE_DEFAUT_K = 288.15
 EMISSIVITE_SURFACE_CONSTANTE = 0.98
 CO2_REFERENCE_PPM = 280.0
 CO2_DEFAUT_PPM = 420.0
+PRESSION_REFERENCE_PA = 101_325.0
 
 FACTEUR_DIFFUSIF = 1.66
 ECHELLE_OPACITE_CO2 = 0.0327228010
@@ -34,13 +35,13 @@ COEFFICIENTS_OPACITE_EFFECTIFS = {
     "statut": "coefficients effectifs pedagogiques, pas des sections efficaces spectrales",
     "origine": (
         "noyau long-onde du modele 2.5 pour CO2; recalibrage possible avec "
-        "modele3/calibrer_coefficients_co2.py; ajout modele 3 pour H2O a "
+        "modele3/codes_python/calibrer_coefficients_co2.py; ajout modele 3 pour H2O a "
         "partir des masses colonne ERA5"
     ),
     "cible_co2": "ordre de grandeur du forcage relatif 280 -> 560 ppm conserve du modele 2.5",
     "unite_a_co2": (
         "profondeur optique effective sans dimension pour CO2=280 ppm "
-        "et delta_p=101325 Pa"
+        f"et delta_p={PRESSION_REFERENCE_PA:g} Pa"
     ),
     "unite_a_h2o": (
         "profondeur optique effective sans dimension pour "
@@ -157,6 +158,41 @@ BANDES_INFRAROUGES = [
     creer_bande("H2O_fenetre_8_13um", 8.00, 13.00, 0.0, 0.48, "H2O", "continuum fenetre"),
     creer_bande("H2O_rotation_18_80um", 18.00, 80.00, 0.0, 14.40, "H2O", "rotation loin IR"),
 ]
+
+
+def copier_bandes_infrarouges():
+    """Retourne une copie mutable des bandes de production."""
+
+    return [dict(bande) for bande in BANDES_INFRAROUGES]
+
+
+def bandes_co2():
+    """Retourne les bandes qui portent une opacite CO2 effective."""
+
+    return [
+        dict(bande)
+        for bande in BANDES_INFRAROUGES
+        if float(bande.get("a_co2", 0.0)) > 0.0
+    ]
+
+
+def bandes_avec_coefficients_co2(coefficients_co2, facteur=1.0, zero_h2o=False):
+    """Construit les bandes du modele avec des coefficients CO2 remplaces.
+
+    `coefficients_co2` est un dictionnaire `{nom_bande: a_co2}`. Les bandes non
+    presentes gardent leur valeur de production. La fonction ne mute jamais
+    `BANDES_INFRAROUGES`, ce qui permet au script de calibrage de tester des
+    jeux de coefficients sans changer le runtime par effet de bord.
+    """
+
+    coefficients = {nom: float(valeur) for nom, valeur in dict(coefficients_co2).items()}
+    bandes = copier_bandes_infrarouges()
+    for bande in bandes:
+        if bande["nom"] in coefficients:
+            bande["a_co2"] = max(0.0, coefficients[bande["nom"]] * float(facteur))
+        if zero_h2o:
+            bande["a_h2o"] = 0.0
+    return bandes
 
 
 def borner(valeur, minimum, maximum):
@@ -342,7 +378,7 @@ def tau_co2(couche, bande):
     return (
         bande["a_co2"]
         * (couche["co2_ppm"] / CO2_REFERENCE_PPM)
-        * ((couche["pression_bas_pa"] - couche["pression_haut_pa"]) / 101_325.0)
+        * ((couche["pression_bas_pa"] - couche["pression_haut_pa"]) / PRESSION_REFERENCE_PA)
     )
 
 
