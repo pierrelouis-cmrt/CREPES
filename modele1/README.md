@@ -21,8 +21,7 @@ et `flux_infrarouge_descendant_surface_W_m2`.
 
 | Élément | Rôle |
 | --- | --- |
-| `codes_python/` | Script du modèle et squelette pédagogique. |
-| `requirements.txt` | Dépendances du modèle (bibliothèque standard uniquement). |
+| `codes_python/` | Script du modèle et squelette pour tester le code. |
 | `README.md` | Présentation et commande de lancement. |
 
 Les scripts du dossier `codes_python/` sont décrits dans son
