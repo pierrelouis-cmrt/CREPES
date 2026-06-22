@@ -1,43 +1,27 @@
 # Annexes
 
-Ce dossier contient des outils de préparation ou d'exploration qui ne font pas
-partie de l'exécution normale des modèles.
+Ce dossier rassemble des scripts d'exploration et de préparation de données.
+Ils sont indépendants des modèles exécutés normalement : aucun des fichiers de
+ce dossier n'est importé automatiquement par les modèles 0 à 5.
 
 ## Structure
 
 | Élément | Rôle |
 | --- | --- |
-| `codes_python/` | Scripts annexes, indépendants des moteurs de calcul. |
-| `README.md` | Présentation, prérequis et précautions d'utilisation. |
+| `codes_python/` | Scripts d'étude du CO₂ et du CH₄. |
+| `sorties/` | Images générées par le script d'absorbance. |
 
-## Télécharger et préparer le CO₂ CAMS
+## Contenu
 
-`codes_python/Fraction_massique_CO2.py` télécharge une prévision de CO₂ CAMS
-via l'API Copernicus Atmosphere Data Store, extrait le NetCDF et construit un
-CSV mondial sur une grille de `5° × 5°` aux niveaux de pression `1`, `10`,
-`300`, `500` et `1000 hPa`.
+Les annexes couvrent deux sujets :
 
-Les valeurs du CSV restent des fractions massiques, en `kg de CO₂ / kg d'air`.
-Pour les convertir approximativement en ppm :
+- le téléchargement et le sous-échantillonnage de concentrations de CO₂ CAMS
+  sur une grille mondiale de `5° × 5°` ;
+- des prototypes de profil, spectre et colonne radiative simplifiée pour le
+  méthane CH₄.
 
-```text
-ppm = fraction_massique × 10⁶ × (28,97 / 44,01)
-```
+Les commandes, dépendances, paramètres et formats de sortie sont documentés
+dans le [README des codes Python](codes_python/README.md).
 
-### Prérequis
-
-- Un compte Copernicus ADS et une clé API valide.
-- Les dépendances `cdsapi`, `xarray`, `pandas` et `numpy`.
-- Renseigner la clé dans la constante `CLE_API` du script avant l'exécution.
-
-### Lancer
-
-Depuis la racine du dépôt :
-
-```bash
-python annexe/codes_python/Fraction_massique_CO2.py
-```
-
-Le script crée `co2_monde_5deg_final.csv` dans `annexe/codes_python/`. Le ZIP
-et le NetCDF téléchargés sont temporaires et sont supprimés en fin de traitement
-réussi. Aucun modèle ne lit actuellement ce CSV automatiquement.
+> Ces outils sont exploratoires. Le CSV CO₂ produit et les diagnostics CH₄ ne
+> sont pas lus automatiquement par le modèle 3 ni par les modèles de surface.
