@@ -266,15 +266,20 @@ def ecrire_snippet_python(chemin: Path, coefficients: dict[str, float]) -> None:
     chemin.write_text("\n".join(lignes), encoding="utf-8")
 
 
-def construire_payload_runtime(coefficients: dict[str, float]) -> dict[str, Any]:
+def construire_payload_runtime(coefficients: dict[str, float], facteur_global: float) -> dict[str, Any]:
+    coefficients_runtime = {
+        nom: valeur * facteur_global
+        for nom, valeur in coefficients.items()
+    }
     return {
         "methode": (
             "coefficients H2O effectifs calibres par HITRAN/RADIS, moyenne Planck "
-            "et mediane(tau_eq / X)"
+            "et mediane(tau_eq / X); facteur global optionnel applique si demande"
         ),
         "formule_modele3": "tau_H2O = a_H2O * (masse_h2o_kg_m2 / 10)",
         "masse_h2o_reference_kg_m2": MASSE_H2O_REFERENCE_KG_M2,
-        "coefficients": dict(sorted(coefficients.items())),
+        "facteur_global": facteur_global,
+        "coefficients": dict(sorted(coefficients_runtime.items())),
     }
 
 
@@ -283,6 +288,7 @@ def construire_resultat(
     colonnes: list[Any],
     bandes: list[dict[str, Any]],
     coefficients: dict[str, float],
+    facteur_global: float,
     nombre_couches_humides: int,
     nombre_spectres: int,
 ) -> dict[str, Any]:
@@ -307,6 +313,7 @@ def construire_resultat(
             "masse_h2o_reference_kg_m2": MASSE_H2O_REFERENCE_KG_M2,
             "mole_fraction": "deduite de masse_h2o_kg_m2 / masse_air_kg_m2",
             "transmission_min": TRANSMISSION_MIN,
+            "facteur_global": facteur_global,
         },
         "coefficients": [
             {
@@ -315,6 +322,7 @@ def construire_resultat(
                 "lambda_max_um": float(bandes_par_nom[nom]["lambda_max_um"]),
                 "a_h2o_actuel": float(bandes_par_nom[nom]["a_h2o"]),
                 "a_h2o_hitran": valeur,
+                "a_h2o_modele3": valeur * facteur_global,
             }
             for nom, valeur in sorted(
                 coefficients.items(),
@@ -324,7 +332,7 @@ def construire_resultat(
         "limites": [
             "coefficients effectifs par grandes bandes, pas correlated-k",
             "couches supposees homogenes",
-            "pas de recalage sur les flux ERA5 car les nuages et le profil thermique s'y melangent",
+            "un facteur global peut etre passe explicitement si un recalage clear-sky separe a ete documente",
         ],
     }
 
@@ -347,6 +355,12 @@ def construire_parseur() -> argparse.ArgumentParser:
     )
     parseur.add_argument("--wstep", type=lire_wstep, default="auto")
     parseur.add_argument(
+        "--facteur-global",
+        type=float,
+        default=1.0,
+        help="Facteur multiplicatif applique aux coefficients runtime apres le calibrage HITRAN.",
+    )
+    parseur.add_argument(
         "--output-dir",
         type=Path,
         default=CHEMIN_COEFFICIENTS_H2O.parent,
@@ -362,6 +376,8 @@ def main() -> None:
     echelles_h2o = lire_liste_float(args.h2o_scale_values)
     if any(echelle <= 0.0 for echelle in echelles_h2o):
         raise ValueError("--h2o-scale-values doit contenir des valeurs strictement positives.")
+    if args.facteur_global <= 0.0:
+        raise ValueError("--facteur-global doit etre strictement positif.")
 
     nombre_couches = sum(len(colonne.donnees["couches"]) for colonne in colonnes)
     nombre_couches_humides = compter_couches_humides(colonnes, echelles_h2o)
@@ -384,6 +400,7 @@ def main() -> None:
         colonnes,
         bandes,
         coefficients,
+        args.facteur_global,
         nombre_couches_humides,
         nombre_spectres,
     )
@@ -394,10 +411,16 @@ def main() -> None:
     snippet_path = args.output_dir / "coefficients_h2o_calibres.py"
     json_path.write_text(json.dumps(arrondir_json(resultat), indent=2), encoding="utf-8")
     runtime_path.write_text(
-        json.dumps(arrondir_json(construire_payload_runtime(coefficients)), indent=2),
+        json.dumps(
+            arrondir_json(construire_payload_runtime(coefficients, args.facteur_global)),
+            indent=2,
+        ),
         encoding="utf-8",
     )
-    ecrire_snippet_python(snippet_path, coefficients)
+    ecrire_snippet_python(
+        snippet_path,
+        {nom: valeur * args.facteur_global for nom, valeur in coefficients.items()},
+    )
 
     print("calibrage_h2o_ok")
     print(f"json = {json_path}")

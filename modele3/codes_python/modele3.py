@@ -39,6 +39,44 @@ TEMPERATURE_SURFACE_DEFAUT_K = physique.TEMPERATURE_SURFACE_DEFAUT_K
 CO2_DEFAUT_PPM = physique.CO2_DEFAUT_PPM
 
 
+def _fraction_ou_none(valeur):
+    valeur = physique.valeur_finie(valeur)
+    if valeur is None:
+        return None
+    return physique.fraction(valeur)
+
+
+def _cloud_cover_total_surface(surface):
+    for cle in ("total_cloud_cover", "cloud_cover_total", "tcc"):
+        valeur = _fraction_ou_none(surface.get(cle))
+        if valeur is not None:
+            return valeur
+    return None
+
+
+def _normaliser_nuages_couches(couches, surface):
+    """Renseigne cloud_cover par couche en conservant le total si possible."""
+
+    total_nuage = _cloud_cover_total_surface(surface)
+    valeurs = [_fraction_ou_none(couche.get("cloud_cover")) for couche in couches]
+
+    if any(valeur is not None for valeur in valeurs):
+        brutes = [0.0 if valeur is None else valeur for valeur in valeurs]
+        somme = sum(brutes)
+        if total_nuage is not None and somme > 0.0:
+            facteur = total_nuage / somme
+            normalisees = [physique.fraction(valeur * facteur) for valeur in brutes]
+        else:
+            normalisees = brutes
+    elif total_nuage is not None and couches:
+        normalisees = [total_nuage / len(couches) for _ in couches]
+    else:
+        normalisees = [0.0 for _ in couches]
+
+    for couche, cloud_cover in zip(couches, normalisees):
+        couche["cloud_cover"] = cloud_cover
+
+
 def _arrondir(objet):
     if isinstance(objet, float):
         return round(objet, 6)
@@ -99,9 +137,15 @@ def construire_couches(donnees, co2_ppm=CO2_DEFAUT_PPM):
             raise ValueError(
                 f"Couche {copie['nom']} invalide: temperature_k={copie.get('temperature_k')}"
             )
+        if "cloud_cover" not in copie:
+            for cle_nuage in ("cloud_cover_fraction", "fraction_nuageuse", "cc"):
+                if cle_nuage in copie:
+                    copie["cloud_cover"] = copie[cle_nuage]
+                    break
         copie["masse_h2o_kg_m2"] = masse_h2o
         copie["temperature_k"] = temperature
         couches.append(copie)
+    _normaliser_nuages_couches(couches, donnees.get("surface", {}))
     return couches
 
 
@@ -280,11 +324,13 @@ def calculer_colonne_radiative(
 
         tau_co2_total = 0.0
         tau_h2o_total = 0.0
+        tau_nuage_total = 0.0
         # Ces sommes servent surtout a lire rapidement ce qui absorbe dans la bande.
         for couche in couches:
             diagnostic = physique.opacites_couche_bande(couche, bande)
             tau_co2_total += diagnostic["tau_co2"]
             tau_h2o_total += diagnostic["tau_h2o"]
+            tau_nuage_total += diagnostic["tau_nuage"]
 
         diagnostics_bandes.append(
             {
@@ -295,6 +341,7 @@ def calculer_colonne_radiative(
                 "lambda_max_um": bande["lambda_max_um"],
                 "tau_CO2_total": tau_co2_total,
                 "tau_H2O_total": tau_h2o_total,
+                "tau_nuage_total": tau_nuage_total,
                 "flux_surface_W_m2": flux_surface_bande,
                 "flux_sommet_W_m2": flux_sommet,
                 "flux_descendant_surface_W_m2": flux_descendant,
@@ -334,11 +381,19 @@ def calculer_colonne_radiative(
             sw_absorbe_surface + lw_down_absorbe_surface - flux_surface_total
         ),
         "albedo_surface": shortwave["albedo_surface"],
+        "albedo_nuages_effectif": surface.get("albedo_nuages_effectif"),
+        "total_cloud_cover": _cloud_cover_total_surface(surface),
+        "tau_lw_nuage_total": sum(physique.tau_nuage(couche) for couche in couches),
         "sw_toa_moyen_mensuel_w_m2": surface.get("sw_toa_moyen_mensuel_w_m2"),
         "transmissivite_sw_mensuelle": shortwave["transmissivite_sw_mensuelle"],
         "emissivite_surface": emissivite_surface,
         "sources": {
             "albedo_surface": surface.get("source_albedo_surface", "inconnue"),
+            "albedo_nuages_effectif": surface.get(
+                "source_albedo_nuages_effectif",
+                "non fourni",
+            ),
+            "cloud_cover": surface.get("source_cloud_cover", "non fourni"),
             "transmissivite_sw_mensuelle": surface.get(
                 "source_transmissivite_sw_mensuelle",
                 "inconnue",

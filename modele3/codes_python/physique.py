@@ -1,9 +1,9 @@
 """Formules physiques elementaires du modele 3.
 
 Ce module contient les constantes, la geometrie solaire, Planck, les masses
-colonne et les opacites infrarouges CO2 + H2O. Les coefficients H2O de
-production viennent d'une petite ressource JSON versionnee, afin de pouvoir les
-remplacer par le script de calibrage sans modifier ce fichier.
+colonne et les opacites infrarouges CO2 + H2O + nuages. Les coefficients de
+production viennent de ressources JSON versionnees afin de pouvoir les
+remplacer par les scripts de calibrage sans modifier ce fichier.
 """
 
 from __future__ import annotations
@@ -12,9 +12,17 @@ from functools import lru_cache
 from math import cos, exp, isfinite, pi, radians, sin
 
 try:
-    from .coefficients_opacite import COEFFICIENTS_H2O_MODELE3
+    from .coefficients_opacite import (
+        COEFFICIENTS_CO2_MODELE3,
+        COEFFICIENTS_H2O_MODELE3,
+        PARAMETRES_NUAGES_MODELE3,
+    )
 except ImportError:  # Permet aussi certains imports directs depuis le dossier codes_python.
-    from coefficients_opacite import COEFFICIENTS_H2O_MODELE3
+    from coefficients_opacite import (
+        COEFFICIENTS_CO2_MODELE3,
+        COEFFICIENTS_H2O_MODELE3,
+        PARAMETRES_NUAGES_MODELE3,
+    )
 
 
 SIGMA = 5.670374419e-8  # W m-2 K-4
@@ -31,21 +39,25 @@ CO2_DEFAUT_PPM = 420.0
 PRESSION_REFERENCE_PA = 101_325.0
 
 FACTEUR_DIFFUSIF = 1.66
-ECHELLE_OPACITE_CO2 = 0.0327228010
 MASSE_H2O_REFERENCE_KG_M2 = 10.0
 ALBEDO_SURFACE_SECOURS = 0.30
 ALBEDO_NEIGE_GLACE_SECOURS = 0.65
 SEUIL_FRACTION_NEIGE_GLACE_ALBEDO = 0.05
+TAU_LW_NUAGE_PAR_FRACTION = PARAMETRES_NUAGES_MODELE3["tau_lw_par_fraction_nuage"]
 
 COEFFICIENTS_OPACITE_EFFECTIFS = {
     "statut": "coefficients effectifs pedagogiques, pas des sections efficaces spectrales",
     "origine": (
-        "noyau long-onde du modele 2.5 pour CO2; recalibrage possible avec "
-        "modele3/codes_python/calibrer_coefficients_co2.py; coefficients H2O lus dans "
+        "coefficients CO2 lus dans "
+        "modele3/ressources/calibrage_opacite_co2/coefficients_co2_modele3.json "
+        "et recalibrables avec modele3/codes_python/calibrer_coefficients_co2.py; "
+        "coefficients H2O lus dans "
         "modele3/ressources/calibrage_opacite_h2o/coefficients_h2o_modele3.json "
-        "et recalibrables avec modele3/codes_python/calibrer_coefficients_h2o.py"
+        "et recalibrables avec modele3/codes_python/calibrer_coefficients_h2o.py; "
+        "opacite nuageuse grise lue dans "
+        "modele3/ressources/calibrage_opacite_nuages/coefficients_nuages_modele3.json"
     ),
-    "cible_co2": "ordre de grandeur du forcage relatif 280 -> 560 ppm conserve du modele 2.5",
+    "cible_co2": "forcage global 280 -> 560 ppm cale sur 5.35 ln(2)",
     "unite_a_co2": (
         "profondeur optique effective sans dimension pour CO2=280 ppm "
         f"et delta_p={PRESSION_REFERENCE_PA:g} Pa"
@@ -54,9 +66,11 @@ COEFFICIENTS_OPACITE_EFFECTIFS = {
         "profondeur optique effective sans dimension pour "
         f"{MASSE_H2O_REFERENCE_KG_M2:g} kg m-2 de vapeur d'eau"
     ),
+    "unite_tau_nuage": "profondeur optique grise long-onde pour une fraction nuageuse 1",
     "limites": (
         "valable pour comparer des colonnes pedagogiques CO2 + H2O; ne remplace pas "
-        "HITRAN, correlated-k, ni une dependance fine en temperature/pression"
+        "HITRAN, correlated-k, ni une dependance fine en temperature/pression; "
+        "les nuages restent gris et sans microphysique"
     ),
 }
 
@@ -94,12 +108,18 @@ def coefficient_h2o_bande(nom):
     return COEFFICIENTS_H2O_MODELE3[nom]
 
 
+def coefficient_co2_bande(nom):
+    if nom not in COEFFICIENTS_CO2_MODELE3:
+        raise KeyError(f"Coefficient CO2 manquant pour la bande {nom!r}.")
+    return COEFFICIENTS_CO2_MODELE3[nom]
+
+
 BANDES_INFRAROUGES = [
     creer_bande(
         "CO2_15um_aile_gauche_externe",
         13.00,
         14.00,
-        0.32 * ECHELLE_OPACITE_CO2,
+        coefficient_co2_bande("CO2_15um_aile_gauche_externe"),
         coefficient_h2o_bande("CO2_15um_aile_gauche_externe"),
         "CO2",
         "aile",
@@ -108,7 +128,7 @@ BANDES_INFRAROUGES = [
         "CO2_15um_aile_gauche_interne",
         14.00,
         14.60,
-        3.50 * ECHELLE_OPACITE_CO2,
+        coefficient_co2_bande("CO2_15um_aile_gauche_interne"),
         coefficient_h2o_bande("CO2_15um_aile_gauche_interne"),
         "CO2",
         "aile",
@@ -117,7 +137,7 @@ BANDES_INFRAROUGES = [
         "CO2_15um_coeur_sature",
         14.60,
         15.40,
-        40.0 * ECHELLE_OPACITE_CO2,
+        coefficient_co2_bande("CO2_15um_coeur_sature"),
         coefficient_h2o_bande("CO2_15um_coeur_sature"),
         "CO2",
         "coeur sature",
@@ -126,7 +146,7 @@ BANDES_INFRAROUGES = [
         "CO2_15um_aile_droite_interne",
         15.40,
         16.20,
-        4.00 * ECHELLE_OPACITE_CO2,
+        coefficient_co2_bande("CO2_15um_aile_droite_interne"),
         coefficient_h2o_bande("CO2_15um_aile_droite_interne"),
         "CO2",
         "aile",
@@ -135,7 +155,7 @@ BANDES_INFRAROUGES = [
         "CO2_15um_aile_droite_externe",
         16.20,
         18.00,
-        0.48 * ECHELLE_OPACITE_CO2,
+        coefficient_co2_bande("CO2_15um_aile_droite_externe"),
         coefficient_h2o_bande("CO2_15um_aile_droite_externe"),
         "CO2",
         "aile",
@@ -144,7 +164,7 @@ BANDES_INFRAROUGES = [
         "CO2_4_3um_aile_gauche",
         4.00,
         4.20,
-        0.20 * ECHELLE_OPACITE_CO2,
+        coefficient_co2_bande("CO2_4_3um_aile_gauche"),
         coefficient_h2o_bande("CO2_4_3um_aile_gauche"),
         "CO2",
         "aile",
@@ -153,7 +173,7 @@ BANDES_INFRAROUGES = [
         "CO2_4_3um_coeur_sature",
         4.20,
         4.40,
-        15.0 * ECHELLE_OPACITE_CO2,
+        coefficient_co2_bande("CO2_4_3um_coeur_sature"),
         coefficient_h2o_bande("CO2_4_3um_coeur_sature"),
         "CO2",
         "coeur sature",
@@ -162,7 +182,7 @@ BANDES_INFRAROUGES = [
         "CO2_4_3um_aile_droite",
         4.40,
         4.60,
-        0.20 * ECHELLE_OPACITE_CO2,
+        coefficient_co2_bande("CO2_4_3um_aile_droite"),
         coefficient_h2o_bande("CO2_4_3um_aile_droite"),
         "CO2",
         "aile",
@@ -452,6 +472,13 @@ def tau_h2o(couche, bande):
     return bande["a_h2o"] * (couche["masse_h2o_kg_m2"] / MASSE_H2O_REFERENCE_KG_M2)
 
 
+def tau_nuage(couche, bande=None):
+    """Opacite long-onde grise d'une couche nuageuse effective."""
+
+    del bande
+    return TAU_LW_NUAGE_PAR_FRACTION * fraction(couche.get("cloud_cover", 0.0))
+
+
 def transmission_depuis_tau(tau_total):
     return exp(-FACTEUR_DIFFUSIF * max(tau_total, 0.0))
 
@@ -459,14 +486,16 @@ def transmission_depuis_tau(tau_total):
 def opacites_couche_bande(couche, bande):
     opacite_co2 = tau_co2(couche, bande)
     opacite_h2o = tau_h2o(couche, bande)
-    # Les deux opacites sont additionnees avant de calculer la transmission.
-    tau_total = opacite_co2 + opacite_h2o
+    opacite_nuage = tau_nuage(couche, bande)
+    # Les opacites sont additionnees avant de calculer la transmission.
+    tau_total = opacite_co2 + opacite_h2o + opacite_nuage
     transmission = transmission_depuis_tau(tau_total)
     return {
         "couche": couche["nom"],
         "bande": bande["nom"],
         "tau_co2": opacite_co2,
         "tau_h2o": opacite_h2o,
+        "tau_nuage": opacite_nuage,
         "tau_total": tau_total,
         "transmission": transmission,
         "emissivite": 1.0 - transmission,

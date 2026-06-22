@@ -170,6 +170,16 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
         source_albedo_surface += " + correction zero neige/glace"
     transmissivite_sw = physique.fraction(mensuel("transmissivite_sw_mensuelle"), defaut=0.0)
     sw_toa_moyen = _float_ou_none(mensuel("sw_toa_moyen_mensuel_w_m2"))
+    total_cloud_cover = None
+    if "total_cloud_cover" in donnees:
+        total_cloud_cover = _float_ou_none(mensuel("total_cloud_cover"))
+        if total_cloud_cover is not None:
+            total_cloud_cover = physique.fraction(total_cloud_cover)
+    albedo_nuages_effectif = None
+    if "albedo_nuages_effectif" in donnees:
+        albedo_nuages_effectif = _float_ou_none(mensuel("albedo_nuages_effectif"))
+        if albedo_nuages_effectif is not None:
+            albedo_nuages_effectif = physique.fraction(albedo_nuages_effectif)
 
     surface = {
         "latitude_deg": latitude,
@@ -179,10 +189,18 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
         "pression_surface_pa": pression_surface_hpa * 100.0,
         "pression_surface_hpa": pression_surface_hpa,
         "albedo_surface": albedo_surface,
+        "albedo_nuages_effectif": albedo_nuages_effectif,
+        "total_cloud_cover": total_cloud_cover,
         "sw_toa_moyen_mensuel_w_m2": sw_toa_moyen,
         "transmissivite_sw_mensuelle": transmissivite_sw,
         "emissivite_surface": EMISSIVITE_SURFACE,
         "source_albedo_surface": source_albedo_surface,
+        "source_albedo_nuages_effectif": _source_variable(
+            paquet,
+            "albedo_nuages_effectif",
+            "non fourni",
+        ),
+        "source_cloud_cover": _source_variable(paquet, "total_cloud_cover", "non fourni"),
         "source_transmissivite_sw_mensuelle": _source_variable(
             paquet,
             "transmissivite_sw_mensuelle",
@@ -193,6 +211,9 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
     for nom in (
         "land_fraction",
         "snow_ice_fraction",
+        "low_cloud_cover",
+        "medium_cloud_cover",
+        "high_cloud_cover",
         "temperature_2m_k",
         "skin_temperature_k",
     ):
@@ -201,7 +222,7 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
                 surface[nom] = snow_ice_fraction
             else:
                 valeur = _float_ou_none(mensuel(nom))
-                if nom.endswith("fraction"):
+                if nom.endswith("fraction") or nom.endswith("cloud_cover"):
                     valeur = None if valeur is None else physique.fraction(valeur)
                 surface[nom] = valeur
 
@@ -221,6 +242,9 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
     humidite = mensuel("humidite_specifique_couche_kgkg")
     masse_air = mensuel("masse_air_couche_kg_m2")
     masse_h2o = mensuel("masse_h2o_couche_kg_m2")
+    cloud_cover_couche = None
+    if "cloud_cover_couche" in donnees:
+        cloud_cover_couche = mensuel("cloud_cover_couche")
 
     for indice in range(len(pression_haut)):
         p_bas = _float_ou_none(pression_bas[indice])
@@ -229,6 +253,11 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
         humidite_kgkg = _float_ou_none(humidite[indice])
         masse_air_kg_m2 = _float_ou_none(masse_air[indice])
         masse_h2o_kg_m2 = _float_ou_none(masse_h2o[indice])
+        cloud_cover = None
+        if cloud_cover_couche is not None:
+            cloud_cover = _float_ou_none(cloud_cover_couche[indice])
+            if cloud_cover is not None:
+                cloud_cover = physique.fraction(cloud_cover)
         if (
             p_bas is None
             or p_haut is None
@@ -273,15 +302,19 @@ def extraire_colonne(paquet, lat, lon, mois=None, jour_annee=None):
                 "humidite_specifique_kgkg": max(0.0, humidite_kgkg),
                 "masse_air_kg_m2": masse_air_kg_m2,
                 "masse_h2o_kg_m2": max(0.0, masse_h2o_kg_m2),
+                "cloud_cover": 0.0 if cloud_cover is None else cloud_cover,
             }
         )
 
     validation_flux = {}
     correspondance_flux = {
         "era5_lw_down_surface_w_m2": "era5_lw_down_surface_w_m2",
+        "era5_lw_down_surface_clear_sky_w_m2": "era5_lw_down_surface_clear_sky_w_m2",
         "era5_sw_net_surface_w_m2": "era5_sw_net_surface_w_m2",
         "era5_olr_w_m2": "era5_olr_w_m2",
+        "era5_olr_clear_sky_w_m2": "era5_olr_clear_sky_w_m2",
         "era5_sw_down_surface_w_m2": "era5_sw_down_surface_w_m2",
+        "era5_sw_down_surface_clear_sky_w_m2": "era5_sw_down_surface_clear_sky_w_m2",
     }
     for nom_tableau, nom_sortie in correspondance_flux.items():
         if nom_tableau in donnees:
