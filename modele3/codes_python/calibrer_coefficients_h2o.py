@@ -75,6 +75,7 @@ H2O_MASSE_MIN_KG_M2 = 1e-8
 RADIS_DATABANK = ("hitran", "range")
 RADIS_ISOTOPES_H2O = "1,2,3"
 RADIS_TRUNCATION_CM_1 = 50.0
+RADIS_CUTOFF_H2O = 1e-30
 
 
 @dataclass(frozen=True)
@@ -152,6 +153,7 @@ def calculer_spectre_radis_hitran(
     bande: dict[str, Any],
     couche: CoucheH2OReference,
     wstep: float | str,
+    cutoff: float,
 ) -> tuple[np.ndarray, np.ndarray]:
     try:
         from radis import calc_spectrum
@@ -172,6 +174,7 @@ def calculer_spectre_radis_hitran(
         "medium": "air",
         "wstep": wstep,
         "truncation": RADIS_TRUNCATION_CM_1,
+        "cutoff": cutoff,
         "verbose": False,
     }
     try:
@@ -205,6 +208,7 @@ def mesurer_tau_reference(
     bandes: list[dict[str, Any]],
     echelles_h2o: list[float],
     wstep: float | str,
+    cutoff: float,
 ) -> dict[str, list[tuple[float, float]]]:
     mesures = {bande["nom"]: [] for bande in bandes}
 
@@ -220,6 +224,7 @@ def mesurer_tau_reference(
                         bande,
                         couche,
                         wstep,
+                        cutoff,
                     )
                     transmission_moyenne = moyenne_planck_transmission(
                         nombre_onde_cm,
@@ -274,6 +279,7 @@ def construire_resultat(
             "mole_fraction": "deduite de masse_h2o_kg_m2 / masse_air_kg_m2",
             "transmission_min": TRANSMISSION_MIN,
             "facteur_global": facteur_global,
+            "radis_cutoff": args.radis_cutoff,
         },
         "coefficients": [
             {
@@ -315,6 +321,15 @@ def construire_parseur() -> argparse.ArgumentParser:
     )
     parseur.add_argument("--wstep", type=lire_wstep, default="auto")
     parseur.add_argument(
+        "--radis-cutoff",
+        type=float,
+        default=RADIS_CUTOFF_H2O,
+        help=(
+            "Seuil de force de raie transmis a RADIS pour H2O. "
+            "Plus bas = moins de raies ignorees mais calibrage plus lent."
+        ),
+    )
+    parseur.add_argument(
         "--facteur-global",
         type=float,
         default=1.0,
@@ -338,6 +353,8 @@ def main() -> None:
         raise ValueError("--h2o-scale-values doit contenir des valeurs strictement positives.")
     if args.facteur_global <= 0.0:
         raise ValueError("--facteur-global doit etre strictement positif.")
+    if args.radis_cutoff < 0.0:
+        raise ValueError("--radis-cutoff doit etre positif ou nul.")
 
     nombre_couches = sum(len(colonne.donnees["couches"]) for colonne in colonnes)
     nombre_couches_humides = compter_couches_humides(colonnes, echelles_h2o)
@@ -353,7 +370,13 @@ def main() -> None:
         print(f"spectres_radis_hitran = {nombre_spectres}")
         return
 
-    mesures = mesurer_tau_reference(colonnes, bandes, echelles_h2o, args.wstep)
+    mesures = mesurer_tau_reference(
+        colonnes,
+        bandes,
+        echelles_h2o,
+        args.wstep,
+        args.radis_cutoff,
+    )
     coefficients = ajuster_coefficients_par_bande(mesures)
     resultat = construire_resultat(
         args,

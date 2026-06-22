@@ -9,6 +9,8 @@ est la source normale du calcul 3 et l'entree grille du modele 4.
 - Grille: 36 latitudes x 72 longitudes x 12 mois
 - Usage normal: `modele3.codes_python.donnees.charger_paquet_grille`.
 
+Le paquet est regenere par `modele3.ressources.generer_donnees`.
+
 ## Provenance
 
 | Champ | Source active | Transformation |
@@ -35,5 +37,5 @@ ignorees avant stockage pour eviter des couches nulles apres quantification.
 Le `.npz` contient seulement les champs necessaires au calcul normal :
 coordonnees, poids de surface, pression de surface, albedo, transmissivite
 court-onde mensuelle, champs surface utiles, flux ERA5 de validation et
-couches pretraitees, dont la fraction nuageuse par couche. Les facteurs de
-quantification, unites et sources sont stockes dans le meme `.npz`.
+couches pretraitees, dont la fraction nuageuse par couche. Les facteurs
+de quantification, unites et sources sont stockes dans le meme `.npz`.
