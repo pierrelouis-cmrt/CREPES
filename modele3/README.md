@@ -43,7 +43,7 @@ python modele3/tests/tester_modele3.py
 Pour régénérer le paquet compact lorsque les sources sont disponibles :
 
 ```bash
-python -m modele3.codes_python.generer_donnees --overwrite
+python -m modele3.ressources.generer_donnees --overwrite
 ```
 
 Cette commande génère le paquet de grille puis relance les calibrages CO₂ et
@@ -57,7 +57,7 @@ Le script suivant affiche un spectre indicatif de la vapeur d'eau entre `0,1`
 et `30 µm` :
 
 ```bash
-python modele3/codes_python/Absorbance_H2O.py
+python modele3/ressources/Absorbance_H2O.py
 ```
 
 Il construit des bandes paramétrées et un continuum infrarouge, puis applique
@@ -70,8 +70,8 @@ dans [`documentation/CALIBRAGE_H2O.md`](documentation/CALIBRAGE_H2O.md).
 
 | Élément | Rôle |
 | --- | --- |
-| `codes_python/` | Scripts et modules du modèle : calcul de colonne, chargement, génération du paquet et calibrages éventuels. |
-| `ressources/` | Données prêtes à lire : paquet de grille et coefficients `.npz`. |
+| `codes_python/` | Scripts et modules du modèle : calcul de colonne, chargement et calibrages éventuels. |
+| `ressources/` | Données prêtes à lire, scripts de génération/visualisation associés, paquet de grille et coefficients `.npz`. |
 | `documentation/` | Théorie, provenance et notes de recherche. |
 | `tests/` | Vérifications numériques automatisables. |
 | `sorties/` | Images et autres sorties de diagnostic du modèle. |

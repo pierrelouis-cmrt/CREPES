@@ -109,7 +109,7 @@ Les CSV historiques d'albédo viennent d'un rapport de flux solaire
 Régénérer le paquet :
 
 ```bash
-./.venv/bin/python -m modele3.codes_python.generer_donnees --overwrite
+./.venv/bin/python -m modele3.ressources.generer_donnees --overwrite
 ```
 
 Lancer une colonne depuis le paquet :

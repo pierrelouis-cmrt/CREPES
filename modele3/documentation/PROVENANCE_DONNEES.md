@@ -9,7 +9,7 @@ modele3/ressources/donnees_precalculees/grille_5deg_2024/
 Les fichiers bruts locaux sont lus seulement par :
 
 ```text
-modele3/codes_python/generer_donnees.py
+modele3/ressources/generer_donnees.py
 ```
 
 ## Sources actives
@@ -62,7 +62,7 @@ Les scripts `modele3/codes_python/calibrer_coefficients_co2.py` et
 `modele3/codes_python/calibrer_coefficients_h2o.py` peuvent recalculer ces
 coefficients par bande depuis des transmissions HITRAN/RADIS. Ils mettent a
 jour le meme fichier `.npz`. Le generateur
-`modele3/codes_python/generer_donnees.py` les lance automatiquement apres
+`modele3/ressources/generer_donnees.py` les lance automatiquement apres
 avoir ecrit le paquet de grille, sauf avec `--sans-coefficients`.
 
 Le parametre nuageux `tau_lw_par_fraction_nuage` n'a pas de calibrage
