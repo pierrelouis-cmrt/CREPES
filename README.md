@@ -6,6 +6,7 @@ Projet Climat, Groupe D, 2026
 
 | Dossier                | Rôle                                                                                            |
 | ---------------------- | ----------------------------------------------------------------------------------------------- |
+| `annexe/` | Pistes pour l'année prochaine                                        |
 | `modele0_maintenance/` | Ancien modèle combiné, conservé comme référence stable.                                         |
 | `modele1/`             | Colonne radiative CO2 simplifiée à 3 couches.                                                   |
 | `modele2/`             | Colonne atmosphérique CO2 à 6 couches avec noyau radiatif infrarouge simplifié.                 |
@@ -13,7 +14,7 @@ Projet Climat, Groupe D, 2026
 | `modele3/`             | Colonne radiative finale pour le modèle 4, avec paquet `.npz` compact et provenances explicites. |
 | `modele4/`             | Grille de température de surface couplée au modèle 3 et aux termes de surface du modèle 0.       |
 | `modele5/`             | Grille modèle 4 rapide avec échanges radiatifs horizontaux entre colonnes voisines.              |
-| `planisphere.py`       | Visualisation racine des sorties `.npz` des modèles 4 et 5.                                      |
+| `visualisation/`       | Visualisation des modèles 4 et 5.                                      |
 
 
 ## Lancement des codes 
@@ -173,15 +174,49 @@ Documentation détaillée :
 
 - `modele5/README.md`
 
-## Visualisation
+## Annexes
 
-Afficher une sortie `.npz` des modèles 4 ou 5 depuis la racine :
+Les scripts annexes sont indépendants des modèles principaux.
+
+Lancer la colonne radiative simplifiée au CH₄ :
 
 ```bash
-./.venv/bin/python planisphere.py
+python annexe/codes_python/modele_ch4.py
 ```
 
-Sans argument, le script propose les fichiers présents dans `modele4/sorties/`
-et `modele5/sorties/`. L'ancien chemin
-`modele4/visualisation/planisphere.py` reste utilisable et délègue au script
-racine.
+Générer un profil vertical de CH₄ :
+
+```bash
+python annexe/codes_python/profil_atmosphere_ch4.py --no-plot --csv annexe/codes_python/profil_ch4.csv
+```
+
+Calculer et enregistrer le spectre CH₄ :
+
+```bash
+python annexe/codes_python/spectre_absorbance_ch4.py --no-plot --output annexe/sorties/absorbance_ch4.png
+```
+
+L'outil CAMS/CO₂ requiert un compte Copernicus ADS et une clé API renseignée
+dans le script avant son lancement :
+
+```bash
+python annexe/codes_python/Fraction_massique_CO2.py
+```
+
+Documentation détaillée : `annexe/README.md`.
+
+## Visualisation
+
+Afficher ou choisir une sortie `.npz` des modèles 4 ou 5 depuis la racine :
+
+```bash
+python visualisation/planisphere.py --sorties modele4/sorties modele5/sorties
+```
+
+Pour ouvrir directement un fichier et exporter un PNG sans fenêtre :
+
+```bash
+python visualisation/planisphere.py --fichier modele5/sorties/simulation_modele5.npz --save visualisation/planisphere.png --no-show
+```
+
+Documentation détaillée : `visualisation/README.md`.
