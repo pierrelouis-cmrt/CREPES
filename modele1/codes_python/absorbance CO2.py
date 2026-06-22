@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import io
+import json
 import os
 import shutil
 import sys
@@ -16,35 +17,92 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = SCRIPT_DIR.parent / "sorties"
 
 
-def default_cache_dir() -> Path:
-    """Chemin de cache stable, indépendant de l'emplacement du script."""
+def default_matplotlib_cache_dir() -> Path:
+    """Cache Matplotlib stable, sans toucher au cache RADIS."""
     if os.name == "nt":
         base = os.environ.get("LOCALAPPDATA")
         if base:
-            return Path(base) / "CREPES" / "absorbance_co2"
-        return Path.home() / "AppData" / "Local" / "CREPES" / "absorbance_co2"
+            return Path(base) / "CREPES" / "absorbance_co2" / "matplotlib"
+        return Path.home() / "AppData" / "Local" / "CREPES" / "absorbance_co2" / "matplotlib"
 
     base = os.environ.get("XDG_CACHE_HOME")
     if base:
-        return Path(base) / "crepes" / "absorbance_co2"
-    return Path.home() / ".cache" / "crepes" / "absorbance_co2"
+        return Path(base) / "crepes" / "absorbance_co2" / "matplotlib"
+    return Path.home() / ".cache" / "crepes" / "absorbance_co2" / "matplotlib"
 
 
-def setup_cache_dirs() -> tuple[Path, Path, Path]:
-    default_dir = default_cache_dir()
+def iter_strings(obj):
+    """Parcourt récursivement un objet JSON et renvoie toutes les chaînes."""
+    if isinstance(obj, str):
+        yield obj
+    elif isinstance(obj, dict):
+        for value in obj.values():
+            yield from iter_strings(value)
+    elif isinstance(obj, list):
+        for value in obj:
+            yield from iter_strings(value)
 
-    radis_dir = default_dir / "radisdb"
-    matplotlib_dir = default_dir / "matplotlib"
 
-    radis_dir.mkdir(parents=True, exist_ok=True)
-    matplotlib_dir.mkdir(parents=True, exist_ok=True)
+def find_registered_hitran_co2_file() -> Path | None:
+    """
+    Trouve le fichier HITRAN CO2 déjà enregistré par RADIS dans ~/radis.json.
 
-    return default_dir, matplotlib_dir, radis_dir
+    Exemple trouvé :
+    C:/Users/melvi/.radisdb/hitran/co2.h5
+    """
+    radis_json = Path.home() / "radis.json"
+
+    if not radis_json.exists():
+        return None
+
+    try:
+        data = json.loads(radis_json.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+    candidates = []
+
+    for value in iter_strings(data):
+        normalized = value.replace("\\", "/").lower()
+        if "hitran" in normalized and normalized.endswith("co2.h5"):
+            candidates.append(Path(value).expanduser())
+
+    if not candidates:
+        return None
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+
+    return candidates[0]
 
 
-CACHE_DIR, MPL_CACHE_DIR, RADIS_CACHE_DIR = setup_cache_dirs()
+def resolve_radis_download_dir() -> Path:
+    """
+    Utilise le cache RADIS déjà enregistré si possible.
+
+    Sinon, utilise le cache standard de RADIS :
+    ~/.radisdb
+
+    Ça évite les conflits du type :
+    HITRAN-CO2 déjà enregistré dans radis.json mais pas dans le dossier attendu.
+    """
+    registered_co2_file = find_registered_hitran_co2_file()
+
+    if registered_co2_file is not None:
+        # Exemple :
+        # C:/Users/melvi/.radisdb/hitran/co2.h5
+        # -> DEFAULT_DOWNLOAD_PATH = C:/Users/melvi/.radisdb
+        return registered_co2_file.parent.parent
+
+    return Path.home() / ".radisdb"
+
+
+MPL_CACHE_DIR = default_matplotlib_cache_dir()
+MPL_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 os.environ.setdefault("MPLCONFIGDIR", str(MPL_CACHE_DIR))
+
 
 import numpy as np
 import radis
@@ -53,14 +111,18 @@ from radis.misc.warning import LinestrengthCutoffWarning, MissingReferenceWarnin
 from scipy.interpolate import interp1d
 
 
-radis.config["DEFAULT_DOWNLOAD_PATH"] = str(RADIS_CACHE_DIR)
+RADIS_DOWNLOAD_DIR = resolve_radis_download_dir()
+RADIS_DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
+(RADIS_DOWNLOAD_DIR / "hitran").mkdir(parents=True, exist_ok=True)
+
+radis.config["DEFAULT_DOWNLOAD_PATH"] = str(RADIS_DOWNLOAD_DIR)
 radis.config["ALLOW_OVERWRITE"] = True
 
 
 BANDS_CM_1 = [
-    (600, 760),       # ~ 15 µm
-    (1200, 1500),     # ~ 7.2 µm
-    (2100, 2450),     # ~ 4.3 µm
+    (600, 760),      # bande à 667 cm-1 environ, soit ~ 15 µm
+    (1200, 1500),    # bande à 1388 cm-1 environ, soit ~ 7.2 µm
+    (2100, 2450),    # bande à 2349 cm-1 environ, soit ~ 4.3 µm
 ]
 
 BANDES_MODELES_1_2_UM = (
@@ -70,9 +132,15 @@ BANDES_MODELES_1_2_UM = (
 
 
 def prepare_radis_cache(regen_cache: bool = False) -> None:
+    """
+    Prépare le cache RADIS sans imposer un nouveau chemin.
+
+    Si --regen-cache est utilisé, on supprime seulement le dossier HITRAN actif.
+    """
     if regen_cache:
-        shutil.rmtree(RADIS_CACHE_DIR, ignore_errors=True)
-    RADIS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        shutil.rmtree(RADIS_DOWNLOAD_DIR / "hitran", ignore_errors=True)
+
+    (RADIS_DOWNLOAD_DIR / "hitran").mkdir(parents=True, exist_ok=True)
 
 
 def make_cross_section_co2_all_bands(regen_cache: bool = False):
@@ -108,9 +176,11 @@ def make_cross_section_co2_all_bands(regen_cache: bool = False):
                     )
                 except Exception as exc:
                     raise RuntimeError(
-                        "RADIS n'a pas pu charger les données HITRAN du CO2. "
-                        "Au premier lancement, il faut une connexion Internet. "
-                        f"Cache utilisé : {RADIS_CACHE_DIR}"
+                        "RADIS n'a pas pu charger les données HITRAN du CO2.\n"
+                        "Au premier lancement, il faut une connexion Internet.\n"
+                        f"Cache RADIS utilisé : {RADIS_DOWNLOAD_DIR}\n"
+                        "Si le problème persiste, supprime le fichier ~/radis.json "
+                        "puis relance le script."
                     ) from exc
 
         wavelength_nm, absorbance = spectrum.get("absorbance", wunit="nm")
@@ -133,16 +203,18 @@ def make_cross_section_co2_all_bands(regen_cache: bool = False):
     )
 
 
-def moyenne_trapezes(y, x):
-    """Compatibilité entre anciennes et nouvelles versions de NumPy."""
+def moyenne_trapezes(y, x) -> float:
+    """Calcule une moyenne par intégration trapézoïdale."""
     if hasattr(np, "trapezoid"):
         integrale = np.trapezoid(y, x)
     else:
         integrale = np.trapz(y, x)
-    return integrale / (x[-1] - x[0])
+
+    return float(integrale / (x[-1] - x[0]))
 
 
 def calculer_absorbances_moyennes(absorption_co2, points_par_bande: int = 2_000):
+    """Calcule l'absorbance moyenne sur les bandes utiles au modèle."""
     moyennes = []
 
     for nom, longueur_onde_min_um, longueur_onde_max_um in BANDES_MODELES_1_2_UM:
@@ -160,7 +232,7 @@ def calculer_absorbances_moyennes(absorption_co2, points_par_bande: int = 2_000)
                 nom,
                 longueur_onde_min_um,
                 longueur_onde_max_um,
-                float(absorbance_moyenne),
+                absorbance_moyenne,
             )
         )
 
@@ -180,6 +252,7 @@ def afficher_absorbances_moyennes(moyennes) -> None:
 
 
 def is_headless_environment() -> bool:
+    """Détecte un environnement sans affichage graphique."""
     return bool(
         os.environ.get("CI")
         or os.environ.get("CODEX_CI")
@@ -191,6 +264,7 @@ def is_headless_environment() -> bool:
 def build_plot(absorption_co2, points: int, moyennes, *, use_file_backend: bool):
     if use_file_backend:
         import matplotlib
+
         matplotlib.use("Agg")
 
     import matplotlib.pyplot as plt
@@ -251,6 +325,7 @@ def build_plot(absorption_co2, points: int, moyennes, *, use_file_backend: bool)
     ax.grid(True, alpha=0.3)
 
     fig.tight_layout()
+
     return fig, plt
 
 
@@ -274,7 +349,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--regen-cache",
         action="store_true",
-        help="supprime et régénère le cache HITRAN local",
+        help="supprime et régénère le cache HITRAN actif",
     )
 
     parser.add_argument(
