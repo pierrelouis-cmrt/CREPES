@@ -1,6 +1,6 @@
 # Génération des données — modèle 0
 
-Ce dossier contient les outils qui inventorient ou produisent les sorties du
+Ce dossier contient les outils qui sont necessaires ou produisent les sorties du
 modèle 0. Les fichiers existants sont protégés par défaut.
 
 ## Lancer
@@ -8,7 +8,7 @@ modèle 0. Les fichiers existants sont protégés par défaut.
 Depuis la racine du dépôt :
 
 ```bash
-# Inventorier les ressources sans rien écrire
+# Appeler l'ensemble des ressources sans rien écrire
 python modele0_maintenance/outils_generation_donnees/generer_donnees.py --status
 
 # Afficher les cibles disponibles
