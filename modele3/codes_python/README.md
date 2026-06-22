@@ -29,11 +29,18 @@ concentration et `--json` pour obtenir la sortie complète structurée.
 | `donnees.py` | Chargement du paquet et extraction de la colonne demandée. |
 | `physique.py` | Constantes, bandes et formules radiatives partagées. |
 | `calibrer_coefficients_co2.py` | Calibrage HITRAN/RADIS des coefficients CO₂ effectifs. |
+| `calibrer_coefficients_h2o.py` | Calibrage HITRAN/RADIS des coefficients H₂O effectifs. |
 
 Pour calibrer les coefficients CO₂ :
 
 ```bash
 python -m modele3.codes_python.calibrer_coefficients_co2 --dry-run
+```
+
+Pour calibrer les coefficients H₂O :
+
+```bash
+python -m modele3.codes_python.calibrer_coefficients_h2o --dry-run
 ```
 
 La préparation des données est décrite dans le

@@ -52,7 +52,7 @@ definis dans `modele3/codes_python/physique.py` comme coefficients effectifs ped
 | Coefficient | Unite interne | Origine | Limite |
 | --- | --- | --- | --- |
 | `a_CO2` | profondeur optique sans dimension pour `CO2 = 280 ppm` et `delta_p = 101325 Pa` | noyau modele 2.5, avec cible de doublement `280 -> 560 ppm` | pas une section efficace spectrale |
-| `a_H2O` | profondeur optique sans dimension pour `10 kg m-2` de vapeur d'eau | ajout modele 3 branche sur les masses H2O ERA5 | pas une methode raie par raie |
+| `a_H2O` | profondeur optique sans dimension pour `10 kg m-2` de vapeur d'eau | ajout modele 3 branche sur les masses H2O ERA5, recalibrable par HITRAN/RADIS | pas une methode raie par raie |
 
 Ces coefficients gardent une physique CO2 + H2O simple ; ils ne remplacent pas
 HITRAN, RADIS ou une methode correlated-k.
@@ -63,6 +63,12 @@ Le recalibrage propre des coefficients CO2 est maintenant isole dans
 HITRAN/RADIS, une moyenne de bande ponderee par Planck, la mediane de
 `tau_eq / X` par bande, puis un recalage global sur le forcage
 `280 -> 560 ppm`.
+
+Le recalibrage H2O correspondant est isole dans
+`modele3/codes_python/calibrer_coefficients_h2o.py` et documente dans
+`modele3/documentation/CALIBRAGE_H2O.md`. Il utilise la masse H2O des couches
+ERA5 pour definir la fraction molaire RADIS, puis ajuste les coefficients par
+bande sans recaler les flux ERA5.
 
 ## Transmissivite court-onde
 
