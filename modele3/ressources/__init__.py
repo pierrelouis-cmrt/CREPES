@@ -1,1 +1,2 @@
-"""Ressources et outils de generation du modele 3."""
+"""Generation et donnees du modele 3."""
+

@@ -18,6 +18,14 @@
       "valeurs_bornees_min": 0,
       "valeurs_bornees_max": 15,
       "valeurs_sans_soleil": 28
+    },
+    "albedo_surface": {
+      "zeros_neige_glace_corriges": 1926,
+      "seuil_fraction_neige_glace": 0.05,
+      "albedo_surface_secours": 0.3,
+      "albedo_neige_glace_secours": 0.65,
+      "fallback_min": 0.320335,
+      "fallback_max": 0.65
     }
   },
   "sources_fichiers": {
@@ -111,7 +119,7 @@
       "scale_factor": 0.0001,
       "offset": 0.0,
       "valeur_manquante": 65535,
-      "source": "ressources/albedo/albedo01.csv..albedo12.csv"
+      "source": "ressources/albedo/albedo01.csv..albedo12.csv + correction zero neige/glace"
     },
     "sw_toa_moyen_mensuel_w_m2": {
       "dtype_stocke": "uint16",
@@ -180,6 +188,7 @@
   },
   "notes": [
     "Les CSV d'albedo sont lus depuis ressources/albedo, copie racine des donnees utiles du modele 0.",
+    "Les albedos nuls sur neige/glace sont remplaces par un repli physique 0.30..0.65, car le rapport SW_UP/SW_DOWN source est non observable en nuit polaire.",
     "Le modele 3 n'utilise pas de coefficient nuageux court-onde ou long-onde.",
     "transmissivite_sw_mensuelle corrige le court-onde surface avec ERA5, sans remplacer S0*cos(i).",
     "Les poids_surface sont normalises pour sommer a 1 sur la grille."

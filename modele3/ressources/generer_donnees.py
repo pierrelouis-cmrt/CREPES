@@ -17,10 +17,10 @@ except ImportError as exc:  # pragma: no cover - message CLI
     raise SystemExit("xarray est requis pour generer les donnees 3.") from exc
 
 try:
-    from .. import physique
+    from ..codes_python import physique
 except ImportError:  # Permet aussi : python modele3/ressources/generer_donnees.py
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from modele3 import physique
+    from modele3.codes_python import physique
 
 
 RACINE_DEPOT = Path(__file__).resolve().parents[2]
@@ -28,6 +28,8 @@ RESSOURCES_DEFAUT = RACINE_DEPOT / "ressources"
 ALBEDO_DIR_DEFAUT = RESSOURCES_DEFAUT / "albedo"
 SORTIE_DEFAUT = Path(__file__).resolve().parent / "donnees_precalculees" / "grille_5deg_2024"
 FICHIER_NPZ = "donnees_colonnes_5deg_2024.npz"
+LONGITUDE_CONVENTION = "-180..180"
+EPAISSEUR_MIN_COUCHE_HPA = 0.1
 
 
 QUANTIFICATION = {
@@ -67,6 +69,14 @@ def construire_grille(resolution):
     return latitudes, longitudes, poids.astype(np.float32)
 
 
+def normaliser_longitudes_180(longitudes):
+    return ((np.asarray(longitudes, dtype=float) + 180.0) % 360.0) - 180.0
+
+
+def _distance_longitude_deg(source_lon, cible_lon):
+    return np.abs(((np.asarray(source_lon, dtype=float) - float(cible_lon) + 180.0) % 360.0) - 180.0)
+
+
 def _selection_temps(ds, annee):
     coord = "valid_time" if "valid_time" in ds.coords else "time"
     valeurs = ds[coord]
@@ -83,8 +93,12 @@ def _selection_temps(ds, annee):
 
 
 def _selection_grille(ds, latitudes, longitudes):
-    longitudes_era5 = np.asarray(longitudes, dtype=float) % 360.0
-    return ds.sel(latitude=latitudes, longitude=longitudes_era5, method="nearest")
+    longitude_source = np.asarray(ds["longitude"].to_numpy(), dtype=float)
+    if np.nanmin(longitude_source) >= 0.0 and np.nanmax(longitude_source) > 180.0:
+        longitudes_selection = np.asarray(longitudes, dtype=float) % 360.0
+    else:
+        longitudes_selection = normaliser_longitudes_180(longitudes)
+    return ds.sel(latitude=latitudes, longitude=longitudes_selection, method="nearest")
 
 
 def trouver_fichiers_era5(ressources_dir):
@@ -108,6 +122,30 @@ def trouver_fichiers_era5(ressources_dir):
 
 def _borne_fraction(tableau, maximum=1.0):
     return np.clip(np.nan_to_num(tableau, nan=0.0), 0.0, maximum).astype(np.float32)
+
+
+def corriger_albedo_neige_glace(albedo_surface, snow_ice_fraction):
+    """Remplace les albedos nuls sur neige/glace par un repli physique simple."""
+
+    albedo = _borne_fraction(albedo_surface)
+    neige_glace = _borne_fraction(snow_ice_fraction)
+    masque = (albedo <= 0.0) & (
+        neige_glace > physique.SEUIL_FRACTION_NEIGE_GLACE_ALBEDO
+    )
+    fallback = physique.ALBEDO_SURFACE_SECOURS + neige_glace * (
+        physique.ALBEDO_NEIGE_GLACE_SECOURS - physique.ALBEDO_SURFACE_SECOURS
+    )
+    corrige = np.where(masque, fallback, albedo).astype(np.float32)
+    valeurs_corrigees = corrige[masque]
+    diagnostics = {
+        "zeros_neige_glace_corriges": int(np.count_nonzero(masque)),
+        "seuil_fraction_neige_glace": physique.SEUIL_FRACTION_NEIGE_GLACE_ALBEDO,
+        "albedo_surface_secours": physique.ALBEDO_SURFACE_SECOURS,
+        "albedo_neige_glace_secours": physique.ALBEDO_NEIGE_GLACE_SECOURS,
+        "fallback_min": float(valeurs_corrigees.min()) if valeurs_corrigees.size else None,
+        "fallback_max": float(valeurs_corrigees.max()) if valeurs_corrigees.size else None,
+    }
+    return corrige, diagnostics
 
 
 def _ouvrir_selection_surface(fichier, latitudes, longitudes, annee):
@@ -183,11 +221,13 @@ def _lire_csv_albedo(path):
 
 def _nearest_matrix(source_lat, source_lon, valeurs, target_lat, target_lon, allow_fallbacks, fallback):
     sortie = np.empty((len(target_lat), len(target_lon)), dtype=np.float32)
+    source_lon = normaliser_longitudes_180(source_lon)
+    target_lon = normaliser_longitudes_180(target_lon)
     valid = np.isfinite(valeurs)
     for i, lat in enumerate(target_lat):
         i_src = int(np.nanargmin(np.abs(source_lat - lat)))
         for j, lon in enumerate(target_lon):
-            j_src = int(np.nanargmin(np.abs(source_lon - lon)))
+            j_src = int(np.nanargmin(_distance_longitude_deg(source_lon, lon)))
             valeur = valeurs[i_src, j_src]
             if not math.isfinite(float(valeur)):
                 if not allow_fallbacks:
@@ -283,6 +323,27 @@ def _moyenne_profile(p_levels_hpa, valeurs, p_bas, p_haut):
     return float(np.trapezoid(interp, points) / (p_bas - p_haut))
 
 
+def _bords_couches_valides(p_surface_hpa):
+    bords = [float(p_surface_hpa)]
+    for pression_hpa in physique.PRESSION_BORDS_REFERENCE_HPA:
+        if pression_hpa < p_surface_hpa - EPAISSEUR_MIN_COUCHE_HPA:
+            bords.append(float(pression_hpa))
+    return bords
+
+
+def diagnostiquer_couches_pretraitees(couches):
+    p_bas = couches["pression_bas_couche_hpa"]
+    p_haut = couches["pression_haut_couche_hpa"]
+    valides = np.isfinite(p_bas) & np.isfinite(p_haut)
+    delta = np.where(valides, p_bas - p_haut, np.nan)
+    return {
+        "epaisseur_min_hpa": EPAISSEUR_MIN_COUCHE_HPA,
+        "couches_valides": int(np.count_nonzero(valides)),
+        "couches_nulles_ou_negatives": int(np.count_nonzero(valides & (p_bas <= p_haut))),
+        "delta_p_min_hpa": float(np.nanmin(delta)) if np.isfinite(delta).any() else None,
+    }
+
+
 def charger_profils_et_couches(fichier_profil, surface, latitudes, longitudes, annee):
     with xr.open_dataset(fichier_profil, decode_times=True) as ds:
         ds = _selection_temps(ds, annee)
@@ -310,7 +371,7 @@ def charger_profils_et_couches(fichier_profil, surface, latitudes, longitudes, a
                 ps = float(p_surface[mois, i, j])
                 if not math.isfinite(ps) or ps <= 1.0:
                     continue
-                bords = [ps] + [p for p in physique.PRESSION_BORDS_REFERENCE_HPA if p < ps]
+                bords = _bords_couches_valides(ps)
                 for p_bas, p_haut in zip(bords[:-1], bords[1:]):
                     indice_couche = physique.PRESSION_BORDS_REFERENCE_HPA.index(p_haut)
                     t_moy = _moyenne_profile(p_levels, temperature[mois, :, i, j], p_bas, p_haut)
@@ -386,7 +447,7 @@ def ecrire_paquet(sortie_dir, tableaux, metadata, overwrite):
         f"- Resolution: {metadata['resolution_deg']} degres\n"
         f"- Annee: {metadata['annee']}\n"
         "- Grille: 36 latitudes x 72 longitudes x 12 mois\n"
-        "- Usage normal: `modele3.donnees.charger_paquet_grille`.\n\n"
+        "- Usage normal: `modele3.codes_python.donnees.charger_paquet_grille`.\n\n"
         "## Provenance\n\n"
         "| Champ | Source active | Transformation |\n"
         "| --- | --- | --- |\n"
@@ -394,11 +455,16 @@ def ecrire_paquet(sortie_dir, tableaux, metadata, overwrite):
         "| Surface | ERA5 single levels, `ressources/**/*.nc` | Selection au plus proche sur grille 5 degres. |\n"
         "| Flux de validation | ERA5 flux moyens | Stockes pour comparaison, jamais pour recalibrer. |\n"
         "| Transmissivite SW | Geometrie solaire 3 + ERA5 `avg_sdswrf` | `ERA5 SW_down / moyenne_mensuelle(S0*cos(i))`, borne `[0, 1]`. |\n"
-        "| Albedo surface | `ressources/albedo/albedo01.csv` ... `albedo12.csv` | Selection mensuelle au plus proche. |\n"
+        "| Albedo surface | `ressources/albedo/albedo01.csv` ... `albedo12.csv` | Longitudes normalisees -180..180, selection mensuelle au plus proche, puis correction des zeros sur neige/glace. |\n"
         "\n"
         "Les fichiers `ressources/albedo/*` sont des copies racine des donnees utiles\n"
         "historiquement presentes dans le modele 0. Le code 3 ne lit pas le dossier\n"
-        "`modele0_maintenance/`.\n\n"
+        "`modele0_maintenance/`. Les valeurs d'albedo nulles sur des mailles\n"
+        "neige/glace viennent surtout de mois polaires ou le rapport source\n"
+        "`SW_UP / SW_DOWN` n'est pas observable ; elles sont remplacees par un\n"
+        "melange simple entre `0.30` et `0.65` selon la fraction neige/glace.\n\n"
+        "Les couches verticales dont l'epaisseur serait inferieure a 0.1 hPa sont\n"
+        "ignorees avant stockage pour eviter des couches nulles apres quantification.\n\n"
         "## Contenu\n\n"
         "Le `.npz` contient seulement les champs necessaires au calcul normal :\n"
         "coordonnees, poids de surface, pression de surface, albedo, transmissivite\n"
@@ -442,8 +508,13 @@ def generer(args):
         flux["era5_sw_down_surface_w_m2"],
         sw_toa_moyen,
     )
+    albedo_surface, diagnostics_albedo = corriger_albedo_neige_glace(
+        albedo_surface,
+        surface["snow_ice_fraction"],
+    )
     _message("Construction des couches pretraitees")
     couches = charger_profils_et_couches(fichier_profil, surface, latitudes, longitudes, args.annee)
+    diagnostics_couches = diagnostiquer_couches_pretraitees(couches)
 
     tableaux = {
         "lat_deg": latitudes.astype(np.float32),
@@ -477,8 +548,15 @@ def generer(args):
             "valeur": physique.EMISSIVITE_SURFACE_CONSTANTE,
             "source": "constante_modele3",
         },
+        "conventions": {
+            "longitude_deg": LONGITUDE_CONVENTION,
+            "albedo_nearest_neighbor": "longitudes source et cible normalisees -180..180",
+            "shortwave_mensuel": "transmissivite et SW_TOA moyennes sur le mois complet",
+        },
         "diagnostics_generation": {
             "transmissivite_sw": diagnostics_transmissivite,
+            "albedo_surface": diagnostics_albedo,
+            "couches_verticales": diagnostics_couches,
         },
         "sources_fichiers": {
             "era5_profil": str(Path(fichier_profil).relative_to(RACINE_DEPOT)),
@@ -496,15 +574,15 @@ def generer(args):
             nom: _metadata_variable(nom, source)
             for nom, source in {
                 "pression_surface_hpa": "ERA5 sp",
-                "pression_bas_couche_hpa": "pretraitement ERA5 pression_surface + bords 3",
-                "pression_haut_couche_hpa": "bords 3",
+                "pression_bas_couche_hpa": "pretraitement ERA5 pression_surface + bords 3, couches <0.1 hPa ignorees",
+                "pression_haut_couche_hpa": "bords 3, couches <0.1 hPa ignorees",
                 "temperature_couche_k": "ERA5 t moyenne par couche",
                 "temperature_2m_k": "ERA5 t2m",
                 "skin_temperature_k": "ERA5 skt",
                 "masse_air_couche_kg_m2": "delta_p / g",
                 "humidite_specifique_couche_kgkg": "ERA5 q moyenne par couche",
                 "masse_h2o_couche_kg_m2": "q * delta_p / g",
-                "albedo_surface": "ressources/albedo/albedo01.csv..albedo12.csv",
+                "albedo_surface": "ressources/albedo/albedo01.csv..albedo12.csv, longitudes normalisees -180..180 + correction zero neige/glace",
                 "sw_toa_moyen_mensuel_w_m2": "geometrie solaire modele 3, S0=1361 W m-2",
                 "transmissivite_sw_mensuelle": "ERA5 avg_sdswrf / sw_toa_moyen_mensuel_w_m2",
                 "land_fraction": "ERA5 lsm",
@@ -517,8 +595,10 @@ def generer(args):
         },
         "notes": [
             "Les CSV d'albedo sont lus depuis ressources/albedo, copie racine des donnees utiles du modele 0.",
+            "Les albedos nuls sur neige/glace sont remplaces par un repli physique 0.30..0.65, car le rapport SW_UP/SW_DOWN source est non observable en nuit polaire.",
             "Le modele 3 n'utilise pas de coefficient nuageux court-onde ou long-onde.",
             "transmissivite_sw_mensuelle corrige le court-onde surface avec ERA5, sans remplacer S0*cos(i).",
+            "Les couches verticales <0.1 hPa sont ignorees avant stockage.",
             "Les poids_surface sont normalises pour sommer a 1 sur la grille.",
         ],
     }

@@ -1,6 +1,6 @@
 # Provenance
 
-Cette fiche indique ce qui vient de chaque groupe et ce qui a été écrit pour la
+Cette fiche indique ce qui provient de chaque groupe et ce qui a été écrit pour la
 compatibilité du projet.
 
 ## Synthèse
@@ -8,7 +8,7 @@ compatibilité du projet.
 | Élément | Statut |
 | --- | --- |
 | Données et PDF | Copies exactes des archives sources. |
-| Moteur par défaut | Carcajous modèle 4. |
+| Moteur par défaut | Carcajous, modèle 4. |
 | Convection | Active par défaut, depuis Chevreaux et Ornithorynquietant. |
 | Diffusion | Conservée, non activée. |
 | Gaz à effet de serre | Non intégré pour l'instant. |
@@ -53,11 +53,11 @@ Conservé et activé par défaut pour la convection naturelle :
 - `codes_python/physique/convection.py` : convection naturelle.
 - `codes_python/physique/diffusion.py` : diffusion radiale conservée, non branchée.
 - `ressources/12_mois/*.csv` : format mensuel utilisé par le viewer 3D rapide,
-  désormais régénérable depuis la grille annuelle du moteur courant.
+désormais régénérable depuis la grille annuelle du moteur courant.
 
 ## Données et génération
 
-Le détail opérationnel est dans `outils_generation_donnees/README.md`.
+Le détail opérationnel se trouve dans `outils_generation_donnees/README.md`.
 
 | Donnée finale | Statut de génération |
 | --- | --- |

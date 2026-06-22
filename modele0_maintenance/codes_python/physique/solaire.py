@@ -15,6 +15,7 @@ def get_time_variables(t_sec, lon_deg):
     """Retourne le jour de l'annee et l'heure solaire locale."""
     jour_sim = int(t_sec // 86400)
     day_of_year = jour_sim % 365
+    # La longitude décale l'heure civile vers l'heure solaire locale.
     heure_solaire = ((t_sec / 3600.0) + lon_deg / 15.0) % 24.0
     return day_of_year, heure_solaire
 
@@ -32,11 +33,12 @@ def cos_incidence(lat_rad, day, hour):
         np.sin(lat_rad) * np.sin(delta)
         + np.cos(lat_rad) * np.cos(delta) * np.cos(hour_angle)
     )
+    # La nuit, on force le flux solaire à zéro.
     return max(ci, 0.0)
 
 
 def P_inc_solar(lat_rad, day, hour, albedo_sol, albedo_nuages):
     """Flux solaire net absorbe par la surface selon Carcajous modele 4."""
     phi_entrant = constante_solaire * cos_incidence(lat_rad, day, hour)
+    # Nuages puis sol retirent chacun leur part réfléchie.
     return phi_entrant * (1 - albedo_nuages) * (1 - albedo_sol)
-
