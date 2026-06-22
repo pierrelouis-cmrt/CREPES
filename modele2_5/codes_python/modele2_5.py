@@ -13,6 +13,18 @@ from math import exp, pi
 from pathlib import Path
 import sys
 
+RACINE_PROJET = Path(__file__).resolve().parents[2]
+DOSSIER_SCRIPT = Path(__file__).resolve().parent
+try:
+    sys.path.remove(str(RACINE_PROJET))
+except ValueError:
+    pass
+try:
+    sys.path.remove(str(DOSSIER_SCRIPT))
+except ValueError:
+    pass
+sys.path.insert(0, str(RACINE_PROJET))
+
 import numpy as np
 
 from modele2_5.ressources.profil_vertical_atmosphere_co2 import (

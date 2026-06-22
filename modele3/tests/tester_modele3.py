@@ -21,6 +21,11 @@ from modele3.codes_python.calibrer_coefficients_co2 import (
     moyenne_planck_transmission,
     tau_equivalent_depuis_transmission,
 )
+from modele3.codes_python.calibrer_coefficients_h2o import (
+    MASSE_H2O_REFERENCE_KG_M2 as MASSE_H2O_REFERENCE_CALIBRAGE_KG_M2,
+    couche_reference_depuis_modele as couche_h2o_reference_depuis_modele,
+    fraction_molaire_h2o_depuis_masses,
+)
 from modele3.codes_python.donnees import charger_paquet_grille, extraire_colonne, iterer_colonnes
 from modele3.codes_python.modele3 import calculer_colonne_radiative, construire_couches
 from modele3.ressources.generer_donnees import _nearest_matrix, normaliser_longitudes_180
@@ -82,6 +87,32 @@ def tester_shortwave_mensuel_utilise_moyenne_paquet():
     assert resultat["SW_down_surface"] == 321.5 * donnees["surface"]["transmissivite_sw_mensuelle"]
 
 
+def tester_validation_shortwave_utilise_moyenne_mensuelle():
+    donnees = _donnees_test()
+    donnees["surface"]["sw_toa_moyen_mensuel_w_m2"] = 400.0
+    resultat = calculer_colonne_radiative(donnees, moyenne_journaliere_sw=False)
+    assert resultat["mode_shortwave"] == "instantane_jour_representatif"
+    assert resultat["SW_absorbe_surface"] != resultat["flux_validation_modele"][
+        "SW_absorbe_surface_mensuel"
+    ]
+    assert resultat["flux_validation_modele"]["SW_down_surface_mensuel"] == 240.0
+    assert resultat["flux_validation_modele"]["SW_absorbe_surface_mensuel"] == 168.0
+    assert (
+        abs(resultat["comparaison_validation"]["ecart_SW_down_surface_mensuel_W_m2"])
+        < 1e-12
+    )
+    assert (
+        abs(
+            resultat["comparaison_validation"][
+                "ecart_SW_absorbe_surface_mensuel_W_m2"
+            ]
+        )
+        < 1e-12
+    )
+    assert "ecart_SW_absorbe_surface_W_m2" not in resultat["comparaison_validation"]
+    assert resultat["notes_validation"]
+
+
 def tester_emissivite_constante():
     resultat = calculer_colonne_radiative(_donnees_test())
     assert resultat["emissivite_surface"] == 0.98
@@ -137,6 +168,46 @@ def tester_coefficients_co2_remplacables_sans_mutation_globale():
     assert all(bande["a_h2o"] == 0.0 for bande in bandes)
     assert avant["a_co2"] != 0.123
     assert any(bande["a_h2o"] > 0.0 for bande in physique.BANDES_INFRAROUGES)
+
+
+def tester_normalisation_tau_h2o_reference():
+    assert physique.MASSE_H2O_REFERENCE_KG_M2 == MASSE_H2O_REFERENCE_CALIBRAGE_KG_M2 == 10.0
+    couche_reference = {"masse_h2o_kg_m2": physique.MASSE_H2O_REFERENCE_KG_M2}
+    bande = {"a_h2o": 0.42}
+    assert abs(physique.tau_h2o(couche_reference, bande) - 0.42) < 1e-12
+    couche_double_h2o = {"masse_h2o_kg_m2": 2.0 * physique.MASSE_H2O_REFERENCE_KG_M2}
+    assert abs(physique.tau_h2o(couche_double_h2o, bande) - 0.84) < 1e-12
+
+
+def tester_coefficients_h2o_remplacables_sans_mutation_globale():
+    nom_bande = "H2O_6_3um"
+    avant = next(bande for bande in physique.BANDES_INFRAROUGES if bande["nom"] == nom_bande)
+    bandes = physique.bandes_avec_coefficients_h2o({nom_bande: 1.23}, zero_co2=True)
+    remplacee = next(bande for bande in bandes if bande["nom"] == nom_bande)
+    assert remplacee["a_h2o"] == 1.23
+    assert all(bande["a_co2"] == 0.0 for bande in bandes)
+    assert avant["a_h2o"] != 1.23
+    assert any(bande["a_co2"] > 0.0 for bande in physique.BANDES_INFRAROUGES)
+
+
+def tester_calibrage_h2o_fraction_molaire_depuis_masses():
+    assert fraction_molaire_h2o_depuis_masses(0.0, 1000.0) == 0.0
+    fraction = fraction_molaire_h2o_depuis_masses(10.0, 1000.0)
+    assert 0.0 < fraction < 0.1
+
+
+def tester_calibrage_h2o_couche_reference_synthetique():
+    couche = {
+        "pression_bas_pa": 100_000.0,
+        "pression_haut_pa": 90_000.0,
+        "temperature_k": 280.0,
+        "masse_air_kg_m2": 1000.0,
+        "masse_h2o_kg_m2": 5.0,
+    }
+    reference = couche_h2o_reference_depuis_modele(couche, echelle_h2o=2.0)
+    assert abs(reference.masse_h2o_kg_m2 - 10.0) < 1e-12
+    assert reference.chemin_optique_cm > 0.0
+    assert reference.fraction_molaire_h2o > 0.0
 
 
 def tester_calibrage_co2_coefficient_median_synthetique():
@@ -291,11 +362,16 @@ def tester_appel_en_boucle_sur_plusieurs_colonnes():
 def main():
     tester_court_onde_unique_transmissivite()
     tester_shortwave_mensuel_utilise_moyenne_paquet()
+    tester_validation_shortwave_utilise_moyenne_mensuelle()
     tester_emissivite_constante()
     tester_nuages_lw_absents_des_opacites()
     tester_coefficients_opacite_effectifs_documentes()
     tester_normalisation_tau_co2_reference()
     tester_coefficients_co2_remplacables_sans_mutation_globale()
+    tester_normalisation_tau_h2o_reference()
+    tester_coefficients_h2o_remplacables_sans_mutation_globale()
+    tester_calibrage_h2o_fraction_molaire_depuis_masses()
+    tester_calibrage_h2o_couche_reference_synthetique()
     tester_calibrage_co2_coefficient_median_synthetique()
     tester_calibrage_co2_wstep_auto()
     tester_calibrage_co2_transmission_planck()

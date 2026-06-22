@@ -25,6 +25,12 @@ Les options restent disponibles si besoin :
 ./modele3.py --lat 0 --lon 0 --mois 7 --temperature-surface 293 --moyenne-journaliere-sw
 ```
 
+Les flux ERA5 affiches en validation sont mensuels. Si le court-onde principal
+est lance en mode instantane, le bloc de validation compare donc un diagnostic
+mensuel equivalent du modele, pas le flux instantane affiche dans `flux_W_m2`.
+Pour rendre le flux court-onde principal directement comparable a ERA5, lancer
+avec `--moyenne-journaliere-sw` et `--mois` sans `--jour-annee`.
+
 Depuis la racine du dépôt :
 
 ```bash
@@ -47,12 +53,14 @@ python -m modele3.ressources.generer_donnees --overwrite
 
 | Élément | Rôle |
 | --- | --- |
-| `codes_python/` | Chargement du paquet, calcul radiatif de colonne et calibrage CO₂. |
+| `codes_python/` | Chargement du paquet, calcul radiatif de colonne et calibrages CO₂/H₂O. |
 | `ressources/` | Générateur du paquet compact et données générées. |
 | `documentation/` | Théorie, provenance, calibrage CO₂ et notes de recherche. |
 | `tests/` | Vérifications numériques automatisables. |
 | `codes_python/calibrer_coefficients_co2.py` | Outil de calibrage CO₂ dédié. |
+| `codes_python/calibrer_coefficients_h2o.py` | Outil de calibrage H₂O dédié. |
 | `documentation/CALIBRAGE_CO2.md` | Méthode de calibrage CO₂ actuelle. |
+| `documentation/CALIBRAGE_H2O.md` | Méthode de calibrage H₂O proposée. |
 | `requirements.txt` | Dépendances du moteur. |
 | `requirements-calibrage.txt` | Dépendances supplémentaires pour le calibrage. |
 

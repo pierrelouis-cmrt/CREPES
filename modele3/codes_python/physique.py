@@ -176,6 +176,16 @@ def bandes_co2():
     ]
 
 
+def bandes_h2o():
+    """Retourne les bandes qui portent une opacite H2O effective."""
+
+    return [
+        dict(bande)
+        for bande in BANDES_INFRAROUGES
+        if float(bande.get("a_h2o", 0.0)) > 0.0
+    ]
+
+
 def bandes_avec_coefficients_co2(coefficients_co2, facteur=1.0, zero_h2o=False):
     """Construit les bandes du modele avec des coefficients CO2 remplaces.
 
@@ -192,6 +202,24 @@ def bandes_avec_coefficients_co2(coefficients_co2, facteur=1.0, zero_h2o=False):
             bande["a_co2"] = max(0.0, coefficients[bande["nom"]] * float(facteur))
         if zero_h2o:
             bande["a_h2o"] = 0.0
+    return bandes
+
+
+def bandes_avec_coefficients_h2o(coefficients_h2o, facteur=1.0, zero_co2=False):
+    """Construit les bandes du modele avec des coefficients H2O remplaces.
+
+    `coefficients_h2o` est un dictionnaire `{nom_bande: a_h2o}`. Les bandes non
+    presentes gardent leur valeur de production. La fonction suit le meme
+    contrat que `bandes_avec_coefficients_co2` pour faciliter les calibrages.
+    """
+
+    coefficients = {nom: float(valeur) for nom, valeur in dict(coefficients_h2o).items()}
+    bandes = copier_bandes_infrarouges()
+    for bande in bandes:
+        if bande["nom"] in coefficients:
+            bande["a_h2o"] = max(0.0, coefficients[bande["nom"]] * float(facteur))
+        if zero_co2:
+            bande["a_co2"] = 0.0
     return bandes
 
 

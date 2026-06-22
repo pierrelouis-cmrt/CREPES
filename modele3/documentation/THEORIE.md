@@ -123,6 +123,19 @@ SW_down_surface = transmissivite_sw_mensuelle * SW_TOA_local
 SW_absorbe_surface = SW_down_surface * (1 - albedo_surface)
 ```
 
+Pour la validation ERA5, ces flux ne sont comparables directement que lorsque
+`SW_TOA_local` represente la moyenne mensuelle. En mode instantane, le modele
+affiche le flux local demande, mais compare ERA5 a un diagnostic mensuel
+equivalent :
+
+```text
+SW_down_surface_mensuel =
+    transmissivite_sw_mensuelle * SW_TOA_moyen_mensuel
+
+SW_absorbe_surface_mensuel =
+    SW_down_surface_mensuel * (1 - albedo_surface)
+```
+
 Cette partie remplace l'ancien court-onde simplifie. Il n'y a plus de mode
 court-onde alternatif dans le modele 3, et il n'y a plus d'albedo nuageux
 effectif multiplie explicitement dans la formule.
@@ -198,7 +211,7 @@ Les unites et references internes sont :
 | Coefficient | Unite dans le modele | Origine projet | Cible / role |
 | --- | --- | --- | --- |
 | `a_CO2_bande` | profondeur optique effective sans dimension pour `CO2 = 280 ppm` et `delta_p = 101325 Pa` | noyau long-onde du modele 2.5, repris dans le modele 3 | conserver l'ordre de grandeur pedagogique du forcage relatif `280 -> 560 ppm` |
-| `a_H2O_bande` | profondeur optique effective sans dimension pour `10 kg m-2` de vapeur d'eau | ajout modele 3 branche sur les masses H2O issues d'ERA5 | representer les grandes bandes H2O : 6.3 um, fenetre 8-13 um, far-IR |
+| `a_H2O_bande` | profondeur optique effective sans dimension pour `10 kg m-2` de vapeur d'eau | ajout modele 3 branche sur les masses H2O issues d'ERA5, recalibrable avec `CALIBRAGE_H2O.md` | representer les grandes bandes H2O : 6.3 um, fenetre 8-13 um, far-IR |
 
 Dans `physique.py`, `ECHELLE_OPACITE_CO2 = 0.0327228010` est donc un facteur
 d'echelle effectif du noyau CO2, pas une section efficace. De meme, les valeurs
@@ -213,8 +226,9 @@ D = 1.66
 ```
 
 Les bandes CO2 conservees du noyau precedent couvrent la bande `15 um`
-avec un decoupage coeur/ailes, et la bande `4.3 um` avec le meme principe. Les
-bandes H2O effectives sont :
+avec un decoupage coeur/ailes, et la bande `4.3 um` avec le meme principe. Ces
+intervalles peuvent aussi porter une contribution H2O via `a_H2O_bande`. Les
+trois grands intervalles propres a H2O sont :
 
 ```text
 5.5-7.5 um   : bande vibration-rotation autour de 6.3 um
@@ -224,9 +238,11 @@ bandes H2O effectives sont :
 
 Les coefficients de bandes sont effectifs. Ils gardent un noyau CO2 + H2O
 simple et lisible ; ils ne remplacent pas HITRAN, RADIS ou une methode
-correlated-k. Le script `codes_python/calibrer_coefficients_co2.py` sert precisement a
+correlated-k. Le script `codes_python/calibrer_coefficients_co2.py` sert a
 deriver des `a_CO2_bande` plus tracables depuis des transmissions HITRAN/RADIS,
-puis a recaler leur facteur global sur le forcage `280 -> 560 ppm`.
+puis a recaler leur facteur global sur le forcage `280 -> 560 ppm`. Le script
+`codes_python/calibrer_coefficients_h2o.py` applique la meme compression aux
+bandes H2O, mais sans recalage global de forcage.
 
 ## Vapeur d'eau
 
