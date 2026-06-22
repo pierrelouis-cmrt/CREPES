@@ -7,20 +7,16 @@ le modèle 4. Il ne fait pas évoluer lui-même la température de surface.
 
 ## Lancer
 
-Depuis le dossier `modele3/` :
+Depuis la racine du dépôt :
 
-```
-# Colonne locale avec les paramètres par défaut
-./modele3.py
-
-# Équivalent si le dossier courant est modele3/
-python .
+```bash
+python -m modele3.codes_python.modele3
 ```
 
 Les options restent disponibles si besoin :
 
 ```bash
-./modele3.py --lat 0 --lon 0 --mois 7 --temperature-surface 293 --moyenne-journaliere-sw
+python -m modele3.codes_python.modele3 --lat 0 --lon 0 --mois 7 --temperature-surface 293 --moyenne-journaliere-sw
 ```
 
 Les flux ERA5 affiches en validation sont mensuels. Si le court-onde principal
@@ -34,7 +30,7 @@ Depuis la racine du dépôt :
 ```bash
 
 # Colonne locale, moyenne journalière du court-onde
-python -m modele3 --lat 0 --lon 0 --mois 7 --temperature-surface 293 --moyenne-journaliere-sw
+python -m modele3.codes_python.modele3 --lat 0 --lon 0 --mois 7 --temperature-surface 293 --moyenne-journaliere-sw
 
 # Tests
 python modele3/tests/tester_modele3.py

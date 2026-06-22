@@ -12,7 +12,7 @@ Depuis la racine du dépôt :
 ```bash
 
 python modele2_5/codes_python/modele2_5.py
-python modele2_5/ressources/tester_modele2_5.py
+python modele2_5/tests/tester_modele2_5.py
 ```
 
 Pour régénérer le profil atmosphérique :

@@ -23,5 +23,6 @@ moteur et son mode d'exécution.
 | `*.npz` | Résultats de simulation du modèle 4. |
 | `README.md` | Convention de sortie et commande de production. |
 
-Pour afficher une sortie, utiliser [`planisphere.py`](../../planisphere.py) à
-la racine du dépôt.
+Pour afficher une sortie, utiliser
+[`visualisation/planisphere.py`](../../visualisation/planisphere.py) depuis la
+racine du dépôt.

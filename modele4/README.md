@@ -37,7 +37,7 @@ python -m modele4.codes_python.rapide --jours 1 --max-latitudes 4 --max-longitud
 | `documentation/` | Hypothèses, bilan de surface et notes de conception. |
 | `tests/` | Tests du moteur de référence et du moteur rapide. |
 | `sorties/` | Résultats `.npz` produits par les simulations. |
-| `visualisation/` | Emplacement des outils de visualisation du modèle. |
+| `../visualisation/` | Outil commun de visualisation des sorties des modèles 4 et 5. |
 
 Les sorties et les options propres aux moteurs sont documentées dans les README
 des sous-dossiers concernés.

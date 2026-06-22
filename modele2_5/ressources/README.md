@@ -1,8 +1,8 @@
 # Ressources — modèle 2.5
 
 Ce dossier rassemble les outils auxiliaires du modèle 2.5 : génération du
-profil atmosphérique, calibration des coefficients optiques et tests du noyau
-radiatif. Les données détaillées générées restent dans `données/`.
+profil atmosphérique et calibration des coefficients optiques. Les sorties
+générées par défaut sont écrites dans `../sorties/`.
 
 ## Lancer les outils
 
@@ -13,7 +13,7 @@ Depuis la racine du dépôt :
 python modele2_5/ressources/profil_vertical_atmosphere_co2.py --no-plot
 
 # Vérifier les cas limites et la réponse au CO₂
-python modele2_5/ressources/tester_modele2_5.py
+python modele2_5/tests/tester_modele2_5.py
 
 # Recalculer le facteur d'échelle optique
 python modele2_5/ressources/calibrer_coefficients_optiques.py
@@ -28,7 +28,7 @@ déplacer les sorties.
 | --- | --- |
 | `profil_vertical_atmosphere_co2.py` | Génère le profil vertical standard. |
 | `calibrer_coefficients_optiques.py` | Calibre les coefficients optiques effectifs. |
-| `tester_modele2_5.py` | Lance les vérifications numériques du modèle. |
-| `données/` | Fichiers produits par le générateur ; contenu détaillé exclu de cette documentation. |
+| `../tests/tester_modele2_5.py` | Lance les vérifications numériques du modèle. |
+| `../sorties/` | CSV et PNG produits par le générateur de profil. |
 
 Le moteur principal est décrit dans le [README parent](../README.md).

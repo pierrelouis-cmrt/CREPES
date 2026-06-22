@@ -15,10 +15,10 @@ utilise les absorbances moyennes définies dans son code.
 Depuis la racine du dépôt :
 
 ```bash
-python "modele1/codes_python/absorbance CO2.py" --no-plot --output modele1/sorties/absorbance_CO2.png
+python "modele1/ressources/absorbance CO2.py" --no-plot --output modele1/sorties/absorbance_CO2.png
 ```
 
 RADIS peut devoir télécharger les données HITRAN au premier lancement ; une
 connexion Internet est alors nécessaire. La commande remplace l'image existante.
 Pour les paramètres et les options du script, voir le
-[README des codes Python](../codes_python/README.md).
+[README des ressources](../ressources/README.md).

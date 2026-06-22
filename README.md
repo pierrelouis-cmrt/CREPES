@@ -50,6 +50,22 @@ python3 modele0_maintenance/outils_generation_donnees/generer_donnees.py --statu
 La documentation complète du modèle 0 est dans
 `modele0_maintenance/README.md`.
 
+## Modèle 1
+
+Lancer la colonne radiative simplifiée :
+
+```bash
+./.venv/bin/python modele1/codes_python/modele1.py
+```
+
+Régénérer le spectre d'absorbance CO2 :
+
+```bash
+./.venv/bin/python "modele1/ressources/absorbance CO2.py" --no-plot
+```
+
+La documentation détaillée du modèle 1 est dans `modele1/README.md`.
+
 ## Modèle 2
 
 Lancer le noyau radiatif du modèle 2 :
@@ -77,13 +93,13 @@ Lancer le noyau radiatif du modèle 2.5 :
 Lancer les tests numériques séparés :
 
 ```bash
-./.venv/bin/python modele2_5/ressources/tester_modele2_5.py
+./.venv/bin/python modele2_5/tests/tester_modele2_5.py
 ```
 
 Régénérer les profils standard et CO2 :
 
 ```bash
-./.venv/bin/python modele2_5/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 84 --step-m 100 --surface-co2-ppm 420 --output modele2_5/ressources/profil_vertical_atmosphere_co2.png --csv modele2_5/ressources/profil_vertical_atmosphere_co2.csv --no-plot
+./.venv/bin/python modele2_5/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 84 --step-m 100 --surface-co2-ppm 420 --output modele2_5/sorties/profil_vertical_atmosphere_co2.png --csv modele2_5/sorties/profil_vertical_atmosphere_co2.csv --no-plot
 ```
 
 La documentation détaillée du modèle 2.5 est dans `modele2_5/README.md`.
@@ -99,14 +115,7 @@ Régénérer le paquet compact :
 Lancer une colonne depuis le paquet global :
 
 ```bash
-cd modele3
-./modele3.py
-```
-
-Avec des options depuis la racine :
-
-```bash
-./.venv/bin/python -m modele3 --lat 0 --lon 0 --mois 7 --temperature-surface 293.0 --moyenne-journaliere-sw
+./.venv/bin/python -m modele3.codes_python.modele3 --lat 0 --lon 0 --mois 7 --temperature-surface 293.0 --moyenne-journaliere-sw
 ```
 
 Lancer les tests :
@@ -138,7 +147,7 @@ Lancer le moteur rapide, sortie toutes les 4 heures par défaut :
 Lancer un test temporel court sur une cellule :
 
 ```bash
-./.venv/bin/python -m modele4.modele4 --mode temporel --jours 0.020833333333333332 --max-latitudes 1 --max-longitudes 1 --frequence-sortie-pas 1 --output /tmp/modele4_test.npz
+./.venv/bin/python -m modele4.codes_python.modele4 --mode temporel --jours 0.020833333333333332 --max-latitudes 1 --max-longitudes 1 --frequence-sortie-pas 1 --output /tmp/modele4_test.npz
 ```
 
 Lancer les tests :
@@ -151,7 +160,7 @@ Lancer les tests :
 Documentation détaillée :
 
 - `modele4/README.md`
-- `modele4/THEORIE.md`
+- `modele4/documentation/THEORIE.md`
 
 ## Modèle 5
 
@@ -164,13 +173,13 @@ Lancer le modèle couplé horizontal, sortie toutes les 4 heures par défaut :
 Lancer une petite grille de développement :
 
 ```bash
-./.venv/bin/python -m modele5.modele5 --jours 1 --max-latitudes 4 --max-longitudes 8 --output modele5/sorties/simulation_dev.npz
+./.venv/bin/python -m modele5.codes_python.modele5 --jours 1 --max-latitudes 4 --max-longitudes 8 --output modele5/sorties/simulation_dev.npz
 ```
 
 Comparer au modèle 4 rapide sans échange horizontal :
 
 ```bash
-./.venv/bin/python -m modele5.modele5 --facteur-horizontal 0 --output modele5/sorties/simulation_sans_horizontal.npz
+./.venv/bin/python -m modele5.codes_python.modele5 --facteur-horizontal 0 --output modele5/sorties/simulation_sans_horizontal.npz
 ```
 
 Lancer les tests :
