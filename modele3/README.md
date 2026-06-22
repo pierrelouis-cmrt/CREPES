@@ -9,9 +9,7 @@ le modèle 4. Il ne fait pas évoluer lui-même la température de surface.
 
 Depuis le dossier `modele3/` :
 
-```bash
-python -m pip install -r requirements.txt
-
+```
 # Colonne locale avec les paramètres par défaut
 ./modele3.py
 
@@ -34,7 +32,6 @@ avec `--moyenne-journaliere-sw` et `--mois` sans `--jour-annee`.
 Depuis la racine du dépôt :
 
 ```bash
-python -m pip install -r modele3/requirements.txt
 
 # Colonne locale, moyenne journalière du court-onde
 python -m modele3 --lat 0 --lon 0 --mois 7 --temperature-surface 293 --moyenne-journaliere-sw
@@ -49,6 +46,21 @@ Pour régénérer le paquet compact lorsque les sources sont disponibles :
 python -m modele3.ressources.generer_donnees --overwrite
 ```
 
+## Visualisation de l'absorption H₂O
+
+Le script suivant affiche un spectre indicatif de la vapeur d'eau entre `0,1`
+et `30 µm` :
+
+```bash
+python modele3/codes_python/Absorbance_H2O.py
+```
+
+Il construit des bandes paramétrées et un continuum infrarouge, puis applique
+Beer-Lambert. C'est une visualisation qualitative : elle ne lit pas RADIS,
+ne calcule pas de raies HITRAN et ne modifie pas les coefficients utilisés par
+la colonne radiative. Le calibrage effectif des coefficients H₂O est expliqué
+dans [`documentation/CALIBRAGE_H2O.md`](documentation/CALIBRAGE_H2O.md).
+
 ## Structure
 
 | Élément | Rôle |
@@ -57,6 +69,7 @@ python -m modele3.ressources.generer_donnees --overwrite
 | `ressources/` | Générateur du paquet compact et données générées. |
 | `documentation/` | Théorie, provenance, calibrage CO₂ et notes de recherche. |
 | `tests/` | Vérifications numériques automatisables. |
+| `sorties/` | Images et autres sorties de diagnostic du modèle. |
 
 Les hypothèses, limites et sources sont détaillées dans
 [documentation/](documentation/README.md).

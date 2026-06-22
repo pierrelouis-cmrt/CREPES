@@ -21,6 +21,9 @@ une sortie existante n'est pas remplacée.
 | Élément | Rôle |
 | --- | --- |
 | `generer_donnees.py` | Prépare le paquet compact à partir des données sources. |
+| `calibrage_opacite_co2/` | Coefficients effectifs CO₂ et rapport produits par le calibrage. |
+| `calibrage_opacite_h2o/` | Coefficients effectifs H₂O et rapport produits par le calibrage. |
+| `calibrage_opacite_nuages/` | Coefficients effectifs de nuages lus par le runtime. |
 | `donnees_precalculees/` | Paquets prêts à être lus ; données détaillées non réécrites ici. |
 
 Pour utiliser le paquet dans une colonne, voir le
