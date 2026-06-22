@@ -2,7 +2,7 @@
 
 Le modèle 0 est la version historique maintenue du modèle de surface CREPES.
 Il simule la température de surface en un point ou sur une grille, à partir du
-rayonnement solaire, des albédo, de la capacité thermique, de la chaleur
+rayonnement solaire, des albédos, de la capacité thermique, de la chaleur
 latente et de la convection.
 
 ## Parcours de la documentation
