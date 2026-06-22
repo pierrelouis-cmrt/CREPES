@@ -7,13 +7,31 @@ le modèle 4. Il ne fait pas évoluer lui-même la température de surface.
 
 ## Lancer
 
+Depuis le dossier `modele3/` :
+
+```bash
+python -m pip install -r requirements.txt
+
+# Colonne locale avec les paramètres par défaut
+./modele3.py
+
+# Équivalent si le dossier courant est modele3/
+python .
+```
+
+Les options restent disponibles si besoin :
+
+```bash
+./modele3.py --lat 0 --lon 0 --mois 7 --temperature-surface 293 --moyenne-journaliere-sw
+```
+
 Depuis la racine du dépôt :
 
 ```bash
 python -m pip install -r modele3/requirements.txt
 
 # Colonne locale, moyenne journalière du court-onde
-python -m modele3.codes_python.modele3 --lat 0 --lon 0 --mois 7 --temperature-surface 293 --moyenne-journaliere-sw
+python -m modele3 --lat 0 --lon 0 --mois 7 --temperature-surface 293 --moyenne-journaliere-sw
 
 # Tests
 python modele3/tests/tester_modele3.py
@@ -29,12 +47,12 @@ python -m modele3.ressources.generer_donnees --overwrite
 
 | Élément | Rôle |
 | --- | --- |
-| `codes_python/` | Chargement du paquet et calcul radiatif de colonne. |
+| `codes_python/` | Chargement du paquet, calcul radiatif de colonne et calibrage CO₂. |
 | `ressources/` | Générateur du paquet compact et données générées. |
-| `documentation/` | Théorie, provenance et notes de recherche. |
+| `documentation/` | Théorie, provenance, calibrage CO₂ et notes de recherche. |
 | `tests/` | Vérifications numériques automatisables. |
-| `calibrer_coefficients_co2.py` | Outil de calibrage CO₂ dédié. |
-| `CALIBRAGE_COEFFICIENTS_CO2.md` | Méthode et résultats du calibrage. |
+| `codes_python/calibrer_coefficients_co2.py` | Outil de calibrage CO₂ dédié. |
+| `documentation/CALIBRAGE_CO2.md` | Méthode de calibrage CO₂ actuelle. |
 | `requirements.txt` | Dépendances du moteur. |
 | `requirements-calibrage.txt` | Dépendances supplémentaires pour le calibrage. |
 

@@ -159,7 +159,14 @@ Régénérer le paquet compact :
 Lancer une colonne depuis le paquet global :
 
 ```bash
-./.venv/bin/python -m modele3.codes_python.modele3 --lat 0 --lon 0 --mois 7 --temperature-surface 293.0 --moyenne-journaliere-sw
+cd modele3
+./modele3.py
+```
+
+Avec des options depuis la racine :
+
+```bash
+./.venv/bin/python -m modele3 --lat 0 --lon 0 --mois 7 --temperature-surface 293.0 --moyenne-journaliere-sw
 ```
 
 Lancer les tests :
