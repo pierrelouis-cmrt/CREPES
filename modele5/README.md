@@ -10,7 +10,7 @@ grille ; il ne remplace ni l'advection atmosphérique ni un océan dynamique.
 Depuis la racine du dépôt :
 
 ```bash
-python -m pip install -r modele5/requirements.txt
+
 
 # Simulation par défaut : un jour, grille globale, sortie toutes les 4 h
 python -m modele5.codes_python.modele5

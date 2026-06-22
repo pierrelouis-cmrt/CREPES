@@ -10,7 +10,7 @@ de transport horizontal ; cette extension est le rôle du modèle 5.
 Depuis la racine du dépôt :
 
 ```bash
-python -m pip install -r modele4/requirements.txt
+
 
 # Diagnostic mensuel (moteur de référence)
 python -m modele4.codes_python.modele4

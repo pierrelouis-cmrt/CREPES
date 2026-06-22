@@ -15,6 +15,13 @@ Projet Climat, Groupe D, 2026
 | `modele5/`             | Grille modèle 4 rapide avec échanges radiatifs horizontaux entre colonnes voisines.              |
 | `planisphere.py`       | Visualisation racine des sorties `.npz` des modèles 4 et 5.                                      |
 
+
+## Lancement des codes 
+Bien effectuer la commande suivante :
+```bash 
+python -m pip install -r modele5/requirements.txt
+```
+
 ## Résumé rapide des modèles
 
 ### Modèle 1
