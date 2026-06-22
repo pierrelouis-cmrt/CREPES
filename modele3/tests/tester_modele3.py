@@ -33,7 +33,7 @@ from modele3.codes_python.coefficients_opacite import (
 )
 from modele3.codes_python.donnees import charger_paquet_grille, extraire_colonne, iterer_colonnes
 from modele3.codes_python.modele3 import calculer_colonne_radiative, construire_couches
-from modele3.ressources.generer_donnees import _nearest_matrix, normaliser_longitudes_180
+from modele3.codes_python.generer_donnees import _nearest_matrix, normaliser_longitudes_180
 
 
 def _donnees_test(transmissivite=0.60):
@@ -157,7 +157,7 @@ def tester_nuages_lw_depuis_fraction_totale():
 def tester_coefficients_opacite_effectifs_documentes():
     description = physique.COEFFICIENTS_OPACITE_EFFECTIFS
     assert "effectifs" in description["statut"]
-    assert "280 -> 560 ppm" in description["cible_co2"]
+    assert "coefficients_opacite_modele3.npz" in description["origine"]
     assert "101325 Pa" in description["unite_a_co2"]
     assert "10 kg m-2" in description["unite_a_h2o"]
     assert "HITRAN" in description["limites"]
@@ -173,8 +173,8 @@ def tester_normalisation_tau_co2_reference():
     }
     bande = {"a_co2": 0.42}
     assert abs(physique.tau_co2(couche_reference, bande) - 0.42) < 1e-12
-    couche_double_co2 = dict(couche_reference, co2_ppm=2.0 * physique.CO2_REFERENCE_PPM)
-    assert abs(physique.tau_co2(couche_double_co2, bande) - 0.84) < 1e-12
+    couche_420_ppm = dict(couche_reference, co2_ppm=420.0)
+    assert abs(physique.tau_co2(couche_420_ppm, bande) - 0.63) < 1e-12
     couche_demi_pression = dict(couche_reference, pression_bas_pa=0.5 * physique.PRESSION_REFERENCE_PA)
     assert abs(physique.tau_co2(couche_demi_pression, bande) - 0.21) < 1e-12
 

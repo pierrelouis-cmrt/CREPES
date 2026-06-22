@@ -6,6 +6,7 @@ import argparse
 import csv
 import json
 import math
+import subprocess
 import sys
 from pathlib import Path
 
@@ -17,17 +18,30 @@ except ImportError as exc:  # pragma: no cover - message CLI
     raise SystemExit("xarray est requis pour generer les donnees 3.") from exc
 
 try:
-    from ..codes_python import physique
-except ImportError:  # Permet aussi : python modele3/ressources/generer_donnees.py
+    from . import physique
+    from .coefficients_opacite import (
+        CHEMIN_COEFFICIENTS_OPACITE,
+        ecrire_coefficients_opacite,
+    )
+except ImportError:  # Permet aussi : python modele3/codes_python/generer_donnees.py
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from modele3.codes_python import physique
+    from modele3.codes_python.coefficients_opacite import (
+        CHEMIN_COEFFICIENTS_OPACITE,
+        ecrire_coefficients_opacite,
+    )
 
 
 RACINE_DEPOT = Path(__file__).resolve().parents[2]
 RESSOURCES_DEFAUT = RACINE_DEPOT / "ressources"
 ALBEDO_DIR_DEFAUT = RESSOURCES_DEFAUT / "albedo"
 CERES_ALBEDO_NUAGES_DEFAUT = ALBEDO_DIR_DEFAUT / "CERES_EBAF-TOA_Ed4.2.1_Subset_202401-202501.nc"
-SORTIE_DEFAUT = Path(__file__).resolve().parent / "donnees_precalculees" / "grille_5deg_2024"
+SORTIE_DEFAUT = (
+    Path(__file__).resolve().parents[1]
+    / "ressources"
+    / "donnees_precalculees"
+    / "grille_5deg_2024"
+)
 FICHIER_NPZ = "donnees_colonnes_5deg_2024.npz"
 LONGITUDE_CONVENTION = "-180..180"
 EPAISSEUR_MIN_COUCHE_HPA = 0.1
@@ -501,17 +515,17 @@ def _metadata_variable(nom, source):
 def ecrire_paquet(sortie_dir, tableaux, metadata, overwrite):
     sortie_dir = Path(sortie_dir)
     npz_path = sortie_dir / FICHIER_NPZ
-    metadata_path = sortie_dir / "metadata.json"
     readme_path = sortie_dir / "README.md"
-    if (npz_path.exists() or metadata_path.exists()) and not overwrite:
+    if npz_path.exists() and not overwrite:
         raise FileExistsError(f"La sortie existe deja: {sortie_dir}. Ajouter --overwrite.")
     sortie_dir.mkdir(parents=True, exist_ok=True)
 
     tableaux_quantifies = {nom: _quantifier(nom, valeurs) for nom, valeurs in tableaux.items()}
-    np.savez_compressed(npz_path, **tableaux_quantifies)
-    with metadata_path.open("w", encoding="utf-8") as fichier:
-        json.dump(metadata, fichier, indent=2, ensure_ascii=False)
-        fichier.write("\n")
+    np.savez_compressed(
+        npz_path,
+        metadata_json=np.array(json.dumps(metadata, ensure_ascii=False)),
+        **tableaux_quantifies,
+    )
     readme_path.write_text(
         "# Donnees precalculees 3\n\n"
         "Paquet compact genere depuis les ressources racine du depot. Ce dossier\n"
@@ -543,11 +557,63 @@ def ecrire_paquet(sortie_dir, tableaux, metadata, overwrite):
         "Le `.npz` contient seulement les champs necessaires au calcul normal :\n"
         "coordonnees, poids de surface, pression de surface, albedo, transmissivite\n"
         "court-onde mensuelle, champs surface utiles, flux ERA5 de validation et\n"
-        "couches pretraitees, dont la fraction nuageuse par couche. Les facteurs de quantification, unites et sources\n"
-        "sont dans `metadata.json`.\n",
+        "couches pretraitees, dont la fraction nuageuse par couche. Les facteurs\n"
+        "de quantification, unites et sources sont stockes dans le meme `.npz`.\n",
         encoding="utf-8",
     )
     return npz_path
+
+
+def _chemin_absolu(chemin):
+    chemin = Path(chemin)
+    if chemin.is_absolute():
+        return chemin
+    return Path.cwd() / chemin
+
+
+def recalculer_coefficients_opacite(paquet_npz, coefficients_output, tau_lw_nuage):
+    """Recalcule CO2 puis H2O et garde le parametre nuageux dans le NPZ commun."""
+
+    paquet_npz = _chemin_absolu(paquet_npz)
+    coefficients_output = _chemin_absolu(coefficients_output)
+
+    if tau_lw_nuage is not None:
+        _message("Mise a jour du coefficient nuageux long-onde")
+        ecrire_coefficients_opacite(
+            coefficients_output,
+            parametres_nuages={"tau_lw_par_fraction_nuage": tau_lw_nuage},
+        )
+
+    commandes = (
+        (
+            "CO2",
+            [
+                sys.executable,
+                "-m",
+                "modele3.codes_python.calibrer_coefficients_co2",
+                "--paquet",
+                str(paquet_npz),
+                "--output",
+                str(coefficients_output),
+            ],
+        ),
+        (
+            "H2O",
+            [
+                sys.executable,
+                "-m",
+                "modele3.codes_python.calibrer_coefficients_h2o",
+                "--paquet",
+                str(paquet_npz),
+                "--output",
+                str(coefficients_output),
+            ],
+        ),
+    )
+
+    for nom, commande in commandes:
+        _message(f"Calibrage coefficients {nom}")
+        subprocess.run(commande, cwd=RACINE_DEPOT, check=True)
 
 
 def generer(args):
@@ -701,6 +767,14 @@ def generer(args):
     _message("Ecriture du paquet compact")
     npz_path = ecrire_paquet(args.output, tableaux, metadata, args.overwrite)
     _message(f"Paquet ecrit: {npz_path}")
+    if args.sans_coefficients:
+        _message("Calibrage des coefficients ignore (--sans-coefficients).")
+    else:
+        recalculer_coefficients_opacite(
+            npz_path,
+            args.coefficients_output,
+            args.tau_lw_nuage,
+        )
     return npz_path
 
 
@@ -712,6 +786,26 @@ def construire_parseur():
     parseur.add_argument("--albedo-dir", type=Path, default=ALBEDO_DIR_DEFAUT)
     parseur.add_argument("--ceres-file", type=Path, default=CERES_ALBEDO_NUAGES_DEFAUT)
     parseur.add_argument("--output", type=Path, default=SORTIE_DEFAUT)
+    parseur.add_argument(
+        "--coefficients-output",
+        type=Path,
+        default=CHEMIN_COEFFICIENTS_OPACITE,
+        help="Fichier NPZ commun ou ecrire les coefficients CO2, H2O et nuages.",
+    )
+    parseur.add_argument(
+        "--tau-lw-nuage",
+        type=float,
+        default=None,
+        help=(
+            "Met a jour le coefficient nuageux gris tau_lw_par_fraction_nuage "
+            "dans le NPZ commun. Par defaut, conserve la valeur existante."
+        ),
+    )
+    parseur.add_argument(
+        "--sans-coefficients",
+        action="store_true",
+        help="Genere seulement le paquet de grille, sans lancer les calibrages CO2/H2O.",
+    )
     parseur.add_argument("--overwrite", action="store_true")
     parseur.add_argument("--dry-run", action="store_true")
     parseur.add_argument("--allow-fallbacks", action="store_true")

@@ -9,7 +9,7 @@ modele3/ressources/donnees_precalculees/grille_5deg_2024/
 Les fichiers bruts locaux sont lus seulement par :
 
 ```text
-modele3/ressources/generer_donnees.py
+modele3/codes_python/generer_donnees.py
 ```
 
 ## Sources actives
@@ -51,24 +51,24 @@ definis dans `modele3/codes_python/physique.py` comme coefficients effectifs ped
 
 | Coefficient | Unite interne | Origine | Limite |
 | --- | --- | --- | --- |
-| `a_CO2` | profondeur optique sans dimension pour `CO2 = 280 ppm` et `delta_p = 101325 Pa` | noyau modele 2.5, avec cible de doublement `280 -> 560 ppm` | pas une section efficace spectrale |
-| `a_H2O` | profondeur optique sans dimension pour `10 kg m-2` de vapeur d'eau | ajout modele 3 branche sur les masses H2O ERA5, recalibrable par HITRAN/RADIS | pas une methode raie par raie |
+| `a_CO2` | profondeur optique sans dimension pour `CO2 = 280 ppm` et `delta_p = 101325 Pa` | `modele3/ressources/coefficients_opacite_modele3.npz` | pas une section efficace spectrale |
+| `a_H2O` | profondeur optique sans dimension pour `10 kg m-2` de vapeur d'eau | `modele3/ressources/coefficients_opacite_modele3.npz` | pas une methode raie par raie |
+| `tau_nuage` | profondeur optique grise pour une fraction nuageuse | `modele3/ressources/coefficients_opacite_modele3.npz` | pas de microphysique nuageuse |
 
 Ces coefficients gardent une physique CO2 + H2O simple ; ils ne remplacent pas
 HITRAN, RADIS ou une methode correlated-k.
 
-Le recalibrage propre des coefficients CO2 est maintenant isole dans
-`modele3/codes_python/calibrer_coefficients_co2.py` et documente dans
-`modele3/documentation/CALIBRAGE_CO2.md`. La methode utilise des transmissions
-HITRAN/RADIS, une moyenne de bande ponderee par Planck, la mediane de
-`tau_eq / X` par bande, puis un recalage global sur le forcage
-`280 -> 560 ppm`.
+Les scripts `modele3/codes_python/calibrer_coefficients_co2.py` et
+`modele3/codes_python/calibrer_coefficients_h2o.py` peuvent recalculer ces
+coefficients par bande depuis des transmissions HITRAN/RADIS. Ils mettent a
+jour le meme fichier `.npz`. Le generateur
+`modele3/codes_python/generer_donnees.py` les lance automatiquement apres
+avoir ecrit le paquet de grille, sauf avec `--sans-coefficients`.
 
-Le recalibrage H2O correspondant est isole dans
-`modele3/codes_python/calibrer_coefficients_h2o.py` et documente dans
-`modele3/documentation/CALIBRAGE_H2O.md`. Il utilise la masse H2O des couches
-ERA5 pour definir la fraction molaire RADIS, puis ajuste les coefficients par
-bande sans recaler les flux ERA5.
+Le parametre nuageux `tau_lw_par_fraction_nuage` n'a pas de calibrage
+spectroscopique dedie : c'est une opacite grise simple appliquee aux fractions
+nuageuses ERA5. Il reste dans le meme `.npz` et peut etre remplace au moment de
+la generation avec `--tau-lw-nuage`.
 
 ## Transmissivite court-onde
 
@@ -81,7 +81,7 @@ transmissivite_sw_mensuelle =
 ```
 
 La transmissivite est bornee dans `[0, 1]`. Les valeurs bornees sont comptees
-dans `metadata.json`.
+dans la metadata integree au `.npz`.
 
 ## Donnees non utilisees
 

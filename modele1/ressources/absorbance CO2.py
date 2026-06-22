@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-OUTPUT_DIR = SCRIPT_DIR.parent / "sorties"
+OUTPUT_DIR = SCRIPT_DIR / "données"
 
 
 def default_matplotlib_cache_dir() -> Path:
@@ -375,13 +375,10 @@ def main(argv: list[str] | None = None) -> int:
     absorbances_moyennes = calculer_absorbances_moyennes(absorption_co2)
     afficher_absorbances_moyennes(absorbances_moyennes)
 
-    if args.no_plot and not args.output:
-        return 0
-
     headless = is_headless_environment()
 
     output_path = args.output
-    if headless and output_path is None:
+    if (headless or args.no_plot) and output_path is None:
         output_path = OUTPUT_DIR / "absorbance_CO2.png"
 
     fig, plt = build_plot(

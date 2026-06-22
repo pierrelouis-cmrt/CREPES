@@ -8,7 +8,6 @@ s'y exécute directement.
 | Fichier | Contenu |
 | --- | --- |
 | `THEORIE.md` | Hypothèses, équations et limites du calcul radiatif. |
-| `CALIBRAGE_CO2.md` | Méthode actuelle de calibrage HITRAN/RADIS des coefficients CO₂. |
 | `CALIBRAGE_H2O.md` | Méthode proposée de calibrage HITRAN/RADIS des coefficients H₂O. |
 | `PROVENANCE_DONNEES.md` | Sources, transformations et traçabilité des données. |
 | `recap_ERA5.md` | Inventaire des données ERA5 mobilisées. |

@@ -57,34 +57,31 @@ def _dequantifier(nom, tableau, metadata):
 def _chemins_paquet(chemin):
     chemin = Path(chemin)
     if chemin.is_dir():
-        metadata_path = chemin / "metadata.json"
-        if metadata_path.exists():
-            with metadata_path.open(encoding="utf-8") as fichier:
-                metadata = json.load(fichier)
-            npz_name = metadata.get("fichier_npz", FICHIER_NPZ_DEFAUT)
-            return chemin, metadata_path, chemin / npz_name
-        return chemin, metadata_path, chemin / FICHIER_NPZ_DEFAUT
-    return chemin.parent, chemin.parent / "metadata.json", chemin
+        return chemin, chemin / FICHIER_NPZ_DEFAUT
+    return chemin.parent, chemin
+
+
+def _metadata_depuis_npz(npz):
+    if "metadata_json" in npz.files:
+        return json.loads(str(np.asarray(npz["metadata_json"]).item()))
+    raise FileNotFoundError("metadata_json absent du paquet NPZ.")
 
 
 def charger_paquet_grille(chemin=DOSSIER_PAQUET_DEFAUT):
-    dossier, metadata_path, npz_path = _chemins_paquet(chemin)
-    if not metadata_path.exists():
-        raise FileNotFoundError(f"metadata introuvable: {metadata_path}")
+    dossier, npz_path = _chemins_paquet(chemin)
     if not npz_path.exists():
         raise FileNotFoundError(f"paquet NPZ introuvable: {npz_path}")
 
-    with metadata_path.open(encoding="utf-8") as fichier:
-        metadata = json.load(fichier)
-
     donnees = {}
-    with np.load(npz_path) as npz:
+    with np.load(npz_path, allow_pickle=False) as npz:
+        metadata = _metadata_depuis_npz(npz)
         for nom in npz.files:
+            if nom == "metadata_json":
+                continue
             donnees[nom] = _dequantifier(nom, npz[nom], metadata)
 
     return {
         "dossier": dossier,
-        "metadata_path": metadata_path,
         "npz_path": npz_path,
         "metadata": metadata,
         "donnees": donnees,
