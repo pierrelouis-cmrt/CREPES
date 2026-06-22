@@ -6,6 +6,13 @@ effectifs, pas avec un transfert radiatif ligne par ligne. Le script
 a partir de transmissions HITRAN/RADIS, dans le meme esprit que le calibrage
 CO2.
 
+Les coefficients H2O utilises par le calcul normal ne sont pas ecrits dans
+`physique.py`. Ils sont lus depuis :
+
+```text
+modele3/ressources/calibrage_opacite_h2o/coefficients_h2o_modele3.json
+```
+
 La methode volontairement simple est :
 
 1. prendre des couches atmospheriques deja preparees dans le paquet modele 3 ;
@@ -78,17 +85,18 @@ il utilise directement les profils humides du paquet.
 
 ## Sorties
 
-Le script ecrit deux fichiers :
+Le script ecrit trois fichiers :
 
 ```text
 modele3/ressources/calibrage_opacite_h2o/calibrage_coefficients_h2o.json
+modele3/ressources/calibrage_opacite_h2o/coefficients_h2o_modele3.json
 modele3/ressources/calibrage_opacite_h2o/coefficients_h2o_calibres.py
 ```
 
-Le JSON contient la methode, l'echantillon, la normalisation et les
-coefficients. Le fichier Python permet de tester les coefficients avec
-`calculer_colonne_radiative(..., bandes=...)` sans modifier
-`codes_python/physique.py`.
+Le premier JSON est le rapport detaille. Le fichier
+`coefficients_h2o_modele3.json` est le fichier runtime charge par le modele 3.
+Le fichier Python permet de tester les coefficients avec
+`calculer_colonne_radiative(..., bandes=...)`.
 
 Le script calibre toutes les bandes ou `a_h2o > 0`, y compris les intervalles
 CO2 ou la vapeur d'eau contribue aussi a l'opacite.

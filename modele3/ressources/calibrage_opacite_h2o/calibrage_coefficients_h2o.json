@@ -1,0 +1,124 @@
+{
+  "methode": "HITRAN/RADIS H2O -> moyenne Planck -> tau equivalent -> mediane(tau/X) par bande -> facteur global clear-sky ERA5",
+  "formule_modele3": "tau_H2O = a_H2O * (masse_h2o_kg_m2 / 10)",
+  "echantillon": {
+    "latitudes": "-45,0,45",
+    "longitudes": "0",
+    "mois": "1,7",
+    "h2o_scale_values": "1",
+    "colonnes": 6,
+    "couches": 60,
+    "couches_humides_echantillonnees": 48,
+    "spectres_radis_hitran": 528
+  },
+  "normalisation": {
+    "masse_h2o_reference_kg_m2": 10.0,
+    "mole_fraction": "deduite de masse_h2o_kg_m2 / masse_air_kg_m2",
+    "transmission_min": 1e-12
+  },
+  "recalage_clear_sky": {
+    "facteur_global": 7.8414315693,
+    "cibles": "ERA5 clear-sky LW_down surface et OLR",
+    "diagnostics": {
+      "rmse_W_m2": 8.1460443232,
+      "biais_lw_down_clear_sky_W_m2": -3.5891319028,
+      "biais_olr_clear_sky_W_m2": -5.2033389421
+    }
+  },
+  "coefficients": [
+    {
+      "nom": "CO2_4_3um_aile_gauche",
+      "lambda_min_um": 4.0,
+      "lambda_max_um": 4.2,
+      "a_h2o_actuel": 0.0004685608,
+      "a_h2o_hitran": 5.97545e-05,
+      "a_h2o_modele3": 0.0004685611
+    },
+    {
+      "nom": "CO2_4_3um_coeur_sature",
+      "lambda_min_um": 4.2,
+      "lambda_max_um": 4.4,
+      "a_h2o_actuel": 0.0100011367,
+      "a_h2o_hitran": 0.0012754223,
+      "a_h2o_modele3": 0.0100011367
+    },
+    {
+      "nom": "CO2_4_3um_aile_droite",
+      "lambda_min_um": 4.4,
+      "lambda_max_um": 4.6,
+      "a_h2o_actuel": 0.0907878108,
+      "a_h2o_hitran": 0.0115779638,
+      "a_h2o_modele3": 0.0907878106
+    },
+    {
+      "nom": "H2O_6_3um",
+      "lambda_min_um": 5.5,
+      "lambda_max_um": 7.5,
+      "a_h2o_actuel": 137.339196696,
+      "a_h2o_hitran": 17.5145565554,
+      "a_h2o_modele3": 137.339196696
+    },
+    {
+      "nom": "H2O_fenetre_8_13um",
+      "lambda_min_um": 8.0,
+      "lambda_max_um": 13.0,
+      "a_h2o_actuel": 0.3346922056,
+      "a_h2o_hitran": 0.0426825386,
+      "a_h2o_modele3": 0.3346922056
+    },
+    {
+      "nom": "CO2_15um_aile_gauche_externe",
+      "lambda_min_um": 13.0,
+      "lambda_max_um": 14.0,
+      "a_h2o_actuel": 0.6825780269,
+      "a_h2o_hitran": 0.0870476291,
+      "a_h2o_modele3": 0.6825780269
+    },
+    {
+      "nom": "CO2_15um_aile_gauche_interne",
+      "lambda_min_um": 14.0,
+      "lambda_max_um": 14.6,
+      "a_h2o_actuel": 3.6778904328,
+      "a_h2o_hitran": 0.4690330331,
+      "a_h2o_modele3": 3.6778904326
+    },
+    {
+      "nom": "CO2_15um_coeur_sature",
+      "lambda_min_um": 14.6,
+      "lambda_max_um": 15.4,
+      "a_h2o_actuel": 2.5275765238,
+      "a_h2o_hitran": 0.3223361068,
+      "a_h2o_modele3": 2.5275765234
+    },
+    {
+      "nom": "CO2_15um_aile_droite_interne",
+      "lambda_min_um": 15.4,
+      "lambda_max_um": 16.2,
+      "a_h2o_actuel": 5.122294671,
+      "a_h2o_hitran": 0.6532346327,
+      "a_h2o_modele3": 5.1222946712
+    },
+    {
+      "nom": "CO2_15um_aile_droite_externe",
+      "lambda_min_um": 16.2,
+      "lambda_max_um": 18.0,
+      "a_h2o_actuel": 11.3675437396,
+      "a_h2o_hitran": 1.4496770952,
+      "a_h2o_modele3": 11.3675437396
+    },
+    {
+      "nom": "H2O_rotation_18_80um",
+      "lambda_min_um": 18.0,
+      "lambda_max_um": 80.0,
+      "a_h2o_actuel": 122.1669170235,
+      "a_h2o_hitran": 15.5796701079,
+      "a_h2o_modele3": 122.1669170234
+    }
+  ],
+  "limites": [
+    "coefficients effectifs par grandes bandes, pas correlated-k",
+    "couches supposees homogenes",
+    "le facteur clear-sky est un recalage large bande, pas une section efficace H2O pure",
+    "les nuages sont exclus du recalage H2O et traites par un coefficient separe"
+  ]
+}

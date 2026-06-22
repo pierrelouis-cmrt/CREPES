@@ -32,6 +32,5 @@ python modele5/tests/tester_modele5.py
 | `codes_python/` | Moteur couplé et planisphère des résultats. |
 | `sorties/` | Résultats `.npz` des simulations. |
 | `tests/` | Vérifications de conservation et de simulation. |
-| `requirements.txt` | Dépendances Python. |
 
 Les sous-dossiers détaillent leur propre contenu et leurs conventions.

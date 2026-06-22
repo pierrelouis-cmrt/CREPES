@@ -27,7 +27,5 @@ python modele2_5/ressources/profil_vertical_atmosphere_co2.py --no-plot
 | --- | --- |
 | `codes_python/` | Noyau de colonne radiative à dix couches. |
 | `ressources/` | Profil vertical, calibration et tests numériques. |
-| `requirements.txt` | Dépendances Python du modèle. |
-| `README.md` | Présentation et procédures de lancement. |
 
 Les consignes propres à chaque sous-dossier sont dans leurs README respectifs.

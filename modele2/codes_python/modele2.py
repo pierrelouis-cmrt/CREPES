@@ -30,6 +30,15 @@ import sys
 
 import numpy as np
 
+# Permet de lancer ce fichier directement sans que `modele2.py` masque le
+# dossier `modele2/` utilise par l'import ci-dessous.
+RACINE_PROJET = Path(__file__).resolve().parents[2]
+DOSSIER_SCRIPT = Path(__file__).resolve().parent
+if str(DOSSIER_SCRIPT) in sys.path:
+    sys.path.remove(str(DOSSIER_SCRIPT))
+if str(RACINE_PROJET) not in sys.path:
+    sys.path.insert(0, str(RACINE_PROJET))
+
 from modele2.ressources.profil_vertical_atmosphere_co2 import (
     atmosphere_standard,
     calculer_profil,
@@ -113,11 +122,11 @@ PARAMETRES_COUCHES = (
     ("couche_6_mesosphere_haute", 65.0, 80.0, 212.0),
 )
 
-# Coefficients de départ repris comme opacités effectives de bande.
-# Ils devront être recalibrés avec le test de forçage 280 -> 560 ppm.
+# Coefficients de depart repris des absorbances moyennes calculees par
+# `modele1/codes_python/absorbance CO2.py`.
 BANDES_CO2 = (
-    BandeSpectrale("CO2_15um", 14.25, 15.75, 1.0),
-    BandeSpectrale("CO2_4_3um", 4.20, 4.35, 3.25),
+    BandeSpectrale("CO2_15um", 14.25, 15.75, 0.160933),
+    BandeSpectrale("CO2_4_3um", 4.20, 4.35, 1.477625),
 )
 
 

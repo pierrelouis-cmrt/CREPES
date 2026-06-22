@@ -60,11 +60,11 @@ Bandes codées :
 
 | Bande       |          Intervalle spectral | Absorbance moyenne |
 | ----------- | ---------------------------: | -----------------: |
-| `CO2_15um`  | $14.25-15.75\ \mu\mathrm{m}$ |        $A_b = 1.0$ |
-| `CO2_4_3um` |   $4.20-4.35\ \mu\mathrm{m}$ |       $A_b = 3.25$ |
+| `CO2_15um`  | $14.25-15.75\ \mu\mathrm{m}$ |   $A_b = 0.160933$ |
+| `CO2_4_3um` |   $4.20-4.35\ \mu\mathrm{m}$ |   $A_b = 1.477625$ |
 
 Les bornes et les absorbances viennent du script local
-`modélisation absorbance/absorbance CO2.py`, qui calcule un spectre CO₂ avec
+`modele1/codes_python/absorbance CO2.py`, qui calcule un spectre CO₂ avec
 RADIS/HITRAN et récupère :
 
 ```text
@@ -72,7 +72,7 @@ s.get("absorbance")
 ```
 
 Le modèle 1 ne relance pas RADIS : il reprend ces résultats sous forme de deux
-bandes obtenues avec une lecture graphique.
+bandes moyennées numériquement sur les intervalles ci-dessus.
 
 Les positions spectrales sont cohérentes avec les bandes IR usuelles du CO₂. La
 ressource ENS Lyon indique notamment des bandes à `667 cm^-1` et `2349 cm^-1`,
@@ -160,19 +160,19 @@ $$
 Valeurs obtenues :
 
 $$
-A_b = 1.0
+A_b = 0.160933
 \Rightarrow
-\mathcal{T}_b = 0.3679,
+\mathcal{T}_b = 0.8513,
 \qquad
-\varepsilon_b = 0.6321
+\varepsilon_b = 0.1487
 $$
 
 $$
-A_b = 3.25
+A_b = 1.477625
 \Rightarrow
-\mathcal{T}_b = 0.0388,
+\mathcal{T}_b = 0.2282,
 \qquad
-\varepsilon_b = 0.9612
+\varepsilon_b = 0.7718
 $$
 
 ## 6. Propagation radiative
@@ -285,8 +285,8 @@ python3 modele1/codes_python/modele1.py
 Sortie actuelle :
 
 ```text
-flux_infrarouge_sortant_sommet_atmosphere_W_m2 = 380.782258
-flux_infrarouge_descendant_surface_W_m2 = 16.311241
+flux_infrarouge_sortant_sommet_atmosphere_W_m2 = 386.677398
+flux_infrarouge_descendant_surface_W_m2 = 6.612420
 ```
 
 Le premier flux est l'OLR simplifié du modèle. Le second est le flux infrarouge
@@ -318,12 +318,8 @@ $$
 F^\uparrow_{\mathrm{TOA}} = \sigma T_s^4
 $$
 
-Test exécuté :
-
-```text
-flux_infrarouge_sortant_sommet_atmosphere = 390.918507769 W m^-2
-flux_infrarouge_descendant_surface = 0 W m^-2
-```
+Ce test limite n'est pas le cas par défaut : il se vérifie en remplaçant
+temporairement les absorbances des deux bandes par 0.
 
 ## 9. Sources utiles
 
@@ -333,8 +329,8 @@ flux_infrarouge_descendant_surface = 0 W m^-2
 | `CONCENTRATION_CO2_PPM`    |                                $425.65\ \mathrm{ppm}$ | Moyenne globale annuelle NOAA GML pour 2025                                   |
 | `IRRADIANCE_SOLAIRE`       |                            $1360\ \mathrm{W\,m^{-2}}$ | Modèle des Carcajous callipyges de l'année dernière                           |
 | `ALBEDO_SURFACE`           |                                                $0.30$ | Modèle des Carcajous callipyges de l'année dernière                           |
-| Bande `CO2_15um`           |               $14.25-15.75\ \mu\mathrm{m}$, $A_b=1.0$ | `modélisation absorbance/absorbance CO2.py`, RADIS/HITRAN                     |
-| Bande `CO2_4_3um`          |                $4.20-4.35\ \mu\mathrm{m}$, $A_b=3.25$ | `modélisation absorbance/absorbance CO2.py`, RADIS/HITRAN                     |
+| Bande `CO2_15um`           |          $14.25-15.75\ \mu\mathrm{m}$, $A_b=0.160933$ | `modele1/codes_python/absorbance CO2.py`, RADIS/HITRAN                        |
+| Bande `CO2_4_3um`          |           $4.20-4.35\ \mu\mathrm{m}$, $A_b=1.477625$ | `modele1/codes_python/absorbance CO2.py`, RADIS/HITRAN                        |
 | Positions IR du CO₂        | autour de $15\ \mu\mathrm{m}$ et $4.3\ \mu\mathrm{m}$ | ENS Lyon ACCES                                                                |
 
 Liens :

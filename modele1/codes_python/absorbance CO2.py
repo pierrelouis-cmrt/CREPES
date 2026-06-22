@@ -12,6 +12,7 @@ from pathlib import Path
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+OUTPUT_DIR = SCRIPT_DIR.parent / "sorties"
 
 
 def default_cache_dir() -> Path:
@@ -31,16 +32,29 @@ def default_cache_dir() -> Path:
 def setup_cache_dirs() -> tuple[Path, Path, Path]:
     """Create cache directories, falling back to the script folder if needed."""
     last_error = None
-    for cache_dir in (default_cache_dir(), SCRIPT_DIR / ".cache"):
-        matplotlib_dir = cache_dir / "matplotlib"
-        radis_dir = cache_dir / "radisdb"
+    default_dir = default_cache_dir()
+
+    radis_dir = default_dir / "radisdb"
+    try:
+        radis_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        last_error = exc
+        radis_dir = SCRIPT_DIR / ".cache" / "radisdb"
+        radis_dir.mkdir(parents=True, exist_ok=True)
+
+    for matplotlib_dir in (
+        default_dir / "matplotlib",
+        SCRIPT_DIR / ".cache" / "matplotlib",
+    ):
         try:
-            for directory in (matplotlib_dir, radis_dir):
-                directory.mkdir(parents=True, exist_ok=True)
+            matplotlib_dir.mkdir(parents=True, exist_ok=True)
+            test_file = matplotlib_dir / ".write_test"
+            test_file.write_text("", encoding="utf-8")
+            test_file.unlink()
         except OSError as exc:
             last_error = exc
             continue
-        return cache_dir, matplotlib_dir, radis_dir
+        return matplotlib_dir.parent, matplotlib_dir, radis_dir
 
     raise RuntimeError("Impossible de creer un dossier de cache.") from last_error
 
@@ -64,6 +78,11 @@ BANDS_CM_1 = [
     (1200, 1500),  # bande a 1388 cm-1 ~ 7.2 micrometres
     (2100, 2450),  # bande a 2349 cm-1 ~ 4.3 micrometres
 ]
+
+BANDES_MODELES_1_2_UM = (
+    ("CO2_15um", 14.25, 15.75),
+    ("CO2_4_3um", 4.20, 4.35),
+)
 
 
 def prepare_radis_cache(regen_cache: bool = False) -> None:
@@ -128,7 +147,44 @@ def make_cross_section_co2_all_bands(regen_cache: bool = False):
     )
 
 
-def build_plot(absorption_co2, points: int, *, use_file_backend: bool):
+def calculer_absorbances_moyennes(absorption_co2, points_par_bande: int = 2_000):
+    """Calcule l'absorbance moyenne sur les bandes des modèles 1 et 2."""
+
+    moyennes = []
+    for nom, longueur_onde_min_um, longueur_onde_max_um in BANDES_MODELES_1_2_UM:
+        longueurs_onde_um = np.linspace(
+            longueur_onde_min_um,
+            longueur_onde_max_um,
+            points_par_bande,
+        )
+        absorbances = absorption_co2(longueurs_onde_um)
+        absorbance_moyenne = np.trapezoid(absorbances, longueurs_onde_um) / (
+            longueur_onde_max_um - longueur_onde_min_um
+        )
+        moyennes.append(
+            (
+                nom,
+                longueur_onde_min_um,
+                longueur_onde_max_um,
+                float(absorbance_moyenne),
+            )
+        )
+
+    return tuple(moyennes)
+
+
+def afficher_absorbances_moyennes(moyennes) -> None:
+    print("absorbances_moyennes_modeles_1_2")
+    print("bande, intervalle_um, absorbance_moyenne")
+    for nom, longueur_onde_min_um, longueur_onde_max_um, absorbance_moyenne in moyennes:
+        print(
+            f"{nom}, "
+            f"{longueur_onde_min_um:.2f}-{longueur_onde_max_um:.2f}, "
+            f"{absorbance_moyenne:.6f}"
+        )
+
+
+def build_plot(absorption_co2, points: int, moyennes, *, use_file_backend: bool):
     if use_file_backend:
         import matplotlib
 
@@ -145,6 +201,39 @@ def build_plot(absorption_co2, points: int, *, use_file_backend: bool):
         color="steelblue",
         linewidth=0.8,
     )
+    for nom, longueur_onde_min_um, longueur_onde_max_um, absorbance_moyenne in moyennes:
+        ax.axvspan(
+            longueur_onde_min_um,
+            longueur_onde_max_um,
+            color="orange",
+            alpha=0.15,
+        )
+        ax.hlines(
+            absorbance_moyenne,
+            longueur_onde_min_um,
+            longueur_onde_max_um,
+            color="darkorange",
+            linewidth=1.2,
+        )
+        texte_x = (longueur_onde_min_um + longueur_onde_max_um) / 2
+        alignement = "center"
+        if longueur_onde_max_um < 5.0:
+            texte_x = longueur_onde_max_um + 0.08
+            alignement = "left"
+        libelle = (
+            nom.replace("_4_3um", " 4.3 µm")
+            .replace("_15um", " 15 µm")
+            .replace("_", " ")
+        )
+        ax.text(
+            texte_x,
+            absorbance_moyenne,
+            f"{libelle}: {absorbance_moyenne:.2f}",
+            ha=alignement,
+            va="bottom",
+            fontsize=8,
+            color="darkorange",
+        )
     ax.set_xlabel("Longueur d'onde (µm)")
     ax.set_ylabel("Absorbance")
     ax.set_title("Absorption du CO₂ (425 ppm, 1 m)")
@@ -196,19 +285,21 @@ def main(argv: list[str] | None = None) -> int:
         raise ValueError("--points doit être supérieur à 1.")
 
     absorption_co2 = make_cross_section_co2_all_bands(regen_cache=args.regen_cache)
+    absorbances_moyennes = calculer_absorbances_moyennes(absorption_co2)
+    afficher_absorbances_moyennes(absorbances_moyennes)
 
     if args.no_plot and not args.output:
-        print("Calcul terminé.")
         return 0
 
     headless = is_headless_environment()
     output_path = args.output
     if headless and output_path is None:
-        output_path = SCRIPT_DIR / "absorbance_CO2.png"
+        output_path = OUTPUT_DIR / "absorbance_CO2.png"
 
     fig, plt = build_plot(
         absorption_co2,
         points=args.points,
+        moyennes=absorbances_moyennes,
         use_file_backend=headless or args.no_plot,
     )
 

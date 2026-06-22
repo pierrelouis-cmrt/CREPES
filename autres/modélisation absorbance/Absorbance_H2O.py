@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-print("Génération du spectre haute résolution (0 - 30 µm) sans plancher artificiel...")
 
 # 1. Configuration de l'axe des abscisses (Longueur d'onde de 0.1 à 30 µm)
 longueurs_onde = np.linspace(0.1, 30, 30000)
@@ -9,17 +8,17 @@ longueurs_onde = np.linspace(0.1, 30, 30000)
 # 2. Paramètres physiques (Épaisseur optique tau pure)
 tau = np.zeros_like(longueurs_onde)
 
-# 3. Base de données des bandes majeures de l'eau (Issues de HITRAN)
+# 3. Base de données des bandes majeures de l'eau (Source : HITRAN)
 bandes_hitran = [
-    (0.72, 0.03, 0.1),    
+    (0.72, 0.03, 0.1),    # (centre, largeur, force)
     (0.82, 0.04, 0.5),    
     (0.94, 0.05, 2.0),    
     (1.13, 0.06, 8.0),    
     (1.38, 0.08, 150.0),  
     (1.88, 0.10, 250.0),  
-    (2.68, 0.20, 1500.0), # Sature à 100%
+    (2.68, 0.20, 1500.0), 
     (3.20, 0.25, 50.0),   
-    (6.27, 0.50, 2000.0), # Sature totalement à 100%
+    (6.27, 0.50, 2000.0), 
 ]
 
 # 4. Simulation des raies de rotation-vibration

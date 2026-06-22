@@ -44,22 +44,69 @@ consomme comme flux de colonne locale, puis resout le bilan de surface.
 
 ## Court-onde de surface
 
-Le terme court-onde utilise dans le bilan est :
+Le modele separe trois effets :
+
+1. la geometrie solaire locale ;
+2. l'attenuation moyenne par l'atmosphere ;
+3. la reflexion par l'albedo de surface.
+
+Le flux solaire au sommet de l'atmosphere est calcule avec la geometrie du
+projet :
+
+```text
+SW_TOA_local(t) = S0 * max(cos(i(t)), 0)
+```
+
+`tau_SW_mensuel` n'est pas une epaisseur optique. C'est une transmissivite
+effective mensuelle, donc un rapport de flux compris entre 0 et 1 :
+
+- `tau_SW_mensuel = 1` : toute la lumiere court-onde arrive a la surface ;
+- `tau_SW_mensuel = 0` : rien n'arrive a la surface ;
+- en pratique, il contient l'effet moyen des nuages, de la diffusion, des
+  aerosols et de l'absorption atmospherique.
+
+On l'utilise parce que `S0 * max(cos(i), 0)` donne un flux au sommet de
+l'atmosphere, alors que le bilan de surface a besoin du flux descendant a la
+surface. Le facteur `tau_SW_mensuel` permet de garder le cycle jour/nuit du
+modele tout en ramenant le niveau moyen vers ERA5.
+
+Dans le paquet compact, il est determine avant la simulation :
+
+```text
+tau_SW_mensuel =
+    era5_sw_down_surface_w_m2
+  / moyenne_mensuelle(S0 * max(cos(i), 0))
+```
+
+Le rapport est mis a 0 quand il n'y a pas de soleil mensuel, puis borne entre 0
+et 1. Le modele 4 ne recalcule pas ce facteur : il le lit dans le paquet modele
+3 sous le nom `transmissivite_sw_mensuelle`.
+
+Le flux descendant a la surface est alors :
+
+```text
+SW_down_surface(t) = tau_SW_mensuel * SW_TOA_local(t)
+```
+
+L'albedo intervient seulement apres, car il represente la part reflechie par la
+surface, pas l'attenuation de l'atmosphere. Le flux absorbe par la surface est :
 
 ```text
 SW_absorbe_surface = SW_down_surface * (1 - albedo_surface)
 ```
 
-`SW_down_surface` garde le cycle jour/nuit et saisonnier de la geometrie
-solaire locale, corrige par une transmissivite atmospherique mensuelle issue du
-paquet compact :
+Etape par etape :
 
-```text
-SW_down_surface = tau_SW_mensuel * S0 * max(cos(i), 0)
-```
+- calculer `SW_TOA_local(t)` avec la position du Soleil ;
+- multiplier par `tau_SW_mensuel` pour obtenir le court-onde descendant a la
+  surface ;
+- lire `albedo_surface` dans le paquet compact ;
+- corriger seulement les albedos nuls sur neige/glace avec un repli physique ;
+- absorber la fraction `1 - albedo_surface`.
 
 Le modele 4 ne reintegre pas l'ancien albedo nuageux du modele 0. L'effet moyen
-de l'atmosphere sur le court-onde est deja porte par `tau_SW_mensuel`.
+des nuages sur le court-onde descendant est deja porte par `tau_SW_mensuel`.
+Ajouter un albedo nuageux explicite ici compterait deux fois cet effet.
 
 ## Long-onde de surface
 

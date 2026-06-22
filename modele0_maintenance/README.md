@@ -29,7 +29,5 @@ python modele0_maintenance/outils_generation_donnees/generer_donnees.py --status
 | `ressources/` | Ressources lues par le modèle et fichiers générés. |
 | `documents_sources/` | PDF de référence historiques. |
 | `PROVENANCE.md` | Traçabilité des briques conservées. |
-| `THEORIE(a virer).md` | Note théorique historique conservée. |
-| `requirements.txt` | Dépendances Python. |
 
 Chaque sous-dossier explique son propre contenu dans son README.

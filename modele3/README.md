@@ -57,12 +57,6 @@ python -m modele3.ressources.generer_donnees --overwrite
 | `ressources/` | Générateur du paquet compact et données générées. |
 | `documentation/` | Théorie, provenance, calibrage CO₂ et notes de recherche. |
 | `tests/` | Vérifications numériques automatisables. |
-| `codes_python/calibrer_coefficients_co2.py` | Outil de calibrage CO₂ dédié. |
-| `codes_python/calibrer_coefficients_h2o.py` | Outil de calibrage H₂O dédié. |
-| `documentation/CALIBRAGE_CO2.md` | Méthode de calibrage CO₂ actuelle. |
-| `documentation/CALIBRAGE_H2O.md` | Méthode de calibrage H₂O proposée. |
-| `requirements.txt` | Dépendances du moteur. |
-| `requirements-calibrage.txt` | Dépendances supplémentaires pour le calibrage. |
 
 Les hypothèses, limites et sources sont détaillées dans
 [documentation/](documentation/README.md).

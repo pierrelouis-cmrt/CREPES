@@ -1,14 +1,20 @@
 """Formules physiques elementaires du modele 3.
 
-Ce module ne lit aucun fichier. Il contient les constantes, la geometrie
-solaire, Planck, les masses colonne et les opacites infrarouges CO2 + H2O.
-Les nuages ne creent pas d'opacite longwave implicite.
+Ce module contient les constantes, la geometrie solaire, Planck, les masses
+colonne et les opacites infrarouges CO2 + H2O. Les coefficients H2O de
+production viennent d'une petite ressource JSON versionnee, afin de pouvoir les
+remplacer par le script de calibrage sans modifier ce fichier.
 """
 
 from __future__ import annotations
 
 from functools import lru_cache
 from math import cos, exp, isfinite, pi, radians, sin
+
+try:
+    from .coefficients_opacite import COEFFICIENTS_H2O_MODELE3
+except ImportError:  # Permet aussi certains imports directs depuis le dossier codes_python.
+    from coefficients_opacite import COEFFICIENTS_H2O_MODELE3
 
 
 SIGMA = 5.670374419e-8  # W m-2 K-4
@@ -35,8 +41,9 @@ COEFFICIENTS_OPACITE_EFFECTIFS = {
     "statut": "coefficients effectifs pedagogiques, pas des sections efficaces spectrales",
     "origine": (
         "noyau long-onde du modele 2.5 pour CO2; recalibrage possible avec "
-        "modele3/codes_python/calibrer_coefficients_co2.py; ajout modele 3 pour H2O a "
-        "partir des masses colonne ERA5"
+        "modele3/codes_python/calibrer_coefficients_co2.py; coefficients H2O lus dans "
+        "modele3/ressources/calibrage_opacite_h2o/coefficients_h2o_modele3.json "
+        "et recalibrables avec modele3/codes_python/calibrer_coefficients_h2o.py"
     ),
     "cible_co2": "ordre de grandeur du forcage relatif 280 -> 560 ppm conserve du modele 2.5",
     "unite_a_co2": (
@@ -81,13 +88,19 @@ def creer_bande(nom, lambda_min_um, lambda_max_um, a_co2, a_h2o, famille, role):
     }
 
 
+def coefficient_h2o_bande(nom):
+    if nom not in COEFFICIENTS_H2O_MODELE3:
+        raise KeyError(f"Coefficient H2O manquant pour la bande {nom!r}.")
+    return COEFFICIENTS_H2O_MODELE3[nom]
+
+
 BANDES_INFRAROUGES = [
     creer_bande(
         "CO2_15um_aile_gauche_externe",
         13.00,
         14.00,
         0.32 * ECHELLE_OPACITE_CO2,
-        0.64,
+        coefficient_h2o_bande("CO2_15um_aile_gauche_externe"),
         "CO2",
         "aile",
     ),
@@ -96,7 +109,7 @@ BANDES_INFRAROUGES = [
         14.00,
         14.60,
         3.50 * ECHELLE_OPACITE_CO2,
-        0.40,
+        coefficient_h2o_bande("CO2_15um_aile_gauche_interne"),
         "CO2",
         "aile",
     ),
@@ -105,7 +118,7 @@ BANDES_INFRAROUGES = [
         14.60,
         15.40,
         40.0 * ECHELLE_OPACITE_CO2,
-        0.16,
+        coefficient_h2o_bande("CO2_15um_coeur_sature"),
         "CO2",
         "coeur sature",
     ),
@@ -114,7 +127,7 @@ BANDES_INFRAROUGES = [
         15.40,
         16.20,
         4.00 * ECHELLE_OPACITE_CO2,
-        0.48,
+        coefficient_h2o_bande("CO2_15um_aile_droite_interne"),
         "CO2",
         "aile",
     ),
@@ -123,7 +136,7 @@ BANDES_INFRAROUGES = [
         16.20,
         18.00,
         0.48 * ECHELLE_OPACITE_CO2,
-        2.00,
+        coefficient_h2o_bande("CO2_15um_aile_droite_externe"),
         "CO2",
         "aile",
     ),
@@ -132,7 +145,7 @@ BANDES_INFRAROUGES = [
         4.00,
         4.20,
         0.20 * ECHELLE_OPACITE_CO2,
-        0.16,
+        coefficient_h2o_bande("CO2_4_3um_aile_gauche"),
         "CO2",
         "aile",
     ),
@@ -141,7 +154,7 @@ BANDES_INFRAROUGES = [
         4.20,
         4.40,
         15.0 * ECHELLE_OPACITE_CO2,
-        0.08,
+        coefficient_h2o_bande("CO2_4_3um_coeur_sature"),
         "CO2",
         "coeur sature",
     ),
@@ -150,13 +163,37 @@ BANDES_INFRAROUGES = [
         4.40,
         4.60,
         0.20 * ECHELLE_OPACITE_CO2,
-        0.16,
+        coefficient_h2o_bande("CO2_4_3um_aile_droite"),
         "CO2",
         "aile",
     ),
-    creer_bande("H2O_6_3um", 5.50, 7.50, 0.0, 25.60, "H2O", "bande vibration-rotation"),
-    creer_bande("H2O_fenetre_8_13um", 8.00, 13.00, 0.0, 0.48, "H2O", "continuum fenetre"),
-    creer_bande("H2O_rotation_18_80um", 18.00, 80.00, 0.0, 14.40, "H2O", "rotation loin IR"),
+    creer_bande(
+        "H2O_6_3um",
+        5.50,
+        7.50,
+        0.0,
+        coefficient_h2o_bande("H2O_6_3um"),
+        "H2O",
+        "bande vibration-rotation",
+    ),
+    creer_bande(
+        "H2O_fenetre_8_13um",
+        8.00,
+        13.00,
+        0.0,
+        coefficient_h2o_bande("H2O_fenetre_8_13um"),
+        "H2O",
+        "continuum fenetre",
+    ),
+    creer_bande(
+        "H2O_rotation_18_80um",
+        18.00,
+        80.00,
+        0.0,
+        coefficient_h2o_bande("H2O_rotation_18_80um"),
+        "H2O",
+        "rotation loin IR",
+    ),
 ]
 
 
