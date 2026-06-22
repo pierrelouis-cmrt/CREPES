@@ -1,0 +1,21 @@
+{
+  "methode": "coefficients CO2 effectifs calibres par HITRAN/RADIS, moyenne Planck, mediane(tau_eq / X), puis facteur global sur le forcage 280 -> 560 ppm",
+  "formule_modele3": "tau_CO2 = a_CO2 * (co2_ppm / 280) * (delta_p_pa / 101325)",
+  "co2_reference_ppm": 280.0,
+  "pression_reference_pa": 101325.0,
+  "forcage": {
+    "cible_W_m2": 3.708337416,
+    "final_W_m2": 3.708337416,
+    "facteur_global": 0.0532077505
+  },
+  "coefficients": {
+    "CO2_15um_aile_droite_externe": 0.0200755831,
+    "CO2_15um_aile_droite_interne": 0.2255591376,
+    "CO2_15um_aile_gauche_externe": 0.0398669092,
+    "CO2_15um_aile_gauche_interne": 0.2346722842,
+    "CO2_15um_coeur_sature": 1.0357652989,
+    "CO2_4_3um_aile_droite": 0.0332982444,
+    "CO2_4_3um_aile_gauche": 0.0087188686,
+    "CO2_4_3um_coeur_sature": 0.7514875165
+  }
+}

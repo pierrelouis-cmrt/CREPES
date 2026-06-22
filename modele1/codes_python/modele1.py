@@ -85,10 +85,11 @@ COUCHES_ATMOSPHERE = (
     ),
 )
 
-# Chaque bande représente une zone où le CO2 absorbe l'infrarouge.
+# Absorbances moyennes calculees par
+# `modele1/codes_python/absorbance CO2.py`.
 BANDES_CO2 = (
-    BandeSpectrale("CO2_15um", 14.25, 15.75, 1.0),
-    BandeSpectrale("CO2_4_3um", 4.2, 4.35, 3.25),
+    BandeSpectrale("CO2_15um", 14.25, 15.75, 0.160933),
+    BandeSpectrale("CO2_4_3um", 4.2, 4.35, 1.477625),
 )
 
 
