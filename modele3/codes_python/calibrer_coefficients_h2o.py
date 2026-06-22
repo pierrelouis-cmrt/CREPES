@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import math
 import sys
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -157,6 +158,7 @@ def calculer_spectre_radis_hitran(
 ) -> tuple[np.ndarray, np.ndarray]:
     try:
         from radis import calc_spectrum
+        from radis.misc.warning import LinestrengthCutoffWarning
     except ImportError as exc:
         raise RuntimeError(
             "RADIS n'est pas installe. Installer avec "
@@ -177,12 +179,14 @@ def calculer_spectre_radis_hitran(
         "cutoff": cutoff,
         "verbose": False,
     }
-    try:
-        spectre = calc_spectrum(wmin, wmax, molecule="H2O", **kwargs)
-    except TypeError as exc:
-        if "molecule" not in str(exc):
-            raise
-        spectre = calc_spectrum(wmin, wmax, species="H2O", **kwargs)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", LinestrengthCutoffWarning)
+        try:
+            spectre = calc_spectrum(wmin, wmax, molecule="H2O", **kwargs)
+        except TypeError as exc:
+            if "molecule" not in str(exc):
+                raise
+            spectre = calc_spectrum(wmin, wmax, species="H2O", **kwargs)
     return extraire_transmission_spectre(spectre)
 
 

@@ -41,7 +41,8 @@ except ImportError:
     SHAPEFILE_DISPONIBLE = False
 
 
-PROJET_DIR = Path(__file__).resolve().parent
+VISUALISATION_DIR = Path(__file__).resolve().parent
+PROJET_DIR = VISUALISATION_DIR.parent
 MODELE4_DIR = PROJET_DIR / "modele4"
 MODELE5_DIR = PROJET_DIR / "modele5"
 SORTIES_DEFAUT = (MODELE4_DIR / "sorties", MODELE5_DIR / "sorties")
