@@ -1,0 +1,5 @@
+# Moteur de calcul et visualisation du modèle 5.
+numpy
+matplotlib
+geopandas
+shapely
