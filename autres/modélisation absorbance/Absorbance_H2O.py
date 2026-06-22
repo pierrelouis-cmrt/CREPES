@@ -47,17 +47,6 @@ plt.figure(figsize=(14, 6))
 plt.plot(longueurs_onde, absorption_pourcentage, color='#004aad', linewidth=0.8, alpha=0.9)
 plt.fill_between(longueurs_onde, absorption_pourcentage, color='#4a90e2', alpha=0.4)
 
-# 8. Annotations scientifiques
-# Fenêtre atmosphérique (Maintenant avec les valeurs réelles proches de 0%)
-'''plt.axvspan(8, 14, color='#2ecc71', alpha=0.15, label="Fenêtre atmosphérique (8-14 µm)")
-plt.text(11, 45, "Fenêtre Atmosphérique\n(Transparence quasi totale)", 
-         horizontalalignment='center', color='#27ae60', fontweight='bold', fontsize=10)'''
-
-# Bande de rotation pure
-'''plt.axvspan(15, 30, color='#e74c3c', alpha=0.05, label="Bande de rotation pure")
-plt.text(22, 50, "Bande de rotation pure\n(Montée progressive vers saturation)", 
-         horizontalalignment='center', color='#c0392b', fontsize=10)'''
-
 # Configuration des axes
 plt.xlim(0, 30)
 plt.ylim(0, 105)
