@@ -25,8 +25,8 @@ que le noyau radiatif est compréhensible avant d'ajouter une dynamique thermiqu
 | --- | --- |
 | `modele2.py` | Point d'entrée du modèle 2. Calcule les opacités des couches, les transmissions, les émissivités, le flux infrarouge sortant au sommet et le flux infrarouge descendant à la surface. |
 | `ressources/profil_vertical_atmosphere_co2.py` | Outil de profil vertical. Calcule pression, température standard, CO2, pression partielle du CO2 et concentration moléculaire en fonction de l'altitude. |
-| `ressources/profil_vertical_atmosphere_co2.csv` | Export numérique du profil vertical de référence. |
-| `ressources/profil_vertical_atmosphere_co2.png` | Graphique de diagnostic du profil vertical de référence. |
+| `ressources/données/profil_vertical_atmosphere_co2.csv` | Export numérique du profil vertical de référence. |
+| `ressources/données/profil_vertical_atmosphere_co2.png` | Graphique de diagnostic du profil vertical de référence. |
 | `requirements.txt` | Dépendances Python nécessaires aux scripts du modèle 2. |
 
 Les fichiers `evolution_co2.py` et `spectre_absorbance_co2.py` ne font plus
@@ -71,7 +71,7 @@ Le script affiche trois blocs :
 Pour régénérer le CSV et le graphique du profil vertical :
 
 ```bash
-./.venv/bin/python modele2/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 50 --surface-co2-ppm 420 --output modele2/ressources/profil_vertical_atmosphere_co2.png --csv modele2/ressources/profil_vertical_atmosphere_co2.csv --no-plot
+./.venv/bin/python modele2/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 50 --surface-co2-ppm 420 --no-plot
 ```
 
 Options utiles :

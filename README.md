@@ -121,7 +121,7 @@ Lancer le noyau radiatif du modèle 2 :
 Régénérer le profil vertical de pression et de CO2 :
 
 ```bash
-./.venv/bin/python modele2/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 50 --surface-co2-ppm 420 --output modele2/ressources/profil_vertical_atmosphere_co2.png --csv modele2/ressources/profil_vertical_atmosphere_co2.csv --no-plot
+./.venv/bin/python modele2/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 50 --surface-co2-ppm 420 --no-plot
 ```
 
 La documentation détaillée du modèle 2 est dans `modele2/README.md`.
