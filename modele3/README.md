@@ -10,8 +10,10 @@ brique stable pour le modele 4.
 modele3/
   modele3.py                  # calcul radiatif d'une colonne
   physique.py                   # constantes et formules physiques
+  calibrer_coefficients_co2.py  # calibrage HITRAN/RADIS des coefficients CO2
   donnees.py                    # chargement du paquet compact
   ressources/
+    README.md                   # ressources et generation du paquet
     generer_donnees.py          # generation du paquet compact
     donnees_precalculees/
       grille_5deg_2024/
@@ -20,6 +22,13 @@ modele3/
         README.md
   tests/
     tester_modele3.py
+    README.md
+  documentation/
+    README.md                   # theorie, provenance et notes ERA5
+    THEORIE.md
+    PROVENANCE_DONNEES.md
+    recap_ERA5.md
+    RECHERCHE_SHORTWAVE_ET_OPTIMISATION.md
 ```
 
 ## Contrat d'une colonne
@@ -70,6 +79,28 @@ transmission = exp(-1.66 * tau_total)
 
 Il n'y a pas de mode court-onde alternatif ni de coefficient nuageux radiatif.
 
+Les coefficients CO2/H2O utilises dans `physique.py` sont des coefficients
+effectifs de profondeur optique, pas des constantes spectroscopiques. Leur
+unite est sans dimension :
+
+- `a_CO2` vaut pour une colonne de reference `CO2 = 280 ppm` et
+  `delta_p = 101325 Pa`, puis il est remis a l'echelle par `CO2_ppm / 280` et
+  `delta_p / 101325`.
+- `a_H2O` vaut pour `10 kg m-2` de vapeur d'eau, puis il est remis a l'echelle
+  par la masse de vapeur d'eau ERA5 de la couche.
+- La cible CO2 conserve l'ordre de grandeur pedagogique du doublement
+  `280 -> 560 ppm` herite du modele 2.5. Les coefficients H2O ajoutent une
+  opacite simple par grandes bandes, sans raies fines.
+
+Ces nombres ne remplacent pas HITRAN, correlated-k ou une dependance fine en
+temperature/pression ; ils servent a garder un noyau CO2 + H2O clair et
+defendable pour le projet.
+
+Une methode de recalibrage propre des coefficients CO2 est documentee dans
+`CALIBRAGE_COEFFICIENTS_CO2.md`. Le script dedie calcule des transmissions de
+reference HITRAN via RADIS, ajuste les `a_CO2` par bande, recale le forcage
+`280 -> 560 ppm`, puis quantifie l'impact des coeurs et des ailes.
+
 ## Donnees
 
 Le paquet compact versionne est dans :
@@ -82,6 +113,12 @@ Il contient la grille globale 5 degres, les champs surface utiles, les couches
 verticales pretraitees, les flux ERA5 de validation, l'albedo de surface et la
 transmissivite court-onde mensuelle.
 
+Les CSV historiques d'albedo viennent d'un rapport de flux solaire
+`SW_UP / SW_DOWN`. En nuit polaire, ce rapport peut donner `0` alors que la
+surface neige/glace reste reflechissante. Le paquet corrige donc uniquement les
+mailles `albedo_surface == 0` avec `snow_ice_fraction > 0.05`, par un melange
+simple entre l'albedo de secours `0.30` et une valeur neige/glace `0.65`.
+
 Regenerer le paquet :
 
 ```bash
@@ -91,7 +128,7 @@ Regenerer le paquet :
 Lancer une colonne depuis le paquet :
 
 ```bash
-./.venv/bin/python -m modele3.modele3 \
+./.venv/bin/python -m modele3.codes_python.modele3 \
   --lat 0 \
   --lon 0 \
   --mois 7 \
@@ -111,4 +148,5 @@ Lancer les tests :
 - Pas de transport horizontal.
 - Pas d'ozone, aerosols, CH4, N2O ou microphysique nuageuse.
 - Emissivite de surface constante `0.98`.
-- Coefficients CO2/H2O effectifs, documentes dans `THEORIE.md`.
+- Coefficients CO2/H2O effectifs, documentes dans
+  `documentation/THEORIE.md`.

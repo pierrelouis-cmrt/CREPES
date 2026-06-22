@@ -18,6 +18,7 @@ try:
 except ImportError:
     GEOPANDAS_AVAILABLE = False
 
+# Moyennes annuelles historiques, converties en flux latent par continent.
 Delta_hvap = 2453000
 rho_eau = 1000
 Delta_t_an = 365.25 * 24 * 3600
@@ -45,10 +46,12 @@ Q_LATENT_CONTINENT = {
 def create_continent_finder(shapefile_path=MAP_SHAPEFILE):
     """Cree une fonction qui associe un point geographique a un continent."""
     if not GEOPANDAS_AVAILABLE:
+        # Sans geopandas, l'océan donne un comportement stable et conservateur.
         return lambda lat, lon: "Océan"
     try:
         world = gpd.read_file(shapefile_path).to_crs(epsg=4326)
     except Exception:
+        # Même fallback si le shapefile local n'est pas disponible.
         return lambda lat, lon: "Océan"
 
     def find_continent_for_point(lat: float, lon: float) -> str:
@@ -75,5 +78,6 @@ def P_em_surf_evap(lat: float, lon: float, verbose: bool = False) -> float:
             f"{continent} (Q base = {q_val:.2f} W m-2)"
         )
     if lat > 75:
+        # Le modèle historique coupe l'évaporation aux hautes latitudes nord.
         return 0.0
     return q_val

@@ -25,8 +25,8 @@ que le noyau radiatif est compréhensible avant d'ajouter une dynamique thermiqu
 | --- | --- |
 | `modele2.py` | Point d'entrée du modèle 2. Calcule les opacités des couches, les transmissions, les émissivités, le flux infrarouge sortant au sommet et le flux infrarouge descendant à la surface. |
 | `ressources/profil_vertical_atmosphere_co2.py` | Outil de profil vertical. Calcule pression, température standard, CO2, pression partielle du CO2 et concentration moléculaire en fonction de l'altitude. |
-| `ressources/profil_vertical_atmosphere_co2.csv` | Export numérique du profil vertical de référence. |
-| `ressources/profil_vertical_atmosphere_co2.png` | Graphique de diagnostic du profil vertical de référence. |
+| `ressources/données/profil_vertical_atmosphere_co2.csv` | Export numérique du profil vertical de référence. |
+| `ressources/données/profil_vertical_atmosphere_co2.png` | Graphique de diagnostic du profil vertical de référence. |
 | `requirements.txt` | Dépendances Python nécessaires aux scripts du modèle 2. |
 
 Les fichiers `evolution_co2.py` et `spectre_absorbance_co2.py` ne font plus
@@ -52,7 +52,7 @@ Les dépendances actuelles sont volontairement réduites :
 Depuis la racine du dépôt :
 
 ```bash
-./.venv/bin/python modele2/modele2.py
+./.venv/bin/python modele2/codes_python/modele2.py
 ```
 
 Le script affiche trois blocs :
@@ -71,7 +71,7 @@ Le script affiche trois blocs :
 Pour régénérer le CSV et le graphique du profil vertical :
 
 ```bash
-./.venv/bin/python modele2/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 50 --surface-co2-ppm 420 --output modele2/ressources/profil_vertical_atmosphere_co2.png --csv modele2/ressources/profil_vertical_atmosphere_co2.csv --no-plot
+./.venv/bin/python modele2/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 50 --surface-co2-ppm 420 --no-plot
 ```
 
 Options utiles :
@@ -169,7 +169,7 @@ $$
 Après intégration sur une couche :
 
 $$
-\frac{I_{b,\mathrm{sortie}}}{I_{b,\mathrm{entree}}}
+\frac{I_{b,\mathrm{sortie}}}{I_{b,\mathrm{entrée}}}
 =
 \exp(-\tau_b)
 $$
@@ -343,6 +343,6 @@ encore calibrée scientifiquement. Les prochaines validations importantes sont :
   \(3{,}7\) à \(3{,}9\ \mathrm{W\,m^{-2}}\) ;
 - tester une grille verticale plus fine, par exemple 8 à 10 couches ;
 - découper la bande CO2 en sous-bandes plus crédibles, notamment ailes faibles
-  et coeur saturé ;
+  et cœur saturé ;
 - ajouter ensuite seulement les bilans d'énergie et l'évolution temporelle des
   températures.

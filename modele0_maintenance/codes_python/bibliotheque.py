@@ -7,11 +7,13 @@ scripts de modele 4.
 from physique import chaleur_latente, solaire
 from physique.capacite_surface import EPAISSEUR_ACTIVE
 
+# Constantes globales gardées sous les noms historiques du moteur Carcajous.
 constante_solaire = solaire.constante_solaire
 sigma = 5.670374419e-8
 Tatm = 223.15
 dt = 1800.0
 
+# Les fonctions actives sont réexportées pour ne pas casser les anciens imports.
 P_inc_solar = solaire.P_inc_solar
 P_em_surf_evap = chaleur_latente.P_em_surf_evap
 
@@ -31,6 +33,8 @@ def P_em_surf_conv(lat: float, long: float, t: float):
     return 0
 
 
+# Les placeholders ci-dessous restent présents pour les vieux scripts,
+# mais le modèle ponctuel actif ne les branche pas encore.
 def P_abs_atm_solar(lat: float, long: float, t: float, Pinc: float):
     """Placeholder Carcajous conserve: absorption solaire atm non activee."""
     return 0

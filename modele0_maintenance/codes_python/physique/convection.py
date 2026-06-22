@@ -30,6 +30,7 @@ def coefficient_convection(v):
     lambda_air = 0.026
 
     re = rho * max(v, 0.0) * length / mu
+    # Corrélation plaque plane: régime laminaire puis turbulent.
     if re < 5e5:
         coeff, power_re, power_pr = 0.664, 0.5, 1 / 3
     else:
@@ -66,6 +67,7 @@ def get_daily_wind_speed(lat, lon, start="20240101", end="20241231"):
     if cached:
         return cached
     if not REQUESTS_AVAILABLE:
+        # La valeur 2.5 m/s est le vent constant utilisé dans les essais historiques.
         return [2.5] * 365
 
     params = {
@@ -87,6 +89,7 @@ def get_daily_wind_speed(lat, lon, start="20240101", end="20241231"):
         wind_data = response.json()["properties"]["parameter"]["WS2M"]
         values = [wind_data[day] for day in sorted(wind_data)]
     except Exception:
+        # En cas d'API indisponible, on garde une simulation reproductible.
         values = [2.5] * 365
     _write_wind_cache(cache_file, values)
     return values
@@ -122,6 +125,7 @@ def calcul_h(T_sol, T_air):
 
 def convection_forced_flux(T_sol, T_air, wind_speed):
     """Flux convectif force h(Tsol - Tair)."""
+    # Flux positif: la surface est plus chaude que l'air et perd de l'énergie.
     return coefficient_convection(wind_speed) * (T_sol - T_air)
 
 

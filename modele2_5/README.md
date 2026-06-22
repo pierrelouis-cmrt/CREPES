@@ -12,8 +12,7 @@ découpage spectral CO2 et calibration optique.
 | Fichier                                        | Rôle                                                           |
 | ---------------------------------------------- | -------------------------------------------------------------- |
 | `modele2_5.py`                                 | Noyau radiatif CO2 autonome.                                   |
-| `ressources/profil_temperature_standard.py`    | Profil $T(z)$ de l'atmosphère standard 1976 + CSV + graphique. |
-| `ressources/profil_vertical_atmosphere_co2.py` | Profil pression-température-CO2 + CSV + graphique.             |
+| `ressources/profil_vertical_atmosphere_co2.py` | Profil global pression-température-CO2 + CSV + graphique.       |
 | `ressources/calibrer_coefficients_optiques.py` | Recalibre l'échelle des opacités sur le doublement CO2.        |
 | `ressources/tester_modele2_5.py`               | Tests numériques séparés du modèle principal.                  |
 | `requirements.txt`                             | Dépendances locales du modèle 2.5.                             |
@@ -23,7 +22,7 @@ découpage spectral CO2 et calibration optique.
 Depuis la racine du dépôt :
 
 ```bash
-./.venv/bin/python modele2_5/modele2_5.py
+./.venv/bin/python modele2_5/codes_python/modele2_5.py
 ./.venv/bin/python modele2_5/ressources/tester_modele2_5.py
 ./.venv/bin/python modele2_5/ressources/calibrer_coefficients_optiques.py
 ```
@@ -31,8 +30,7 @@ Depuis la racine du dépôt :
 Régénérer les profils :
 
 ```bash
-./.venv/bin/python modele2_5/ressources/profil_temperature_standard.py --max-altitude-km 84 --step-m 100 --output modele2_5/ressources/profil_temperature_standard.png --csv modele2_5/ressources/profil_temperature_standard.csv --no-plot
-./.venv/bin/python modele2_5/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 84 --step-m 100 --surface-co2-ppm 420 --output modele2_5/ressources/profil_vertical_atmosphere_co2.png --csv modele2_5/ressources/profil_vertical_atmosphere_co2.csv --no-plot
+./.venv/bin/python modele2_5/ressources/profil_vertical_atmosphere_co2.py --max-altitude-km 84 --step-m 100 --surface-co2-ppm 420 --no-plot
 ```
 
 ## Grille verticale
@@ -106,7 +104,7 @@ $$
 p(h)=p_b\exp\left[-\frac{g_0(h-h_b)}{R_{air}T_b}\right]
 $$
 
-Le graphique `ressources/profil_temperature_standard.png` montre la courbe en zigzag
+Le graphique `ressources/données/profil_vertical_atmosphere_co2.png` montre la courbe en zigzag
 attendue : troposphère refroidissante, tropopause, stratosphère réchauffante,
 puis mésosphère refroidissante.
 
@@ -134,7 +132,7 @@ Les bandes retenues sont :
 
 La bande $2.7\ \mu m$ est négligée : son diagnostic était proche de $0.001\ \mathrm{W\,m^{-2}}$ pour $280\to560\ ppm$.
 
-Le découpage coeur/ailes est conservé : le diagnostic montre qu'il change la
+Le découpage cœur/ailes est conservé : le diagnostic montre qu'il change la
 réponse marginale au doublement CO2. Coefficients effectifs utilisés dans
 $\Delta\tau$, après calibration :
 
@@ -142,11 +140,11 @@ $\Delta\tau$, après calibration :
 | ---------------------------- | -----------: | ----- | -------: |
 | CO2_15um_aile_gauche_externe |  13.00-14.00 | aile  | 0.010471 |
 | CO2_15um_aile_gauche_interne |  14.00-14.60 | aile  | 0.114530 |
-| CO2_15um_coeur_sature        |  14.60-15.40 | coeur | 1.308912 |
+| CO2_15um_coeur_sature        |  14.60-15.40 | cœur | 1.308912 |
 | CO2_15um_aile_droite_interne |  15.40-16.20 | aile  | 0.130891 |
 | CO2_15um_aile_droite_externe |  16.20-18.00 | aile  | 0.015707 |
 | CO2_4_3um_aile_gauche        |    4.00-4.20 | aile  | 0.006545 |
-| CO2_4_3um_coeur_sature       |    4.20-4.40 | coeur | 0.490842 |
+| CO2_4_3um_coeur_sature       |    4.20-4.40 | cœur | 0.490842 |
 | CO2_4_3um_aile_droite        |    4.40-4.60 | aile  | 0.006545 |
 
 ## Opacité et flux
@@ -220,7 +218,7 @@ Diagnostic de contribution :
 | ------------------ | ------------------------: |
 | Toutes sous-bandes |                  3.930000 |
 | 15 µm total        |                  3.816900 |
-| 15 µm coeur        |                  1.818766 |
+| 15 µm cœur        |                  1.818766 |
 | 15 µm ailes        |                  1.998134 |
 | 4.3 µm total       |                  0.113100 |
 

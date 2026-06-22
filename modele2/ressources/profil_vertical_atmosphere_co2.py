@@ -20,6 +20,9 @@ import numpy as np
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+DONNEES_DIR = SCRIPT_DIR / "données"
+CSV_DEFAUT = DONNEES_DIR / "profil_vertical_atmosphere_co2.csv"
+GRAPHIQUE_DEFAUT = DONNEES_DIR / "profil_vertical_atmosphere_co2.png"
 CACHE_DIR = SCRIPT_DIR / ".cache"
 MPL_CACHE_DIR = CACHE_DIR / "matplotlib"
 G0 = 9.80665  # m s-2, acceleration de la pesanteur standard au niveau de la mer
@@ -80,6 +83,7 @@ def atmosphere_standard(altitude_m: np.ndarray,pression_surface_pa: float = 101_
     )
     temperature_k = np.empty_like(altitude_m)
     pression_pa = np.empty_like(altitude_m)
+    # Chaque altitude est rattachée à la couche standard qui la contient.
     indices_couches = np.searchsorted(BASES_COUCHES_M[1:], altitude_m, side="right")
     indices_couches = np.minimum(indices_couches, len(GRADIENTS_THERMIQUES_K_M) - 1)
 
@@ -117,6 +121,7 @@ def calculer_profil(
 ) -> dict[str, np.ndarray]:
     """Construit le profil vertical complet utilisé par le modèle 2."""
 
+    # On part du profil atmosphérique, puis on ajoute le CO2 choisi par l'utilisateur.
     temperature_k, pression_pa = atmosphere_standard(
         altitude_m, pression_surface_pa, temperature_surface_k
     )
@@ -125,6 +130,7 @@ def calculer_profil(
         raise ValueError("Le profil de CO2 devient nul ou négatif.")
 
     fraction_molaire_co2 = co2_ppm * 1e-6
+    # Les grandeurs dérivées servent aux diagnostics et aux graphiques.
     return {
         "altitude_km": altitude_m / 1000.0,
         "temperature_k": temperature_k,
@@ -213,8 +219,12 @@ def analyser_arguments(argv: list[str]) -> argparse.Namespace:
         default=288.15,
         help="température de surface en kelvins",
     )
-    parser.add_argument("--output", type=Path, help="chemin du graphique produit")
-    parser.add_argument("--csv", type=Path, help="chemin du CSV produit")
+    parser.add_argument(
+        "--output", type=Path, default=GRAPHIQUE_DEFAUT, help="chemin du graphique produit"
+    )
+    parser.add_argument(
+        "--csv", type=Path, default=CSV_DEFAUT, help="chemin du CSV produit"
+    )
     parser.add_argument(
         "--no-plot",
         action="store_true",
@@ -248,6 +258,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     max_altitude_m = args.max_altitude_km * 1000.0
+    # Génère les points du profil vertical jusqu'à l'altitude demandée.
     altitude_m = np.arange(0.0, max_altitude_m + args.step_m, args.step_m)
     altitude_m = altitude_m[altitude_m <= max_altitude_m]
     profil = calculer_profil(
@@ -276,8 +287,6 @@ def main(argv: list[str] | None = None) -> int:
 
     sans_interface = environnement_sans_interface_graphique()
     chemin_sortie = args.output
-    if sans_interface and chemin_sortie is None:
-        chemin_sortie = SCRIPT_DIR / "profil_vertical_atmosphere_co2.png"
 
     fig, plt = construire_graphique(
         profil,

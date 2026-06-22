@@ -21,6 +21,7 @@ from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
 CODES_DIR = Path(__file__).resolve().parents[1]
 if str(CODES_DIR) not in sys.path:
+    # Les scripts de visualisation sont lancés depuis plusieurs dossiers différents.
     sys.path.insert(0, str(CODES_DIR))
 
 import bibliotheque as lib  # noqa: E402
@@ -64,6 +65,7 @@ GRILLES_PAR_VARIANTE = {
 
 def _candidats_grille(preferer_haute_resolution, variante):
     if variante == "auto":
+        # Ordre historique: résultat standard, puis stabilisé, puis rapide.
         ordre = ("1an", "stabilisee", "rapide")
     else:
         if variante not in GRILLES_PAR_VARIANTE:
@@ -102,6 +104,7 @@ def charger_grille_temperature(
             "Aucune grille compatible trouvee dans ressources/grilles"
         )
 
+    # mmap évite de charger toute une grille annuelle en mémoire pour un affichage.
     donnees = np.load(chemin, mmap_mode="r")
     latitudes, longitudes = axes_geographiques(donnees.shape[1], donnees.shape[2])
     return GrilleTemperature(donnees, latitudes, longitudes, chemin, niveau)
@@ -112,6 +115,7 @@ def axes_geographiques(nombre_latitudes, nombre_longitudes):
     _, lat_lowres, lon_lowres = load_albedo_series()
     if len(lat_lowres) == nombre_latitudes and len(lon_lowres) == nombre_longitudes:
         return lat_lowres, lon_lowres
+    # Les grilles haute résolution gardent les mêmes bornes que la grille basse.
     return (
         np.linspace(float(lat_lowres.min()), float(lat_lowres.max()), nombre_latitudes),
         np.linspace(float(lon_lowres.min()), float(lon_lowres.max()), nombre_longitudes),
@@ -142,6 +146,7 @@ def _segments_depuis_points(points):
     dernier_lon = None
     for lon, lat in points:
         if dernier_lon is not None and abs(lon - dernier_lon) > 180:
+            # Sans cette coupe, une côte traverse toute la carte à +/-180 degrés.
             if len(segment) > 1:
                 yield segment
             segment = []
@@ -237,6 +242,7 @@ def _segments_visibles_devant_camera(segments_xyz, direction_camera, rayon=1.012
         if len(segment) < 2:
             continue
 
+        # Projection positive: le point est sur l'hémisphère visible.
         projections = segment @ direction_camera
         segment_visible = []
         point_precedent = segment[0]
@@ -383,6 +389,7 @@ def creer_planisphere(
     slider_heure = Slider(axe_heure, "Heure", 0, 23, valinit=heure, valstep=1)
 
     def rafraichir(_):
+        # Les sliders changent seulement la tranche temporelle affichée.
         jour_courant = int(slider_jour.val)
         heure_courante = int(slider_heure.val)
         idx = indice_temps(grille, jour_courant, heure_courante)
@@ -477,6 +484,7 @@ def creer_sphere(
     slider_heure = Slider(axe_heure, "Heure", 0, 23, valinit=heure, valstep=1)
 
     def rafraichir(_):
+        # On garde le maillage 3D et on remplace seulement les couleurs.
         jour_courant = int(slider_jour.val)
         heure_courante = int(slider_heure.val)
         idx = indice_temps(grille, jour_courant, heure_courante)

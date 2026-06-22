@@ -32,9 +32,73 @@ modele4/
   tests/tester_modele4.py  # tests numeriques minimaux
   tests/tester_rapide.py   # tests du moteur rapide
   rapide.py                # moteur rapide vectorise, sortie 4h par defaut
+  lancer.py                # TUI pour choisir le moteur et lancer les cas courants
   README.md
   THEORIE.md
   plan.md
+```
+
+## Deux scripts, deux roles
+
+Le modele 4 a volontairement deux scripts d'execution. Ils resolvent le meme
+bilan de surface, mais pas avec le meme niveau de recalcul radiatif.
+
+### `modele4.py` : moteur classique
+
+Role : reference physique et numerique.
+
+Techniquement :
+
+- il appelle le modele 3 dans la boucle de calcul ;
+- en mode `temporel`, chaque cellule et chaque pas de temps repassent par la
+  colonne radiative locale ;
+- il resout le bilan d'energie avec un schema implicite et des iterations de
+  Newton ;
+- il est plus lent, surtout sur la grille globale.
+
+Physiquement :
+
+- les flux radiatifs de surface sont recalcules avec la temperature de surface
+  courante ;
+- c'est le moteur a utiliser pour verifier une petite experience, comparer au
+  moteur rapide, ou garder une reference plus proche du couplage avec le modele
+  3 ;
+- il reste un modele local : pas de transport horizontal, pas d'ocean dynamique,
+  pas de recalcul complet de l'atmosphere 3D.
+
+### `rapide.py` : moteur rapide
+
+Role : moteur pratique pour les essais courants et les longues simulations.
+
+Techniquement :
+
+- il appelle le modele 3 au debut pour pre-calculer des champs mensuels ;
+- ensuite, la boucle temporelle est vectorisee avec `numpy` sur toute la grille ;
+- il ne rappelle plus le modele 3 a chaque pas ;
+- il ecrit par defaut une carte toutes les 4 heures ;
+- il est beaucoup plus rapide que le moteur classique.
+
+Physiquement :
+
+- l'atmosphere radiative est approximee par des champs mensuels fixes pendant la
+  simulation ;
+- le court-onde garde le cycle jour/nuit via la geometrie solaire, mais utilise
+  une transmissivite mensuelle ;
+- le long-onde montant et la convection suivent la temperature de surface en
+  temps reel ;
+- c'est une approximation controlee du moteur classique, pas une reference
+  exacte colonne par colonne.
+
+### Choix recommande
+
+- Pour travailler, tester des parametres ou lancer une simulation longue :
+  utiliser `modele4.rapide`.
+- Pour verifier la physique locale, comparer les resultats ou valider une
+  modification : utiliser `modele4.modele4` sur une petite grille.
+- Pour une premiere utilisation : lancer le TUI.
+
+```bash
+./.venv/bin/python -m modele4.lancer
 ```
 
 ## Execution directe
@@ -164,7 +228,8 @@ Options principales du moteur rapide :
 - `--convection`, `--facteur-latent`, `--vent`, `--co2` : memes roles que dans
   le moteur complet.
 - `--rzsm-csv` : source RZSM du modele 0, chargee par defaut pour la capacite
-  surfacique ; les constantes ne servent que si RZSM manque.
+  des terres non enneigees/glacees ; l'ocean et la glace/neige ont une inertie
+  de surface explicite.
 
 ## Options principales
 
@@ -181,10 +246,11 @@ Options principales du moteur rapide :
 - `--vent` : vent constant en m/s pour la convection forcee.
 - `--max-latitudes`, `--max-longitudes` : sous-grille rapide de developpement.
 - `--rzsm-csv` : CSV RZSM du modele 0 pour utiliser la capacite thermique
-  issue de l'humidite du sol. Par defaut, le modele charge
+  issue de l'humidite du sol sur les terres non enneigees/glacees. Par defaut,
+  le modele charge
   `modele0_maintenance/ressources/capacite_humidite/average_rzsm_tout.csv`.
-  Si la source ou une valeur locale manque, il retombe seulement alors sur
-  `CP_SEC`.
+  Si la source ou une valeur locale manque, `CP_SEC` sert seulement pour la
+  part terrestre ; l'ocean et la glace/neige gardent leurs capacites propres.
 - `--no-progress` : desactive la barre de progression console.
 
 Exemple avec un CSV RZSM explicite :
@@ -196,6 +262,18 @@ Exemple avec un CSV RZSM explicite :
   --rzsm-csv modele0_maintenance/ressources/capacite_humidite/average_rzsm_tout.csv \
   --output modele4/sorties/simulation_dev_rzsm.npz
 ```
+
+## Capacite thermique de surface
+
+La capacite des terres non enneigees/glacees reprend la formule RZSM et les
+constantes de `modele0_maintenance/codes_python/physique/capacite_surface.py`.
+Si RZSM manque localement, seule cette part terrestre retombe sur le sol sec.
+
+L'ocean utilise une couche active simple de `1 m` d'eau et la glace/neige une
+couche active simple de `1 m` de glace compacte (`rho_ice = 917 kg m-3`). C'est
+un ordre de grandeur pedagogique : assez grand pour eviter qu'ocean ou glace
+se comportent comme du sol sec, mais encore volontairement loin d'un ocean
+dynamique ou d'un modele vertical de glace.
 
 ## Sortie NPZ
 
@@ -230,8 +308,8 @@ cellule et l'ecriture du fichier `.npz`.
 
 - Pas de transport horizontal.
 - Pas de capacite RZSM pretraitee dans le paquet compact ; le modele 4 charge
-  le CSV RZSM du modele 0 a l'execution et utilise `CP_SEC` seulement en
-  fallback si cette source ou la valeur locale manque.
+  le CSV RZSM du modele 0 a l'execution pour les terres non
+  enneigees/glacees. Le fallback `CP_SEC` ne concerne que cette part terrestre.
 - Pas de diffusion du sol : le module du modele 0 est conserve mais pas branche,
   car son interpretation en flux de surface est encore ambigu.
 - Pas de recalcul des profils atmospheriques quand `T_surface` change.

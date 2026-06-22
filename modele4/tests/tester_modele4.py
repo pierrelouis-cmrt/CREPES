@@ -12,9 +12,9 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from modele3.donnees import charger_paquet_grille
-from modele4 import surface
-from modele4.modele4 import ConfigurationModele4, enregistrer_resultat, simuler, simuler_mensuel
+from modele3.codes_python.donnees import charger_paquet_grille
+from modele4.codes_python import surface
+from modele4.codes_python.modele4 import ConfigurationModele4, enregistrer_resultat, simuler, simuler_mensuel
 
 
 def tester_capacite_surface_finie():
@@ -23,8 +23,9 @@ def tester_capacite_surface_finie():
         "snow_ice_fraction": 0.0,
     }
     capacite = surface.capacite_surface(cellule)
-    attendu = surface.CP_SEC * 1000.0 * surface.RHO_BULK * surface.EPAISSEUR_ACTIVE_M
+    attendu = surface.capacite_sol_sec()
     assert abs(capacite - attendu) < 1e-6
+    assert 5e5 < capacite < 2e6
 
 
 def tester_capacite_depuis_rzsm_modifie_le_sol():
@@ -37,13 +38,41 @@ def tester_capacite_depuis_rzsm_modifie_le_sol():
     assert capacite_humide > capacite_seche
 
 
-def tester_capacite_rzsm_sans_melange_surface():
+def tester_capacite_rzsm_nan_retombe_sur_sol_sec():
     cellule = {
+        "land_fraction": 1.0,
+        "snow_ice_fraction": 0.0,
+    }
+    capacite = surface.capacite_surface(cellule, rzsm=np.nan)
+    assert abs(capacite - surface.capacite_sol_sec()) < 1e-6
+
+
+def tester_capacite_ocean_ignore_rzsm_et_reste_plausible():
+    cellule_ocean = {
         "land_fraction": 0.0,
+        "snow_ice_fraction": 0.0,
+    }
+    capacite = surface.capacite_surface(cellule_ocean, rzsm=0.35)
+    assert abs(capacite - surface.capacite_ocean_surface()) < 1e-6
+    assert capacite > 3.0 * surface.capacite_sol_sec()
+    assert 3e6 < capacite < 1e7
+
+
+def tester_capacite_glace_neige_prioritaire_sur_rzsm():
+    cellule_glace = {
+        "land_fraction": 1.0,
         "snow_ice_fraction": 1.0,
     }
-    capacite = surface.capacite_surface(cellule, rzsm=0.35)
-    assert abs(capacite - surface.capacite_depuis_rzsm(0.35)) < 1e-6
+    capacite = surface.capacite_surface(cellule_glace, rzsm=0.35)
+    assert abs(capacite - surface.capacite_glace_neige_surface()) < 1e-6
+    assert surface.capacite_sol_sec() < capacite < surface.capacite_ocean_surface()
+
+
+def tester_capacite_surface_positive_plausible():
+    capacites = surface.capacite_depuis_rzsm(np.array([0.05, 0.35, 0.9]))
+    assert np.isfinite(capacites).all()
+    assert (capacites > 5.0e5).all()
+    assert (capacites < 5.0e6).all()
 
 
 def tester_grille_rzsm_modele0_bins_1_degre():
@@ -106,8 +135,25 @@ def tester_simulation_courte_point():
     temperatures = resultat["temperature_surface_k"]
     assert temperatures.shape == (2, 1, 1)
     assert np.isfinite(temperatures).all()
+    assert temperatures.min() > 150.0
+    assert temperatures.max() < 350.0
     assert resultat["capacite_surface_j_m2_k"].shape == (1, 1)
+    assert np.isfinite(resultat["capacite_surface_j_m2_k"]).all()
+    assert (resultat["capacite_surface_j_m2_k"] > 0.0).all()
     assert "flux_net_surface" in resultat["diagnostics_moyens"]
+
+    diagnostics = resultat["diagnostics_moyens"]
+    assert diagnostics["SW_absorbe_surface"][0, 0] >= 0.0
+    assert diagnostics["LW_down_absorbe_surface"][0, 0] > 0.0
+    assert diagnostics["LW_up_surface"][0, 0] > 0.0
+    assert diagnostics["flux_latent"][0, 0] == 0.0
+    assert diagnostics["flux_convection"][0, 0] == 0.0
+
+    delta_temperature = float(temperatures[-1, 0, 0] - temperatures[0, 0, 0])
+    flux_net = float(diagnostics["flux_net_surface"][0, 0])
+    capacite = float(resultat["capacite_surface_j_m2_k"][0, 0])
+    attendu = config.dt_s * flux_net / capacite
+    assert abs(delta_temperature - attendu) < 5e-4
 
 
 def tester_ecriture_npz():
@@ -143,13 +189,16 @@ def tester_simulation_mensuelle_point():
     assert temperatures.shape == (12, 1, 1)
     assert resultat["mois"].tolist() == list(range(1, 13))
     assert np.isfinite(temperatures).all()
-    assert resultat["metadata"]["mode_sortie"] == "mensuel"
+    assert resultat["metadata"]["mode_sortie"] == "diagnostic_mensuel_un_pas"
 
 
 def main():
     tester_capacite_surface_finie()
     tester_capacite_depuis_rzsm_modifie_le_sol()
-    tester_capacite_rzsm_sans_melange_surface()
+    tester_capacite_rzsm_nan_retombe_sur_sol_sec()
+    tester_capacite_ocean_ignore_rzsm_et_reste_plausible()
+    tester_capacite_glace_neige_prioritaire_sur_rzsm()
+    tester_capacite_surface_positive_plausible()
     tester_grille_rzsm_modele0_bins_1_degre()
     tester_flux_latent_par_continent_sans_moyenne()
     tester_flux_convection_signe()

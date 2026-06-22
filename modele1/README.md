@@ -279,7 +279,7 @@ bandes CO₂.
 Commande :
 
 ```bash
-python3 modele1/modele1.py
+python3 modele1/codes_python/modele1.py
 ```
 
 Sortie actuelle :
