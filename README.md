@@ -4,22 +4,25 @@ Projet Climat, Groupe D, 2026
 
 ## Organisation
 
-| Dossier                | Rôle                                                                                            |
-| ---------------------- | ----------------------------------------------------------------------------------------------- |
-| `annexe/` | Pistes pour l'année prochaine                                        |
-| `modele0_maintenance/` | Ancien modèle combiné, conservé comme référence stable.                                         |
-| `modele1/`             | Colonne radiative CO2 simplifiée à 3 couches.                                                   |
-| `modele2/`             | Colonne atmosphérique CO2 à 6 couches avec noyau radiatif infrarouge simplifié.                 |
-| `modele2_5/`           | Itération du modèle 2 : 10 couches en pression, profil standard, bandes CO2 découpées et tests. |
+| Dossier                | Rôle                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------ |
+| `annexe/`              | Pistes pour l'année prochaine                                                                    |
+| `modele0_maintenance/` | Ancien modèle combiné, conservé comme référence stable.                                          |
+| `modele1/`             | Colonne radiative CO2 simplifiée à 3 couches.                                                    |
+| `modele2/`             | Colonne atmosphérique CO2 à 6 couches avec noyau radiatif infrarouge simplifié.                  |
+| `modele2_5/`           | Itération du modèle 2 : 10 couches en pression, profil standard, bandes CO2 découpées et tests.  |
 | `modele3/`             | Colonne radiative finale pour le modèle 4, avec paquet `.npz` compact et provenances explicites. |
 | `modele4/`             | Grille de température de surface couplée au modèle 3 et aux termes de surface du modèle 0.       |
 | `modele5/`             | Grille modèle 4 rapide avec échanges radiatifs horizontaux entre colonnes voisines.              |
-| `visualisation/`       | Visualisation des modèles 4 et 5.                                      |
+| `visualisation/`       | Visualisation des modèles 4 et 5.                                                                |
 
+Pour générer les données du modèle 3, un dossier `/ressources/` est à placer à la racine du repo (contient données ERA5 et albédo notamment). Les données générées sont déjà disponnibles ici, le modèle 3 peut être éxécuté tel quel, sans ce dossier de ressources.
 
-## Lancement des codes 
+## Lancement des codes
+
 Bien effectuer la commande suivante :
-```bash 
+
+```bash
 python -m pip install -r requirements.txt
 ```
 
@@ -31,7 +34,6 @@ py -m venv .venv
 .\.venv\Scripts\python.exe -m modele4.codes_python.rapide
 .\.venv\Scripts\python.exe visualisation\planisphere.py --fichier modele4\sorties\simulation_modele4_rapide.npz
 ```
-
 
 ## Modèle 0
 
