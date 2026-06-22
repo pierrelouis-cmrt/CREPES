@@ -12,6 +12,7 @@ modele3/
   physique.py                   # constantes et formules physiques
   donnees.py                    # chargement du paquet compact
   ressources/
+    README.md                   # ressources et generation du paquet
     generer_donnees.py          # generation du paquet compact
     donnees_precalculees/
       grille_5deg_2024/
@@ -20,6 +21,13 @@ modele3/
         README.md
   tests/
     tester_modele3.py
+    README.md
+  documentation/
+    README.md                   # theorie, provenance et notes ERA5
+    THEORIE.md
+    PROVENANCE_DONNEES.md
+    recap_ERA5.md
+    RECHERCHE_SHORTWAVE_ET_OPTIMISATION.md
 ```
 
 ## Contrat d'une colonne
@@ -134,4 +142,5 @@ Lancer les tests :
 - Pas de transport horizontal.
 - Pas d'ozone, aerosols, CH4, N2O ou microphysique nuageuse.
 - Emissivite de surface constante `0.98`.
-- Coefficients CO2/H2O effectifs, documentes dans `THEORIE.md`.
+- Coefficients CO2/H2O effectifs, documentes dans
+  `documentation/THEORIE.md`.

@@ -85,7 +85,7 @@ restent des diagnostics historiques. Elles ne doivent pas être réintroduites
 comme transmission solaire de surface dans le modèle 4.
 
 La justification détaillée et les sources sont dans
-`modele3/RECHERCHE_SHORTWAVE_ET_OPTIMISATION.md`.
+`modele3/documentation/RECHERCHE_SHORTWAVE_ET_OPTIMISATION.md`.
 
 ## Entrées attendues
 

@@ -171,8 +171,8 @@ Lancer les tests :
 Documentation détaillée :
 
 - `modele3/README.md`
-- `modele3/THEORIE.md`
-- `modele3/PROVENANCE_DONNEES.md`
+- `modele3/documentation/THEORIE.md`
+- `modele3/documentation/PROVENANCE_DONNEES.md`
 
 ## Modèle 4
 
