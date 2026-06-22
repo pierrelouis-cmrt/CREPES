@@ -159,7 +159,7 @@ La documentation détaillée du modèle 2.5 est dans `modele2_5/README.md`.
 Régénérer le paquet compact :
 
 ```bash
-./.venv/bin/python -m modele3.codes_python.generer_donnees --overwrite
+./.venv/bin/python -m modele3.ressources.generer_donnees --overwrite
 ```
 
 Lancer une colonne depuis le paquet global :

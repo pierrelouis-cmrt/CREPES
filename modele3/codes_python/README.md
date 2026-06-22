@@ -29,15 +29,12 @@ concentration.
 | `donnees.py` | Chargement du paquet et extraction de la colonne demandée. |
 | `physique.py` | Constantes, bandes et formules radiatives partagées. |
 | `coefficients_opacite.py` | Chargement du paquet unique `coefficients_opacite_modele3.npz`. |
-| `generer_donnees.py` | Génération du paquet compact, puis lancement des calibrages CO₂/H₂O. |
 | `calibrer_coefficients_co2.py` | Recalcule les coefficients CO₂ effectifs et les écrit dans le NPZ commun. |
 | `calibrer_coefficients_h2o.py` | Recalcule les coefficients H₂O effectifs et les écrit dans le NPZ commun. |
-| `Absorbance_H2O.py` | Visualisation qualitative des bandes et du continuum d'absorption H₂O. |
 
-`generer_donnees.py` lance les deux scripts de coefficients après avoir écrit
-le paquet de grille. Le coefficient nuageux n'a pas de script dédié : c'est le
-paramètre gris `tau_lw_par_fraction_nuage`, conservé dans le même NPZ et
-modifiable avec `--tau-lw-nuage`.
+Le script de génération du paquet compact et la visualisation qualitative H₂O
+sont rangés dans [`../ressources/`](../ressources/README.md), avec les données
+qu'ils produisent ou illustrent.
 
 Pour calibrer les coefficients CO₂ :
 
@@ -56,7 +53,7 @@ python -m modele3.codes_python.calibrer_coefficients_h2o --dry-run
 Depuis la racine du dépôt :
 
 ```bash
-python modele3/codes_python/Absorbance_H2O.py
+python modele3/ressources/Absorbance_H2O.py
 ```
 
 Le script ouvre un graphique ; il n'accepte pas d'option et n'écrit pas de

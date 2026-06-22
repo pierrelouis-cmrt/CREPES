@@ -33,7 +33,7 @@ from modele3.codes_python.coefficients_opacite import (
 )
 from modele3.codes_python.donnees import charger_paquet_grille, extraire_colonne, iterer_colonnes
 from modele3.codes_python.modele3 import calculer_colonne_radiative, construire_couches
-from modele3.codes_python.generer_donnees import _nearest_matrix, normaliser_longitudes_180
+from modele3.ressources.generer_donnees import _nearest_matrix, normaliser_longitudes_180
 
 
 def _donnees_test(transmissivite=0.60):

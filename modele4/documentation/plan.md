@@ -178,7 +178,7 @@ Le workflow attendu est donc :
 Commande cible à implémenter :
 
 ```bash
-./.venv/bin/python -m modele3.codes_python.generer_donnees \
+./.venv/bin/python -m modele3.ressources.generer_donnees \
   --resolution 5 \
   --annee 2024 \
   --ressources-dir ressources \
@@ -187,7 +187,7 @@ Commande cible à implémenter :
 ```
 
 Le modèle 4 devra ensuite charger prioritairement ces données pré-calculées
-produites par `modele3.codes_python.generer_donnees`. Si elles sont absentes
+produites par `modele3.ressources.generer_donnees`. Si elles sont absentes
 mais que `ressources/` existe, il pourra proposer la commande de génération.
 S'il n'y a ni données pré-calculées ni `ressources/`, il devra échouer avec un
 message clair plutôt que lancer une simulation globale fausse.
